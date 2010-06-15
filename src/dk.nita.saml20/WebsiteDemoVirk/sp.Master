@@ -1,0 +1,27 @@
+﻿<%@ Master Language="C#" AutoEventWireup="true" CodeBehind="sp.master.cs" Inherits="WebsiteDemoVirk.sp" %>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" >
+<head runat="server">
+    <meta http-equiv="Pragma" content="no-cache" />
+    <title>Demo Service Provider for Virk.dk</title>
+    <asp:ContentPlaceHolder ID="head" runat="server">
+    </asp:ContentPlaceHolder>
+</head>
+<body>
+    <form id="form1" runat="server">
+    <div>
+        <asp:Image runat="server" ID="Branding" ImageUrl="~/images/oiosamlnet_roed.gif" AlternateText="OIOSAML.NET" ></asp:Image>
+    </div>
+    <hr />
+    <div>
+        <asp:ContentPlaceHolder ID="ContentPlaceHolder1" runat="server">
+        
+        </asp:ContentPlaceHolder>
+    </div>
+    <hr />
+    &copy; OIOSAML.NET (<a href="http://www.oiosaml.info/">www.oiosaml.info</a>).
+    </form>
+</body>
+</html>

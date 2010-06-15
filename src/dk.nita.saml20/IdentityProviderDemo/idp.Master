@@ -1,0 +1,29 @@
+﻿<%@ Master Language="C#" AutoEventWireup="true" CodeBehind="idp.master.cs" Inherits="IdentityProviderDemo.idp" %>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" >
+<head runat="server">
+    <title>Demo IdP</title>
+    <style type="text/css">
+        div { width: 100%; margin-bottom: 10px; }
+    </style>
+</head>
+<body style="width:100%">
+    <form id="form1" runat="server">
+    <div>
+        <asp:Image runat="server" ID="Branding" ImageUrl="~/images/oiosamlnet_roed.gif" AlternateText="OIOSAML.NET" ></asp:Image>
+    </div>
+    <hr />
+    <div>
+        <asp:ContentPlaceHolder ID="ContentPlaceHolder1" runat="server">
+        
+        </asp:ContentPlaceHolder>
+    </div>
+    <hr />
+    <div>
+    <span style="color:red;font-weight:bold">NOTE: </span>this Identity provider is for demo purposes only and <i>should never</i> be used in development or production environments. &copy; OIOSAML.NET (<a href="http://www.oiosaml.info/">www.oiosaml.info</a>).
+    </div>
+    </form>
+</body>
+</html>
