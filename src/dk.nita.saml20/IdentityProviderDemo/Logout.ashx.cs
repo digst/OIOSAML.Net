@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Web;
+using System.IO;
 using dk.nita.saml20;
 using dk.nita.saml20.config;
 using dk.nita.saml20.protocol;
@@ -115,14 +116,15 @@ namespace IdentityProviderDemo
         {
             Saml20MetadataDocument metadata = GetMetadata(entityID);
 
-            IDPEndPointElement endpoint = metadata.SLOEndpoint(SAMLBinding.REDIRECT);
+            //IDPEndPointElement endpoint = metadata.SLOEndpoint(SAMLBinding.REDIRECT);
+            IDPEndPointElement endpoint = metadata.SLOEndpoint(SAMLBinding.POST);
 
             Saml20LogoutResponse response = new Saml20LogoutResponse();
             response.Issuer = IDPConfig.ServerBaseUrl;
             response.Destination = endpoint.Url;
             response.StatusCode = Saml20Constants.StatusCodes.Success;
 
-            HTTPRedirect(SAMLAction.SAMLResponse, endpoint, response.GetXml());            
+            HTTPRedirect(SAMLAction.SAMLResponse, endpoint, response.GetXml());
         }
 
         /// <summary>
@@ -141,8 +143,25 @@ namespace IdentityProviderDemo
             request.SubjectToLogOut.Format = Saml20Constants.NameIdentifierFormats.Unspecified;
             request.SubjectToLogOut.Value = user.Username;
 
-            Saml20MetadataDocument metadata = GetMetadata(entityID);            
-            HTTPRedirect(SAMLAction.SAMLRequest, metadata.SLOEndpoint(SAMLBinding.REDIRECT), request.GetXml());
+            Saml20MetadataDocument metadata = GetMetadata(entityID);
+            
+            // HTTPRedirect(SAMLAction.SAMLRequest, metadata.SLOEndpoint(SAMLBinding.REDIRECT), request.GetXml());
+
+
+            HttpPostBindingBuilder builder = new HttpPostBindingBuilder(metadata.SLOEndpoint(SAMLBinding.POST));
+            builder.Action = SAMLAction.SAMLRequest;
+            //builder.Response = assertionDoc.OuterXml;
+
+            string xmloutput = request.GetXml().OuterXml;
+
+            TextWriter tw = new StreamWriter("C:\\temp\\idp.txt", true);
+            tw.WriteLine(xmloutput);
+            tw.Close();
+
+            builder.Response = xmloutput;
+
+            builder.GetPage().ProcessRequest(HttpContext.Current);
+            HttpContext.Current.Response.End();
         }
     }
 }
