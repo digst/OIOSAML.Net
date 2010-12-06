@@ -184,7 +184,7 @@ namespace dk.nita.saml20.protocol
             if(status.StatusCode.SubStatusCode != null){
                 switch (status.StatusCode.SubStatusCode.Value)
                 {
-                    case Saml20Constants.StatusCodes.Responder .AuthnFailed:
+                    case Saml20Constants.StatusCodes.AuthnFailed:
                         HandleError(context, errorMessage, true);
                         break;
                     default:

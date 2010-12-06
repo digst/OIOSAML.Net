@@ -325,7 +325,7 @@ namespace dk.nita.saml20.protocol
                 if (!parser.VerifySignature(idp.metadata.Keys))
                 {
                     AuditLogging.logEntry(Direction.IN, Operation.LOGOUTRESPONSE,
-                                      string.Format("Invalid signature, response: {0}", parser.Message));
+                                      string.Format("Invalid signature in redirect-binding, response: {0}", parser.Message));
                     HandleError(context, Resources.SignatureInvalid);
                     return;
                 }
@@ -334,16 +334,30 @@ namespace dk.nita.saml20.protocol
             }else if(context.Request.RequestType == "POST")
             {
                 HttpPostBindingParser parser = new HttpPostBindingParser(context);
+                LogoutResponse response = Serialization.DeserializeFromXmlString<LogoutResponse>(parser.Message);
+
+                IDPEndPoint idp = RetrieveIDPConfiguration(response.Issuer.Value);
+
+                if (idp.metadata == null)
+                {
+                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTRESPONSE,
+                                      string.Format("No IDP metadata, unknown IDP, response: {0}", parser.Message));
+                    HandleError(context, Resources.UnknownIDP);
+                    return;
+                }
+
                 if (!parser.IsSigned())
                 {
                     AuditLogging.logEntry(Direction.IN, Operation.LOGOUTRESPONSE,
                                       string.Format("Signature not present, response: {0}", parser.Message));
                     HandleError(context, Resources.SignatureNotPresent);
                 }
-                if (!parser.CheckSignature())
+
+                // signature on final message in logout
+                if (!parser.CheckSignature(idp.metadata.Keys))
                 {
                     AuditLogging.logEntry(Direction.IN, Operation.LOGOUTRESPONSE,
-                                      string.Format("Invalid signature, response: {0}", parser.Message));
+                                      string.Format("Invalid signature in post-binding, response: {0}", parser.Message));
                     HandleError(context, Resources.SignatureInvalid);
                 }
 
@@ -410,6 +424,7 @@ namespace dk.nita.saml20.protocol
             {
                 HttpRedirectBindingParser parser = new HttpRedirectBindingParser(context.Request.Url);
                 IDPEndPoint endpoint = config.FindEndPoint(idpEndpoint.Id);
+
                 if (endpoint.metadata == null)
                 {
                     AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Cannot find metadata for IdP");
@@ -421,7 +436,7 @@ namespace dk.nita.saml20.protocol
 
                 if (!parser.VerifySignature(metadata.GetKeys(KeyTypes.signing)))
                 {
-                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Invalid signature, msg: " + parser.Message);
+                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Invalid signature redirect-binding, msg: " + parser.Message);
                     HandleError(context, Resources.SignatureInvalid);
                     return;
                 }
@@ -431,14 +446,27 @@ namespace dk.nita.saml20.protocol
             else if (context.Request.RequestType == "POST") // HTTP Post binding
             {
                 HttpPostBindingParser parser = new HttpPostBindingParser(context);
+
                 if (!parser.IsSigned())
                 {
                     AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Signature not present, msg: " + parser.Message);
                     HandleError(context, Resources.SignatureNotPresent);
                 }
-                if (!parser.CheckSignature())
+
+                IDPEndPoint endpoint = config.FindEndPoint(idpEndpoint.Id);
+                if (endpoint.metadata == null)
                 {
-                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Invalid signature, msg: " + parser.Message);
+                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Cannot find metadata for IdP");
+                    HandleError(context, "Cannot find metadata for IdP " + idpEndpoint.Id);
+                    return;
+                }
+
+                Saml20MetadataDocument metadata = endpoint.metadata;
+
+                // handle a logout-request
+                if (!parser.CheckSignature(metadata.GetKeys(KeyTypes.signing)))
+                {
+                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Invalid signature post-binding, msg: " + parser.Message);
                     HandleError(context, Resources.SignatureInvalid);
                 }
 
