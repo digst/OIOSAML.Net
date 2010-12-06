@@ -129,6 +129,12 @@ namespace dk.nita.saml20
                     Endpoint logoutEndpoint = new Endpoint();
                     logoutEndpoint.Location = new Uri(baseURL, endpoint.localPath).ToString();
                     logoutEndpoint.ResponseLocation = logoutEndpoint.Location;
+                    logoutEndpoint.Binding = GetBinding(endpoint.Binding, Saml20Constants.ProtocolBindings.HTTP_Post);
+                    logoutServiceEndpoints.Add(logoutEndpoint);
+
+                    logoutEndpoint = new Endpoint();
+                    logoutEndpoint.Location = new Uri(baseURL, endpoint.localPath).ToString();
+                    logoutEndpoint.ResponseLocation = logoutEndpoint.Location;
                     logoutEndpoint.Binding = GetBinding(endpoint.Binding, Saml20Constants.ProtocolBindings.HTTP_Redirect);
                     logoutServiceEndpoints.Add(logoutEndpoint);
 
