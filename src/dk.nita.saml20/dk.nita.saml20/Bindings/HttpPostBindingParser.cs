@@ -1,7 +1,12 @@
 using System;
 using System.Text;
+using System.Collections.Generic;
 using System.Web;
 using System.Xml;
+using System.Security.Cryptography;
+using System.Security.Cryptography.Xml;
+using dk.nita.saml20.Logging;
+using dk.nita.saml20.Schema.Metadata;
 using dk.nita.saml20.Utils;
 
 namespace dk.nita.saml20.Bindings
@@ -100,6 +105,26 @@ namespace dk.nita.saml20.Bindings
         public bool CheckSignature()
         {
             return XmlSignatureUtils.CheckSignature(_document);
+        }
+
+        public bool CheckSignature(IEnumerable<KeyDescriptor> keys)
+        {
+            foreach (KeyDescriptor keyDescriptor in keys)
+            {
+                KeyInfo ki = (KeyInfo)keyDescriptor.KeyInfo;
+
+                foreach (KeyInfoClause clause in ki)
+                {
+                    AsymmetricAlgorithm key = XmlSignatureUtils.ExtractKey(clause);
+
+                    if (key != null && XmlSignatureUtils.CheckSignature(_document, key))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
 
         /// <summary>
