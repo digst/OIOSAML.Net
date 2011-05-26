@@ -2,7 +2,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>9.0.30729</ProductVersion>
+    <ProductVersion>9.0.21022</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{5CABB53A-798E-4725-B755-18A60ECC5D31}</ProjectGuid>
     <ProjectTypeGuids>{349c5851-65df-11da-9384-00065b846f21};{fae04ec0-301f-11d3-bf4b-00c04f79efbc}</ProjectTypeGuids>
@@ -158,6 +158,7 @@
     <Content Include="bin\dk.nita.saml20.pdb" />
     <Content Include="bin\dk.nita.saml20.xml" />
     <Content Include="bin\log4net.dll" />
+    <Content Include="bin\log4net.xml" />
     <Content Include="cdcreader.ashx" />
     <Content Include="Global.asax" />
     <Content Include="IDPSelectionDemo.aspx" />
