@@ -288,9 +288,48 @@ namespace dk.nita.saml20.Utils
                 throw new InvalidOperationException("Document does not contain a signature to verify.");
 
             signedXml.LoadXml((XmlElement)nodeList[0]);
+
+            // verify that the inlined signature has a valid reference uri
+            VerifyRererenceURI(signedXml, el.GetAttribute("ID"));
+
             return signedXml;
         }
 
+        /// <summary>
+        /// Verifies that the reference uri (if any) points to the correct element.
+        /// </summary>
+        /// <param name="signedXml">the ds:signature element</param>
+        /// <param name="id">the expected id referenced by the ds:signature element</param>
+        private static void VerifyRererenceURI(SignedXml signedXml, string id)
+        {
+            if (id == null)
+            {
+                throw new InvalidOperationException("Cannot match null id");
+            }
+
+            if (signedXml.SignedInfo.References.Count > 0)
+            {
+                Reference reference = (Reference)signedXml.SignedInfo.References[0];
+                string uri = reference.Uri;
+
+                // empty uri is okay - indicates that everything is signed
+                if (uri != null && uri.Length > 0)
+                {
+                    if (!uri.StartsWith("#"))
+                    {
+                        throw new InvalidOperationException("Signature reference URI is not a document fragment reference. Uri = '" + uri + "'");
+                    }
+                    else if (uri.Length < 2 || !id.Equals(uri.Substring(1)))
+                    {
+                        throw new InvalidOperationException("Rererence URI = '" + uri.Substring(1) + "' does not match expected id = '" + id + "'");
+                    }
+                }
+            }
+            else
+            {
+                throw new InvalidOperationException("No references in Signature element");
+            }
+        }
 
         /// <summary>
         /// Signs an XmlDocument with an xml signature using the signing certificate given as argument to the method.
