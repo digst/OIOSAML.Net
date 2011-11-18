@@ -68,7 +68,8 @@ namespace dk.nita.saml20.config
             }
         }
 
-        private Boolean _showError;
+        // default to false
+        private Boolean _showError = false;
 
         /// <summary>
         /// Gets or sets the ShowError configuration
