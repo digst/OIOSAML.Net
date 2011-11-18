@@ -67,7 +67,21 @@ namespace dk.nita.saml20.config
                 _commonDomain = value;
             }
         }
-        
+
+        private Boolean _showError;
+
+        /// <summary>
+        /// Gets or sets the ShowError configuration
+        /// NOTE: This setting should be FALSE for production, due to XML Encryption being vulnerable to attack
+        ///       if information is leaked through error messages
+        /// </summary>
+        [XmlElement(ElementName = "ShowError")]
+        public Boolean ShowError
+        {
+            get { return _showError; }
+            set { _showError = value; }
+        }
+
         private IDPEndpoints _idpEndpoints;
 
         /// <summary>
@@ -126,6 +140,7 @@ namespace dk.nita.saml20.config
         [XmlAttribute(AttributeName = "localReaderEndpoint")]
         public string LocalReaderEndpoint;
     }
+
 
     /// <summary>
     /// Configuration element that defines settings for generating metadata.

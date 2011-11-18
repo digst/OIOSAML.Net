@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Threading;
 using System.Web;
+using dk.nita.saml20.config;
 using System.Web.SessionState;
 using dk.nita.saml20.protocol.pages;
 using Trace=dk.nita.saml20.Utils.Trace;
@@ -42,15 +43,21 @@ namespace dk.nita.saml20.protocol
         /// <param name="overrideConfigSetting">if set to <c>true</c> [override config setting].</param>
         public void HandleError(HttpContext context, string errorMessage, bool overrideConfigSetting)
         {
+            Boolean showError = SAML20FederationConfig.GetConfig().ShowError;
+            String DEFAULT_MESSAGE = "Unable to validate SAML message!";
+
             if (!string.IsNullOrEmpty(ErrorBehaviour) && ErrorBehaviour.Equals(dk.nita.saml20.config.ErrorBehaviour.THROWEXCEPTION.ToString()))
             {
-                throw new Saml20Exception(errorMessage);
+                if (showError)
+                    throw new Saml20Exception(errorMessage);
+                else
+                    throw new Saml20Exception(DEFAULT_MESSAGE);
             }
             else
             {
                 ErrorPage page = new ErrorPage();
                 page.OverrideConfig = overrideConfigSetting;
-                page.ErrorText = errorMessage;
+                page.ErrorText = (showError) ? errorMessage : DEFAULT_MESSAGE;
                 page.ProcessRequest(context);
                 context.Response.End();
             }
