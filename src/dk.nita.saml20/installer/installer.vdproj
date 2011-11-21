@@ -51,6 +51,36 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_0BF0C14CB7751BF0EA3B661E525D3C19"
+        "OwnerKey" = "8:_083903C36352494B8A90B0287559FE2B"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_0BF0C14CB7751BF0EA3B661E525D3C19"
+        "OwnerKey" = "8:_FA0BED157FA54E458F32AF85D2A48F2E"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_0BF0C14CB7751BF0EA3B661E525D3C19"
+        "OwnerKey" = "8:_E90E8E8531F04430A37C2BEB3C847D0A"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_0BF0C14CB7751BF0EA3B661E525D3C19"
+        "OwnerKey" = "8:_86485580D6BE4F37BC7042544D25C126"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_0BF0C14CB7751BF0EA3B661E525D3C19"
+        "OwnerKey" = "8:_2AD44C205451A9FC39A7553687E86F0A"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_11F02BEA18684188A75B74B6212203C0"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -273,54 +303,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_61577C2B3AFD658E26DA3618DB41DE39"
-        "OwnerKey" = "8:_7216B2D37AAAC7DB9941BE33E398EF07"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_61577C2B3AFD658E26DA3618DB41DE39"
-        "OwnerKey" = "8:_FA0BED157FA54E458F32AF85D2A48F2E"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_61577C2B3AFD658E26DA3618DB41DE39"
-        "OwnerKey" = "8:_E90E8E8531F04430A37C2BEB3C847D0A"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_61577C2B3AFD658E26DA3618DB41DE39"
-        "OwnerKey" = "8:_86485580D6BE4F37BC7042544D25C126"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_61577C2B3AFD658E26DA3618DB41DE39"
-        "OwnerKey" = "8:_61421DDE3A6341109739F93EF66076D0"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_61577C2B3AFD658E26DA3618DB41DE39"
-        "OwnerKey" = "8:_2EE6601D04244D119E1B4ED403CCA4E5"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_61577C2B3AFD658E26DA3618DB41DE39"
-        "OwnerKey" = "8:_16DDEB7CF5DF43DAA94FA270E1ECB4D5"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_61577C2B3AFD658E26DA3618DB41DE39"
-        "OwnerKey" = "8:_083903C36352494B8A90B0287559FE2B"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_635B8C4C77FD4DDAB7A1258DDD0CE53F"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -335,36 +317,6 @@
         {
         "MsmKey" = "8:_6B7CA45761E14F4A9776AD4C3E13D56A"
         "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_7216B2D37AAAC7DB9941BE33E398EF07"
-        "OwnerKey" = "8:_083903C36352494B8A90B0287559FE2B"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_7216B2D37AAAC7DB9941BE33E398EF07"
-        "OwnerKey" = "8:_FA0BED157FA54E458F32AF85D2A48F2E"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_7216B2D37AAAC7DB9941BE33E398EF07"
-        "OwnerKey" = "8:_E90E8E8531F04430A37C2BEB3C847D0A"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_7216B2D37AAAC7DB9941BE33E398EF07"
-        "OwnerKey" = "8:_86485580D6BE4F37BC7042544D25C126"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_7216B2D37AAAC7DB9941BE33E398EF07"
-        "OwnerKey" = "8:_2AD44C205451A9FC39A7553687E86F0A"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -573,6 +525,54 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_E026DA20583F1777FCB5A2418DF2B7BE"
+        "OwnerKey" = "8:_0BF0C14CB7751BF0EA3B661E525D3C19"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_E026DA20583F1777FCB5A2418DF2B7BE"
+        "OwnerKey" = "8:_FA0BED157FA54E458F32AF85D2A48F2E"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_E026DA20583F1777FCB5A2418DF2B7BE"
+        "OwnerKey" = "8:_E90E8E8531F04430A37C2BEB3C847D0A"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_E026DA20583F1777FCB5A2418DF2B7BE"
+        "OwnerKey" = "8:_86485580D6BE4F37BC7042544D25C126"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_E026DA20583F1777FCB5A2418DF2B7BE"
+        "OwnerKey" = "8:_61421DDE3A6341109739F93EF66076D0"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_E026DA20583F1777FCB5A2418DF2B7BE"
+        "OwnerKey" = "8:_2EE6601D04244D119E1B4ED403CCA4E5"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_E026DA20583F1777FCB5A2418DF2B7BE"
+        "OwnerKey" = "8:_16DDEB7CF5DF43DAA94FA270E1ECB4D5"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_E026DA20583F1777FCB5A2418DF2B7BE"
+        "OwnerKey" = "8:_083903C36352494B8A90B0287559FE2B"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_E0CA72DD4B994AD5BD67A95C03031F73"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -640,18 +640,6 @@
         "Entry"
         {
         "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_2AD44C205451A9FC39A7553687E86F0A"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_7216B2D37AAAC7DB9941BE33E398EF07"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_UNDEFINED"
         "OwnerKey" = "8:_DAC14F4B4D4E4268AA3510FFC3DAD2D7"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -688,6 +676,12 @@
         "Entry"
         {
         "MsmKey" = "8:_UNDEFINED"
+        "OwnerKey" = "8:_2AD44C205451A9FC39A7553687E86F0A"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_UNDEFINED"
         "OwnerKey" = "8:_61421DDE3A6341109739F93EF66076D0"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -712,7 +706,13 @@
         "Entry"
         {
         "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_61577C2B3AFD658E26DA3618DB41DE39"
+        "OwnerKey" = "8:_0BF0C14CB7751BF0EA3B661E525D3C19"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_UNDEFINED"
+        "OwnerKey" = "8:_E026DA20583F1777FCB5A2418DF2B7BE"
         "MsmSig" = "8:_UNDEFINED"
         }
     }
@@ -966,6 +966,37 @@
             "Register" = "3:1"
             "Exclude" = "11:FALSE"
             "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_0BF0C14CB7751BF0EA3B661E525D3C19"
+            {
+            "AssemblyRegister" = "3:1"
+            "AssemblyIsInGAC" = "11:FALSE"
+            "AssemblyAsmDisplayName" = "8:dk.nita.saml20, Version=1.7.4.0, Culture=neutral, processorArchitecture=MSIL"
+                "ScatterAssemblies"
+                {
+                    "_0BF0C14CB7751BF0EA3B661E525D3C19"
+                    {
+                    "Name" = "8:dk.nita.saml20.dll"
+                    "Attributes" = "3:512"
+                    }
+                }
+            "SourcePath" = "8:dk.nita.saml20.dll"
+            "TargetName" = "8:"
+            "Tag" = "8:"
+            "Folder" = "8:_1C63E250DD434C00BAB1B2C5F845B0C4"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:TRUE"
             "IsolateTo" = "8:"
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_11F02BEA18684188A75B74B6212203C0"
@@ -1670,37 +1701,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_61577C2B3AFD658E26DA3618DB41DE39"
-            {
-            "AssemblyRegister" = "3:1"
-            "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:log4net, Version=1.2.10.0, Culture=neutral, PublicKeyToken=1b44e1d426115821, processorArchitecture=MSIL"
-                "ScatterAssemblies"
-                {
-                    "_61577C2B3AFD658E26DA3618DB41DE39"
-                    {
-                    "Name" = "8:log4net.dll"
-                    "Attributes" = "3:512"
-                    }
-                }
-            "SourcePath" = "8:log4net.dll"
-            "TargetName" = "8:"
-            "Tag" = "8:"
-            "Folder" = "8:_1C63E250DD434C00BAB1B2C5F845B0C4"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:TRUE"
-            "IsolateTo" = "8:"
-            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_635B8C4C77FD4DDAB7A1258DDD0CE53F"
             {
             "SourcePath" = "8:..\\WebsiteDemo\\IDPSelectionDemo.aspx.designer.cs"
@@ -1759,37 +1759,6 @@
             "Register" = "3:1"
             "Exclude" = "11:FALSE"
             "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_7216B2D37AAAC7DB9941BE33E398EF07"
-            {
-            "AssemblyRegister" = "3:1"
-            "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:dk.nita.saml20, Version=1.7.1.0, Culture=neutral, processorArchitecture=MSIL"
-                "ScatterAssemblies"
-                {
-                    "_7216B2D37AAAC7DB9941BE33E398EF07"
-                    {
-                    "Name" = "8:dk.nita.saml20.dll"
-                    "Attributes" = "3:512"
-                    }
-                }
-            "SourcePath" = "8:dk.nita.saml20.dll"
-            "TargetName" = "8:"
-            "Tag" = "8:"
-            "Folder" = "8:_1C63E250DD434C00BAB1B2C5F845B0C4"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:TRUE"
             "IsolateTo" = "8:"
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_7B9BEA769D60405DBE4E08842198C991"
@@ -2474,6 +2443,37 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_E026DA20583F1777FCB5A2418DF2B7BE"
+            {
+            "AssemblyRegister" = "3:1"
+            "AssemblyIsInGAC" = "11:FALSE"
+            "AssemblyAsmDisplayName" = "8:log4net, Version=1.2.10.0, Culture=neutral, PublicKeyToken=1b44e1d426115821, processorArchitecture=MSIL"
+                "ScatterAssemblies"
+                {
+                    "_E026DA20583F1777FCB5A2418DF2B7BE"
+                    {
+                    "Name" = "8:log4net.dll"
+                    "Attributes" = "3:512"
+                    }
+                }
+            "SourcePath" = "8:log4net.dll"
+            "TargetName" = "8:"
+            "Tag" = "8:"
+            "Folder" = "8:_1C63E250DD434C00BAB1B2C5F845B0C4"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:TRUE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_E0CA72DD4B994AD5BD67A95C03031F73"
             {
             "SourcePath" = "8:..\\WebsiteDemo\\login.ashx"
@@ -2855,14 +2855,14 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:dk.nita.saml20"
-        "ProductCode" = "8:{854C9D10-6D61-4C1E-A5CB-F984EBBD827E}"
-        "PackageCode" = "8:{58C94BA0-405E-43AC-99F6-E1E8BB7E267F}"
+        "ProductCode" = "8:{73680665-D34B-4392-BBA2-ED2264C10FCE}"
+        "PackageCode" = "8:{61A787FB-8E8C-4774-9806-DAA8523B1E7A}"
         "UpgradeCode" = "8:{648E3C15-4718-47C3-BC9C-DED2D52DB7AA}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:FALSE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:FALSE"
-        "ProductVersion" = "8:1.6"
+        "ProductVersion" = "8:1.7.4"
         "Manufacturer" = "8:IT- og Telestyrelsen"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:"
@@ -3376,7 +3376,7 @@
         {
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_083903C36352494B8A90B0287559FE2B"
             {
-            "SourcePath" = "8:..\\IdentityProviderDemo\\obj\\MSI\\IdentityProviderDemo.dll"
+            "SourcePath" = "8:..\\IdentityProviderDemo\\obj\\Release\\IdentityProviderDemo.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_A85BED166BDB4E9FB12A3244E4C47D08"
@@ -3404,7 +3404,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_16DDEB7CF5DF43DAA94FA270E1ECB4D5"
             {
-            "SourcePath" = "8:..\\dk.nita.saml20\\obj\\MSI\\dk.nita.saml20.dll"
+            "SourcePath" = "8:..\\dk.nita.saml20\\obj\\Release\\dk.nita.saml20.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_6EE5B24FD07645D0969A1356E7073108"
@@ -3432,7 +3432,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_2EE6601D04244D119E1B4ED403CCA4E5"
             {
-            "SourcePath" = "8:..\\dk.nita.saml20\\obj\\MSI\\dk.nita.saml20.dll"
+            "SourcePath" = "8:..\\dk.nita.saml20\\obj\\Release\\dk.nita.saml20.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_501C2FE48DFA46EAB322A22E3C939FC9"
@@ -3460,7 +3460,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_61421DDE3A6341109739F93EF66076D0"
             {
-            "SourcePath" = "8:..\\dk.nita.saml20\\obj\\MSI\\dk.nita.saml20.dll"
+            "SourcePath" = "8:..\\dk.nita.saml20\\obj\\Release\\dk.nita.saml20.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_F3942E1D712D467390EB8B7407B1C97B"
