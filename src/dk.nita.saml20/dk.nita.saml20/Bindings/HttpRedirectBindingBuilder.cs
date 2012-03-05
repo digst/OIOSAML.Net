@@ -203,7 +203,7 @@ namespace dk.nita.saml20.Bindings
         private static string DEFLATEEncode(string val)
         {
             MemoryStream memoryStream = new MemoryStream();
-            using (StreamWriter writer = new StreamWriter(new DeflateStream(memoryStream, CompressionMode.Compress, true), Encoding.ASCII))
+            using (StreamWriter writer = new StreamWriter(new DeflateStream(memoryStream, CompressionMode.Compress, true), new UTF8Encoding(false)))
             {
                 writer.Write(val);                
                 writer.Close();

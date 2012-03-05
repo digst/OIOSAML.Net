@@ -233,8 +233,8 @@ namespace dk.nita.saml20.Bindings
 
             StringBuilder result = new StringBuilder();
             using (DeflateStream stream = new DeflateStream(memoryStream, CompressionMode.Decompress))
-            {                                
-                StreamReader testStream = new StreamReader(new BufferedStream(stream), Encoding.ASCII);
+            {
+                StreamReader testStream = new StreamReader(new BufferedStream(stream), Encoding.UTF8);
                 // It seems we need to "peek" on the StreamReader to get it started. If we don't do this, the first call to 
                 // ReadToEnd() will return string.empty.
                 testStream.Peek();
