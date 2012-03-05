@@ -52,6 +52,11 @@ namespace dk.nita.saml20.protocol
         public const string IDPNameIdFormat = "IDPNameIdFormat";
 
         /// <summary>
+        /// Key used to save the idp name id in session context
+        /// </summary>
+        public const string IDPNameId = "IDPNameId";
+
+        /// <summary>
         /// Determines if configuration has been validated
         /// </summary>
         public static bool validated = false;

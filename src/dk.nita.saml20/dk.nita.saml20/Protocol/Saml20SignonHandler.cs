@@ -523,6 +523,7 @@ namespace dk.nita.saml20.protocol
             context.Session[IDPLoginSessionKey] = context.Session[IDPTempSessionKey];
             context.Session[IDPSessionIdKey] = assertion.SessionIndex;
             context.Session[IDPNameIdFormat] = assertion.Subject.Format;
+            context.Session[IDPNameId] = assertion.Subject.Value;
 
             if(Trace.ShouldTrace(TraceEventType.Information))
             {

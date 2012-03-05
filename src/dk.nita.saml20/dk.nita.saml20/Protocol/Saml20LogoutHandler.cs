@@ -240,7 +240,7 @@ namespace dk.nita.saml20.protocol
                 HttpPostBindingBuilder builder = new HttpPostBindingBuilder(destination);
                 request.Destination = destination.Url;
                 request.Reason = Saml20Constants.Reasons.User;
-                request.SubjectToLogOut.Value = context.User.Identity.Name;
+                request.SubjectToLogOut.Value = context.Session[IDPNameId].ToString();
                 request.SessionIndex = context.Session[IDPSessionIdKey].ToString();
                 XmlDocument requestDocument = request.GetXml();
                 XmlSignatureUtils.SignDocument(requestDocument, request.ID);
@@ -261,7 +261,7 @@ namespace dk.nita.saml20.protocol
                 builder.signingKey = FederationConfig.GetConfig().SigningCertificate.GetCertificate().PrivateKey;
                 request.Destination = destination.Url;
                 request.Reason = Saml20Constants.Reasons.User;
-                request.SubjectToLogOut.Value = context.User.Identity.Name;
+                request.SubjectToLogOut.Value = context.Session[IDPNameId].ToString();
                 request.SessionIndex = context.Session[IDPSessionIdKey].ToString();
                 builder.Request = request.GetXml().OuterXml;
                 
@@ -282,7 +282,7 @@ namespace dk.nita.saml20.protocol
 
                 request.Destination = destination.Url;
                 request.Reason = Saml20Constants.Reasons.User;
-                request.SubjectToLogOut.Value = context.User.Identity.Name;
+                request.SubjectToLogOut.Value = context.Session[IDPNameId].ToString();
                 request.SessionIndex = context.Session[IDPSessionIdKey].ToString();
 
                 HttpArtifactBindingBuilder builder = new HttpArtifactBindingBuilder(context);
