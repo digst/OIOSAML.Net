@@ -3,7 +3,6 @@
 <%@ Import Namespace="dk.nita.saml20.identity" %>
 <%@ Import Namespace="dk.nita.saml20.config" %>
 <%@ Import Namespace="dk.nita.saml20.Schema.Core" %>
-
 <asp:Content runat="server" ID="Content1" ContentPlaceHolderID="head">
     <style type="text/css">
         table
@@ -33,6 +32,10 @@
     </style>
 </asp:Content>
 <asp:Content ID="Content2" runat="server" ContentPlaceHolderID="ContentPlaceHolder1">
+    <% if (int.Parse(Saml20Identity.Current["dk:gov:saml:attribute:AssuranceLevel"][0].AttributeValue[0]) < 3)
+       {
+           throw new Exception("Saml assertion does not have required assurance level.");
+       }%>
     <% if (Saml20Identity.IsInitialized()) { %>
     <div>
         Welcome, <%= Saml20Identity.Current.Name + (Saml20Identity.Current.PersistentPseudonym != null ? " (Pseudonym is " + Saml20Identity.Current.PersistentPseudonym + ")" : String.Empty)%><br />
