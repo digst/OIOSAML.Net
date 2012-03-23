@@ -68,6 +68,18 @@ namespace dk.nita.saml20.config
             }
         }
 
+        private string _nameIdFormat;
+
+        /// <summary>
+        /// Gets or sets the NameIdFormat configuration
+        /// </summary>
+        [XmlElement(ElementName = "NameIdFormat")]
+        public string NameIdFormat
+        {
+            get { return _nameIdFormat; }
+            set { _nameIdFormat = value; }
+        }
+
         // default to false
         private Boolean _showError = false;
 

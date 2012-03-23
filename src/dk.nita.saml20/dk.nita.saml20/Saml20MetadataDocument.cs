@@ -151,6 +151,12 @@ namespace dk.nita.saml20
             spDescriptor.SingleLogoutService = logoutServiceEndpoints.ToArray();
             spDescriptor.AssertionConsumerService = signonServiceEndpoints.ToArray();
 
+            // NameIdFormat
+            if (!string.IsNullOrEmpty(config.NameIdFormat))
+            {
+                spDescriptor.NameIDFormat = new string[] { config.NameIdFormat };
+            }
+
             // Attribute consuming service. 
             if (config.RequestedAttributes.Attributes.Count > 0)
             {
