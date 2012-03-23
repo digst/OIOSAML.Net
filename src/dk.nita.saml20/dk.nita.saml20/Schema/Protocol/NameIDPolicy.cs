@@ -66,6 +66,7 @@ namespace dk.nita.saml20.Schema.Protocol
         /// large number of principals).
         /// </summary>
         /// <value><c>true</c> if [allow create]; otherwise, <c>false</c>.</value>
+        [XmlIgnore]
         public bool? AllowCreate
         {
             get { return allowCreateField; }
