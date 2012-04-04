@@ -111,7 +111,7 @@ namespace dk.nita.saml20.Bindings
             if (basicAuth != null && basicAuth.Enabled)
             {
                 string basicAuthzHeader = "Basic " +
-                                          Convert.ToBase64String(Encoding.ASCII.GetBytes(basicAuth.Username + ":" + basicAuth.Password));
+                                          Convert.ToBase64String(Encoding.UTF8.GetBytes(basicAuth.Username + ":" + basicAuth.Password));
                 property.Headers.Add(HttpRequestHeader.Authorization, basicAuthzHeader);
             }
             
@@ -131,7 +131,7 @@ namespace dk.nita.saml20.Bindings
             XmlDocument xDoc = new XmlDocument();
             xDoc.Load(response.GetReaderAtBodyContents());
             string outerXml = xDoc.DocumentElement.OuterXml;
-            MemoryStream memStream = new MemoryStream(Encoding.ASCII.GetBytes(outerXml));
+            MemoryStream memStream = new MemoryStream(Encoding.UTF8.GetBytes(outerXml));
             return memStream;
         
         }
