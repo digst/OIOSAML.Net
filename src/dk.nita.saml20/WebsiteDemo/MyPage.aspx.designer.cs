@@ -14,6 +14,15 @@ namespace WebsiteDemo {
     public partial class WebForm1 {
         
         /// <summary>
+        /// btnLogoff control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Button btnLogoff;
+        
+        /// <summary>
         /// Btn_Relogin control.
         /// </summary>
         /// <remarks>
@@ -23,12 +32,12 @@ namespace WebsiteDemo {
         protected global::System.Web.UI.WebControls.Button Btn_Relogin;
         
         /// <summary>
-        /// Button1 control.
+        /// Btn_ReloginNoForceAuthn control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Button Button1;
+        protected global::System.Web.UI.WebControls.Button Btn_ReloginNoForceAuthn;
     }
 }

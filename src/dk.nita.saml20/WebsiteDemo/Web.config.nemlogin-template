@@ -35,12 +35,18 @@
 		<AllowedAudienceUris>
 			<Audience>https://saml.nemlogin-localhost.dk</Audience>
 		</AllowedAudienceUris>
+    <Actions>
+      <clear/>
+      <add name="SetSamlPrincipal" type="dk.nita.saml20.Actions.SamlPrincipalAction, dk.nita.saml20 " />
+      <add name="LogAction" type="WebsiteDemo.LogAction, WebsiteDemo" />
+      <add name="Redirect" type="dk.nita.saml20.Actions.RedirectAction, dk.nita.saml20" />
+    </Actions>
 	</Federation>
 	<SAML20Federation xmlns="urn:dk.nita.saml20.configuration">
     <ServiceProvider id="https://saml.nemlogin-localhost.dk" server="https://server">
       <ServiceEndpoint localpath="/demo/login.ashx" type="signon" redirectUrl="/demo/MyPage.aspx" index="0"/>
-			<ServiceEndpoint localpath="/demo/logout.ashx" type="logout" redirectUrl="/demo/Default.aspx" index="1"/>
-			<ServiceEndpoint localpath="/demo/metadata.ashx" type="metadata"/>
+      <ServiceEndpoint localpath="/demo/logout.ashx" type="logout" redirectUrl="/demo/Default.aspx" index="1"/>
+      <ServiceEndpoint localpath="/demo/metadata.ashx" type="metadata"/>
 			<md:ContactPerson contactType="administrative" xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata">
 				<md:Company>Firma</md:Company>
 				<md:GivenName>Fornavn</md:GivenName>

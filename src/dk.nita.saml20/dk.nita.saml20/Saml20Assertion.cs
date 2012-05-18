@@ -145,7 +145,6 @@ namespace dk.nita.saml20
             }
         }
 
-
         /// <summary>
         /// They asymmetric key that can verify the signature of the assertion.
         /// </summary>
@@ -417,6 +416,20 @@ namespace dk.nita.saml20
             return XmlSignatureUtils.ExtractSignatureKeys(_samlAssertion);
             
             
+        }
+
+        /// <summary>
+        /// Returns the SubjectConfirmationData from the assertion subject items
+        /// </summary>
+        /// <returns>SubjectConfirmationData object from subject items, null if none present</returns>
+        public SubjectConfirmationData GetSubjectConfirmationData()
+        {
+            foreach (var item in SubjectItems)
+            {
+                if (item is SubjectConfirmation)
+                    return ((SubjectConfirmation)item).SubjectConfirmationData;
+            }
+            return null;
         }
 
         /// <summary>

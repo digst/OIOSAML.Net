@@ -13,6 +13,7 @@ using System.Xml;
 using dk.nita.saml20.Actions;
 using dk.nita.saml20.Bindings;
 using dk.nita.saml20.config;
+using dk.nita.saml20.identity;
 using dk.nita.saml20.Logging;
 using dk.nita.saml20.Properties;
 using dk.nita.saml20.protocol.pages;
@@ -246,6 +247,8 @@ namespace dk.nita.saml20.protocol
             Encoding defaultEncoding = Encoding.UTF8;
             XmlDocument doc = GetDecodedSamlResponse(context, defaultEncoding);
 
+            AuditLogging.logEntry(Direction.IN, Operation.LOGIN, "Received SAMLResponse: " + doc.OuterXml);
+
             try
             {
 
@@ -324,6 +327,7 @@ namespace dk.nita.saml20.protocol
 
             if (inResponseTo != expectedInResponseTo)
             {
+                AuditLogging.logEntry(Direction.IN, Operation.LOGIN, string.Format("Unexpected value {0} for InResponseTo, expected {1}, possible replay attack!", inResponseTo, expectedInResponseTo));
                 throw new Saml20Exception("Replay attack.");
             }
 
@@ -448,7 +452,7 @@ namespace dk.nita.saml20.protocol
             if (assertion.IsExpired())
             {
                 AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST,
-                "Assertion expired, assertion: " + elem);
+                "Assertion expired, assertion: " + elem.OuterXml);
 
                 HandleError(context, Resources.AssertionExpired);
                 return;
@@ -529,7 +533,21 @@ namespace dk.nita.saml20.protocol
             {
                 Trace.TraceData(TraceEventType.Information, string.Format(Tracing.Login, assertion.Subject.Value, assertion.SessionIndex, assertion.Subject.Format));
             }
-            AuditLogging.logEntry(Direction.IN, Operation.LOGIN, "Subject: " + assertion.Subject.Value + " NameIDFormat: " + assertion.Subject.Format);
+
+            string inResponseTo = "(unknown)";
+            if (assertion.GetSubjectConfirmationData() != null && assertion.GetSubjectConfirmationData().InResponseTo != null)
+                inResponseTo = assertion.GetSubjectConfirmationData().InResponseTo;
+
+            string assuranceLevel = "(unknown)";
+            foreach(var attribute in assertion.Attributes)
+            {
+                if (attribute.Name == "dk:gov:saml:attribute:AssuranceLevel"
+                    && attribute.AttributeValue != null 
+                    && attribute.AttributeValue.Length > 0)
+                    assuranceLevel =  attribute.AttributeValue[0];
+            }
+            
+            AuditLogging.logEntry(Direction.IN, Operation.LOGIN, string.Format("Subject: {0} NameIDFormat: {1}  Level of authentication: {2}  Session timeout in minutes: {3}", assertion.Subject.Value, assertion.Subject.Format, assuranceLevel, HttpContext.Current.Session.Timeout));
 
 
             foreach(IAction action in Actions.Actions.GetActions())

@@ -116,6 +116,11 @@ namespace dk.nita.saml20.Bindings
         public bool IsSigned { get { return _signature != null;  } }
 
         /// <summary>
+        /// Gets the signature value
+        /// </summary>
+        public string Signature { get { return _signature; } }
+
+        /// <summary>
         /// Gets the signature algorithm.
         /// </summary>
         /// <value>The signature algorithm.</value>

@@ -241,7 +241,7 @@ namespace dk.nita.saml20.protocol
                 request.Destination = destination.Url;
                 request.Reason = Saml20Constants.Reasons.User;
                 request.SubjectToLogOut.Value = context.Session[IDPNameId].ToString();
-                request.SessionIndex = context.Session[IDPSessionIdKey].ToString();
+                 request.SessionIndex = context.Session[IDPSessionIdKey].ToString();
                 XmlDocument requestDocument = request.GetXml();
                 XmlSignatureUtils.SignDocument(requestDocument, request.ID);
                 builder.Request = requestDocument.OuterXml;
@@ -309,6 +309,9 @@ namespace dk.nita.saml20.protocol
                 HttpRedirectBindingParser parser = new HttpRedirectBindingParser(context.Request.Url);
                 LogoutResponse response = Serialization.DeserializeFromXmlString<LogoutResponse>(parser.Message);
 
+                AuditLogging.logEntry(Direction.IN, Operation.LOGOUTRESPONSE,
+                                      string.Format("Binding: redirect, Signature algorithm: {0}  Signature:  {1}, Message: {2}", parser.SignatureAlgorithm, parser.Signature, parser.Message));
+
                 IDPEndPoint idp = RetrieveIDPConfiguration(response.Issuer.Value);
                 
                 AuditLogging.IdpId = idp.Id;
@@ -334,6 +337,10 @@ namespace dk.nita.saml20.protocol
             }else if(context.Request.RequestType == "POST")
             {
                 HttpPostBindingParser parser = new HttpPostBindingParser(context);
+                AuditLogging.logEntry(Direction.IN, Operation.LOGOUTRESPONSE,
+                                      "Binding: POST, Message: " + parser.Message);
+
+
                 LogoutResponse response = Serialization.DeserializeFromXmlString<LogoutResponse>(parser.Message);
 
                 IDPEndPoint idp = RetrieveIDPConfiguration(response.Issuer.Value);
@@ -368,8 +375,6 @@ namespace dk.nita.saml20.protocol
                                       string.Format("Unsupported request type format, type: {0}", context.Request.RequestType));
                 HandleError(context, Resources.UnsupportedRequestTypeFormat(context.Request.RequestType));
             }
-
-            AuditLogging.logEntry(Direction.IN, Operation.LOGOUTRESPONSE, message);
 
             XmlDocument doc = new XmlDocument();
             doc.PreserveWhitespace = true;
@@ -423,6 +428,10 @@ namespace dk.nita.saml20.protocol
             if(context.Request.RequestType == "GET") // HTTP Redirect binding
             {
                 HttpRedirectBindingParser parser = new HttpRedirectBindingParser(context.Request.Url);
+                AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST,
+                                      string.Format("Binding: redirect, Signature algorithm: {0}  Signature:  {1}, Message: {2}", parser.SignatureAlgorithm, parser.Signature, parser.Message));
+
+                
                 IDPEndPoint endpoint = config.FindEndPoint(idpEndpoint.Id);
 
                 if (endpoint.metadata == null)
@@ -446,6 +455,8 @@ namespace dk.nita.saml20.protocol
             else if (context.Request.RequestType == "POST") // HTTP Post binding
             {
                 HttpPostBindingParser parser = new HttpPostBindingParser(context);
+                AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST,
+                                      "Binding: POST, Message: " + parser.Message);
 
                 if (!parser.IsSigned())
                 {
