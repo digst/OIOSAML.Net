@@ -43,7 +43,7 @@ namespace dk.nita.saml20.Schema.Metadata
         
         private string cacheDurationField;
         
-        private string[] protocolSupportEnumerationField;
+        private string protocolSupportEnumerationField;
         
         private string errorURLField;
         
@@ -211,7 +211,7 @@ namespace dk.nita.saml20.Schema.Metadata
         /// </summary>
         /// <value>The protocol support enumeration.</value>
         [XmlAttributeAttribute(DataType="anyURI")]
-        public string[] protocolSupportEnumeration {
+        public string protocolSupportEnumeration {
             get {
                 return protocolSupportEnumerationField;
             }
