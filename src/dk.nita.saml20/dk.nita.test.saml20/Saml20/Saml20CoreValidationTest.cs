@@ -1458,9 +1458,9 @@ namespace dk.nita.test.Saml20
             Saml20StatementValidator validator = new Saml20StatementValidator();
 
             statement.Resource = String.Empty;
-            Action action = new Action();
+            dk.nita.saml20.Schema.Core.Action action = new dk.nita.saml20.Schema.Core.Action();
             action.Namespace = "http://valid/namespace";
-            statement.Action = new Action[] { action };
+            statement.Action = new dk.nita.saml20.Schema.Core.Action[] { action };
             validator.ValidateStatement(statement);
 
             statement.Resource = "urn:valid.ok:askjld";

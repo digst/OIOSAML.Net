@@ -70,7 +70,7 @@ namespace dk.nita.test.Saml20
             AuthzDecisionStatement authzDecisionStatement = new AuthzDecisionStatement();
             authzDecisionStatement.Decision = DecisionType.Permit;
             authzDecisionStatement.Resource = "http://safewhere.net";
-            authzDecisionStatement.Action = new Action[] { new Action() };            
+            authzDecisionStatement.Action = new dk.nita.saml20.Schema.Core.Action[] { new dk.nita.saml20.Schema.Core.Action() };            
             authzDecisionStatement.Action[0].Namespace = "http://actionns.com";
             authzDecisionStatement.Action[0].Value = "value";
 

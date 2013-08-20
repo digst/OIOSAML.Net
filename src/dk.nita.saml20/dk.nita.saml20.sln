@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual Studio 2008
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IdentityProviderDemo", "IdentityProviderDemo\IdentityProviderDemo.csproj", "{83B75533-8D8E-4470-960E-B575E49393A1}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebsiteDemo", "WebsiteDemo\WebsiteDemo.csproj", "{5CABB53A-798E-4725-B755-18A60ECC5D31}"
