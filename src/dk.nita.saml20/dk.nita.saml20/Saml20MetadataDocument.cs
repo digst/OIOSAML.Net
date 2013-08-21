@@ -73,7 +73,7 @@ namespace dk.nita.saml20
             entity.validUntil = DateTime.Now.AddDays(7);
 
             SPSSODescriptor spDescriptor = new SPSSODescriptor();
-            spDescriptor.protocolSupportEnumeration = Saml20Constants.PROTOCOL;
+            spDescriptor.protocolSupportEnumeration = new string[] { Saml20Constants.PROTOCOL };
             spDescriptor.AuthnRequestsSigned = XmlConvert.ToString(true);
             spDescriptor.WantAssertionsSigned = XmlConvert.ToString(true);
             if(config.ServiceProvider.NameIdFormats.All)

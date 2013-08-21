@@ -34,7 +34,7 @@ namespace IdentityProviderDemo
 
             IDPSSODescriptor descriptor = new IDPSSODescriptor();
             metadata.Items = new object[] { descriptor };
-            descriptor.protocolSupportEnumeration = Saml20Constants.PROTOCOL;
+            descriptor.protocolSupportEnumeration = new string[] { Saml20Constants.PROTOCOL };
             descriptor.KeyDescriptor = CreateKeyDescriptors();
             
             { // Signon endpoint
