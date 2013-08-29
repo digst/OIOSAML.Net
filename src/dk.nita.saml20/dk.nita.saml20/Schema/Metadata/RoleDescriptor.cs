@@ -212,8 +212,9 @@ namespace dk.nita.saml20.Schema.Metadata
         /// <seealso cref="protocolSupportEnumeration"/>.
         /// </remarks>
         /// <value>The protocol support enumeration.</value>
-        [XmlAttributeAttribute(DataType = "anyURI", AttributeName = "protocolSupportEnumeration")]
-        private string protocolSupportEnumerationBacking {
+        [XmlIgnore]
+        private string protocolSupportEnumerationBacking
+        {
             get {
                 return protocolSupportEnumerationField;
             }
@@ -230,7 +231,7 @@ namespace dk.nita.saml20.Schema.Metadata
         /// <remarks>
         /// <seealso cref="protocolSupportEnumerationBacking"/>
         /// </remarks>
-        [XmlIgnore]
+        [XmlAttributeAttribute(DataType = "anyURI", AttributeName = "protocolSupportEnumeration")]
         public string[] protocolSupportEnumeration
         {
             get
