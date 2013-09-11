@@ -43,7 +43,7 @@ namespace dk.nita.saml20.Schema.Metadata
         
         private string cacheDurationField;
         
-        private string[] protocolSupportEnumerationField;
+        private string protocolSupportEnumerationField;
         
         private string errorURLField;
         
@@ -200,7 +200,6 @@ namespace dk.nita.saml20.Schema.Metadata
             }
         }
 
-
         /// <summary>
         /// Gets or sets the protocol support enumeration.
         /// A whitespace-delimited set of URIs that identify the set of protocol specifications supported by the
@@ -209,17 +208,43 @@ namespace dk.nita.saml20.Schema.Metadata
         /// share the same namespace URI, but SHOULD provide alternate "protocol support" identifiers to
         /// ensure discrimination when necessary.
         /// </summary>
+        /// <remarks>
+        /// <seealso cref="protocolSupportEnumeration"/>.
+        /// </remarks>
         /// <value>The protocol support enumeration.</value>
-        [XmlAttributeAttribute(DataType="anyURI")]
-        public string[] protocolSupportEnumeration {
-            get {
+        [XmlAttributeAttribute(DataType = "anyURI", AttributeName = "protocolSupportEnumeration")]
+        public string protocolSupportEnumerationAsString
+        {
+            get
+            {
                 return protocolSupportEnumerationField;
             }
-            set {
+            set
+            {
                 protocolSupportEnumerationField = value;
             }
         }
 
+        /// <summary>
+        /// Gets or sets the protocol support enumeration.
+        /// The array is a set of URIs that identify the set of protocol specifications
+        /// supported by the role element.
+        /// </summary>
+        /// <remarks>
+        /// <seealso cref="protocolSupportEnumerationAsString"/>
+        /// </remarks>
+        [XmlIgnore]
+        public string[] protocolSupportEnumeration
+        {
+            get
+            {
+                return protocolSupportEnumerationField.Split(' ');
+            }
+            set
+            {
+                protocolSupportEnumerationField = String.Join(" ", value);
+            }
+        }
 
         /// <summary>
         /// Gets or sets the error URL.
@@ -236,7 +261,6 @@ namespace dk.nita.saml20.Schema.Metadata
                 errorURLField = value;
             }
         }
-
 
         /// <summary>
         /// Gets or sets any attr.
