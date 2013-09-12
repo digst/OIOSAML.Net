@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>$id$</id>
+    <version>$version$</version>
+    <title>$title$</title>
+    <authors>$author$</authors>
+    <owners>$author$</owners>
+    <licenseUrl>http://www.mozilla.org/MPL/1.1/</licenseUrl>
+    <projectUrl>http://digitaliser.dk/group/42063</projectUrl>
+    <iconUrl>http://digitaliser.dk/media/layout/digst_logo.png</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>$description$</description>
+    <releaseNotes>Summary of changes made in this release of the package.</releaseNotes>
+    <copyright>Copyright 2013</copyright>
+    <tags>SAML OIOSAML SAML2 NEMLOGIN NEMLOG-IN</tags>
+  </metadata>
+</package>
