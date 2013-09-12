@@ -242,6 +242,13 @@ namespace dk.nita.saml20.config
     [XmlType(Namespace = ConfigurationConstants.NamespaceUri)]
     public class IDPEndpoints
     {
+        [XmlIgnore]
+        private string _metadataLocation;
+        
+        private FileSystemWatcher _fileSystemWatcher;
+
+        private object _lockSync = new object();
+
         /// <summary>
         /// Initializes a new instance of the <see cref="IDPEndpoints"/> class.
         /// </summary>
@@ -250,14 +257,59 @@ namespace dk.nita.saml20.config
             IDPEndPoints = new List<IDPEndPoint>();            
             _fileInfo = new Dictionary<string, DateTime>();
             _fileToEntity = new Dictionary<string, string>();
+            InitializeFileSystemWatcher();
             Refresh();
+        }
+
+        private void InitializeFileSystemWatcher()
+        {
+            _fileSystemWatcher = new FileSystemWatcher();
+            _fileSystemWatcher.Filter = "*.*";
+            _fileSystemWatcher.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName;
+            _fileSystemWatcher.Changed += new FileSystemEventHandler(_fileSystemWatcher_Changed);
+            _fileSystemWatcher.Created += new FileSystemEventHandler(_fileSystemWatcher_Changed);
+            _fileSystemWatcher.Deleted += new FileSystemEventHandler(_fileSystemWatcher_Changed);
+            _fileSystemWatcher.Renamed += new RenamedEventHandler(_fileSystemWatcher_Renamed);
         }
 
         /// <summary>
         /// The directory in which the metadata files of trusted identity providers should be found.
         /// </summary>
-        [XmlAttribute("metadata")]        
-        public string metadataLocation;
+        [XmlAttribute("metadata")]
+        public string MetadataLocation
+        {
+            get { return _metadataLocation; }
+            set 
+            {
+                if (!Path.IsPathRooted(value))
+                {
+                    _metadataLocation = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, value);
+                }
+                else
+                {
+                    _metadataLocation = value;
+                }
+
+                _fileSystemWatcher.Path = _metadataLocation;
+                _fileSystemWatcher.EnableRaisingEvents = true;
+            }
+        }
+
+        void _fileSystemWatcher_Renamed(object sender, RenamedEventArgs e)
+        {
+            lock (_lockSync) 
+            {
+                Refresh();
+            }
+        }
+
+        void _fileSystemWatcher_Changed(object sender, FileSystemEventArgs e)
+        {
+            lock (_lockSync)
+            {
+                Refresh();
+            }
+        }
 
         /// <summary>
         /// The encodings that should be attempted when a metadata file does not contain an encoding attribute and 
@@ -342,11 +394,11 @@ namespace dk.nita.saml20.config
         /// </summary>
         public void Refresh()
         {
-            if (metadataLocation == null)
+            if (MetadataLocation == null)
                 return;
 
-            if (!Directory.Exists(metadataLocation))
-                throw new DirectoryNotFoundException(Resources.MetadataLocationNotFoundFormat(metadataLocation));
+            if (!Directory.Exists(MetadataLocation))
+                throw new DirectoryNotFoundException(Resources.MetadataLocationNotFoundFormat(MetadataLocation));
 
             // Start by removing information on files that are no long in the directory.
             List<string> keys = new List<string>(_fileInfo.Keys.Count);
@@ -365,7 +417,7 @@ namespace dk.nita.saml20.config
                 }
 
             // Detect added classes
-            string[] files = Directory.GetFiles(metadataLocation);
+            string[] files = Directory.GetFiles(MetadataLocation);
             foreach (string file in files)
             {
                 Saml20MetadataDocument metadataDoc;

@@ -67,7 +67,7 @@ namespace dk.nita.saml20.Bindings
                     return false;
                 }
 
-                if (_config.Endpoints.metadataLocation == null)
+                if (_config.Endpoints.MetadataLocation == null)
                 {
                     errorMessage = HttpUtility.HtmlEncode(Saml20Resources.MissingMetadataLocation);
                     return false;
