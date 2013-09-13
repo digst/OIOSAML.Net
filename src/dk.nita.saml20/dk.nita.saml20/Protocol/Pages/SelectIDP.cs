@@ -25,7 +25,8 @@ namespace dk.nita.saml20.protocol.pages
             BodyPanel.Controls.Add(new LiteralControl("<br/><br/>"));
             SAML20FederationConfig config = ConfigurationReader.GetConfig<SAML20FederationConfig>();            
             
-            config.Endpoints.Refresh();
+            // TODO: Remove
+            //config.Endpoints.Refresh();
 
             foreach (IDPEndPoint endPoint in config.IDPEndPoints)
             {
