@@ -8,7 +8,7 @@
     <owners>$author$</owners>
     <licenseUrl>http://www.mozilla.org/MPL/1.1/</licenseUrl>
     <projectUrl>http://digitaliser.dk/group/42063</projectUrl>
-    <iconUrl>http://digitaliser.dk/media/layout/digst_logo.png</iconUrl>
+    <iconUrl>https://svn.softwareborsen.dk/oiosaml.net/logo/oiosaml_logo.png</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>$description$</description>
     <releaseNotes>Summary of changes made in this release of the package.</releaseNotes>
