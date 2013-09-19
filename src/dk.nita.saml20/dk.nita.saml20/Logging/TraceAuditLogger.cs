@@ -6,8 +6,14 @@ using System.Diagnostics;
 
 namespace dk.nita.saml20.Logging
 {
+    /// <summary>
+    /// An implementation of the IAuditLogger interface that uses the System.Diagnostics Trace functionality to audit log.
+    /// </summary>
     class TraceAuditLogger : IAuditLogger
     {
+        /// <summary>
+        /// The source to use for logging
+        /// </summary>
         private readonly static TraceSource _source;
 
         static TraceAuditLogger()

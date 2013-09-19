@@ -7,7 +7,7 @@ using log4net;
 namespace dk.nita.saml20.Logging
 {
     /// <summary>
-    /// 
+    /// An implementation of the IAuditLogger interface that uses the log4net functionality to audit log.
     /// </summary>
     public class Log4NetAuditLogger : IAuditLogger
     {
@@ -18,17 +18,6 @@ namespace dk.nita.saml20.Logging
             log4net.Config.XmlConfigurator.Configure();
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="dir"></param>
-        /// <param name="op"></param>
-        /// <param name="msg"></param>
-        /// <param name="data"></param>
-        /// <param name="userHostAddress"></param>
-        /// <param name="idpId"></param>
-        /// <param name="assertionId"></param>
-        /// <param name="sessionId"></param>
         public void logEntry(Direction dir, Operation op, string msg, string data, string userHostAddress, string idpId, string assertionId, string sessionId)
         {
             logger.Info(String.Format("Session id: {6}, Direction: {0}, Operation: {1}, User IP: {2}, Idp ID: {3}, Assertion ID: {4}, Message: {5}, Data: {7}", dir, op, userHostAddress, idpId, assertionId, msg, sessionId, data != null ? data : ""));
