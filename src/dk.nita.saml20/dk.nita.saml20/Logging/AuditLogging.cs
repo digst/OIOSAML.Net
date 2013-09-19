@@ -5,8 +5,8 @@ using System.Web;
 using System.Xml;
 using dk.nita.saml20.identity;
 using dk.nita.saml20.Schema.Metadata;
-using log4net;
-using log4net.Repository.Hierarchy;
+using dk.nita.saml20.config;
+using dk.nita.saml20.Utils;
 
 namespace dk.nita.saml20.Logging
 {
@@ -16,8 +16,31 @@ namespace dk.nita.saml20.Logging
     {
         static AuditLogging()
         {
-            //AuditLogger = new Log4NetAuditLogger();
-            AuditLogger = new TraceAuditLogger();
+            var type = FederationConfig.GetConfig().AuditLoggingType;
+            if (!string.IsNullOrEmpty(type))
+            {
+                try
+                {
+                    var t = Type.GetType(type);
+                    if (t != null) 
+                    { 
+                        AuditLogger = (IAuditLogger)Activator.CreateInstance(t); 
+                    }
+                    else
+                    {
+                        throw new Exception(string.Format("The type {0} is not available for the audit logging. Please check the type name and assembly", type));
+                    }
+                }
+                catch (Exception e)
+                {
+                    Trace.TraceData(System.Diagnostics.TraceEventType.Critical, "Could not instantiate the configured auditLogger. Message: " + e.Message);
+                    throw;
+                }
+            }
+            else
+            {
+                AuditLogger = new TraceAuditLogger();
+            }
         }
 
         private static IAuditLogger AuditLogger;

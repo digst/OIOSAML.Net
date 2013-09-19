@@ -115,10 +115,6 @@
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="log4net, Version=1.2.10.0, Culture=neutral, PublicKeyToken=1b44e1d426115821, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\log4net.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.configuration" />
     <Reference Include="System.Configuration.Install" />
@@ -155,7 +151,6 @@
     <Compile Include="Bindings\SOAPConstants.cs" />
     <Compile Include="Logging\AuditLogging.cs" />
     <Compile Include="Logging\IAuditLogger.cs" />
-    <Compile Include="Logging\Log4NetAuditLogger.cs" />
     <Compile Include="Logging\TraceAuditLogger.cs" />
     <Compile Include="Protocol\Saml20CDCIdPReturnPoint.cs" />
     <Compile Include="Protocol\Saml20CDCReader.cs" />
