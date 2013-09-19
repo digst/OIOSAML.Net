@@ -16,10 +16,11 @@ namespace dk.nita.saml20.Logging
     {
         static AuditLogging()
         {
-            log4net.Config.XmlConfigurator.Configure();
+            //AuditLogger = new Log4NetAuditLogger();
+            AuditLogger = new TraceAuditLogger();
         }
 
-        private static ILog logger = LogManager.GetLogger("OIOSAML_AUDIT_LOGGER");
+        private static IAuditLogger AuditLogger;
         
         ///<summary>
         ///</summary>
@@ -83,7 +84,7 @@ namespace dk.nita.saml20.Logging
         ///<param name="data"></param>
         public static void logEntry(Direction dir, Operation op, string msg, string data)
         {
-            logger.Info(String.Format("Session id: {6}, Direction: {0}, Operation: {1}, User IP: {2}, Idp ID: {3}, Assertion ID: {4}, Message: {5}, Data: {7}", dir, op, HttpContext.Current.Request.UserHostAddress, IdpId, AssertionId, msg, HttpContext.Current.Session.SessionID, data != null ? data : ""));
+            AuditLogger.logEntry(dir, op, msg, data, HttpContext.Current.Request.UserHostAddress, IdpId, AssertionId, HttpContext.Current.Session.SessionID);
         }
     }
     ///<summary>

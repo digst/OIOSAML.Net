@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebsiteDemoVirk", "WebsiteD
 EndProject
 Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "installer", "installer\installer.vdproj", "{33C0D47C-3B85-4893-95B5-A271AB68307E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "dk.nita.saml20.ext.audit.log4net", "dk.nita.saml20.ext.audit.log4net\dk.nita.saml20.ext.audit.log4net.csproj", "{E0529CB0-9183-4768-B654-DB0F867F0E5F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -120,6 +122,15 @@ Global
 		{33C0D47C-3B85-4893-95B5-A271AB68307E}.Release|Any CPU.ActiveCfg = Release
 		{33C0D47C-3B85-4893-95B5-A271AB68307E}.Release|x64.ActiveCfg = Release
 		{33C0D47C-3B85-4893-95B5-A271AB68307E}.Release|x64.Build.0 = Release
+		{E0529CB0-9183-4768-B654-DB0F867F0E5F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E0529CB0-9183-4768-B654-DB0F867F0E5F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E0529CB0-9183-4768-B654-DB0F867F0E5F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{E0529CB0-9183-4768-B654-DB0F867F0E5F}.MSI|Any CPU.ActiveCfg = Release|Any CPU
+		{E0529CB0-9183-4768-B654-DB0F867F0E5F}.MSI|Any CPU.Build.0 = Release|Any CPU
+		{E0529CB0-9183-4768-B654-DB0F867F0E5F}.MSI|x64.ActiveCfg = Release|Any CPU
+		{E0529CB0-9183-4768-B654-DB0F867F0E5F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E0529CB0-9183-4768-B654-DB0F867F0E5F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E0529CB0-9183-4768-B654-DB0F867F0E5F}.Release|x64.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
