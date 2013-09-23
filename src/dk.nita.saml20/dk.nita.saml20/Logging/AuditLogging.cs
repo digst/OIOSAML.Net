@@ -107,7 +107,10 @@ namespace dk.nita.saml20.Logging
         ///<param name="data"></param>
         public static void logEntry(Direction dir, Operation op, string msg, string data)
         {
-            AuditLogger.logEntry(dir, op, msg, data, HttpContext.Current.Request.UserHostAddress, IdpId, AssertionId, HttpContext.Current.Session.SessionID);
+            var userHostAddress = HttpContext.Current != null ? HttpContext.Current.Request.UserHostAddress : "<no ip>";
+            var sessionId = HttpContext.Current != null ? HttpContext.Current.Session.SessionID : "<no session id>";
+
+            AuditLogger.logEntry(dir, op, msg, data, userHostAddress, IdpId, AssertionId, sessionId);
         }
     }
     ///<summary>
