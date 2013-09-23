@@ -30,7 +30,7 @@ namespace dk.nita.test.Logging
     {
         public static int LogEntryCalledCount { get; set; }
 
-        public void logEntry(Direction dir, Operation op, string msg, string data, string userHostAddress, string idpId, string assertionId, string sessionId)
+        public void LogEntry(Direction dir, Operation op, string msg, string data, string userHostAddress, string idpId, string assertionId, string sessionId)
         {
             LogEntryCalledCount++;
         }

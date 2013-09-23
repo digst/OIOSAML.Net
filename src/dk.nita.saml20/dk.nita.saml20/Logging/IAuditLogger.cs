@@ -21,6 +21,6 @@ namespace dk.nita.saml20.Logging
         /// <param name="idpId">The id of the idp</param>
         /// <param name="assertionId">The id of the assertion</param>
         /// <param name="sessionId">The id of the session</param>
-        void logEntry(Direction dir, Operation op, string msg, string data, string userHostAddress, string idpId, string assertionId, string sessionId);
+        void LogEntry(Direction dir, Operation op, string msg, string data, string userHostAddress, string idpId, string assertionId, string sessionId);
     }
 }

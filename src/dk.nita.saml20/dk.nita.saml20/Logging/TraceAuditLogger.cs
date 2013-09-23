@@ -21,7 +21,7 @@ namespace dk.nita.saml20.Logging
             _source = new TraceSource("dk.nita.saml20.auditLogger");
         }
 
-        public void logEntry(Direction dir, Operation op, string msg, string data, string userHostAddress, string idpId, string assertionId, string sessionId)
+        public void LogEntry(Direction dir, Operation op, string msg, string data, string userHostAddress, string idpId, string assertionId, string sessionId)
         {
             if (_source.Switch.ShouldTrace(TraceEventType.Information))
             {

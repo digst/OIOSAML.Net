@@ -110,7 +110,7 @@ namespace dk.nita.saml20.Logging
             var userHostAddress = HttpContext.Current != null ? HttpContext.Current.Request.UserHostAddress : "<no ip>";
             var sessionId = HttpContext.Current != null ? HttpContext.Current.Session.SessionID : "<no session id>";
 
-            AuditLogger.logEntry(dir, op, msg, data, userHostAddress, IdpId, AssertionId, sessionId);
+            AuditLogger.LogEntry(dir, op, msg, data, userHostAddress, IdpId, AssertionId, sessionId);
         }
     }
     ///<summary>
