@@ -135,6 +135,10 @@
     <Content Include="sp.Master" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\dk.nita.saml20.ext.audit.log4net\dk.nita.saml20.ext.audit.log4net.csproj">
+      <Project>{E0529CB0-9183-4768-B654-DB0F867F0E5F}</Project>
+      <Name>dk.nita.saml20.ext.audit.log4net</Name>
+    </ProjectReference>
     <ProjectReference Include="..\dk.nita.saml20.ext.brs\dk.nita.saml20.ext.brs.csproj">
       <Project>{2E16757D-6F42-4253-9C2B-E6E17039F457}</Project>
       <Name>dk.nita.saml20.ext.brs</Name>
