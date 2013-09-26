@@ -11,7 +11,7 @@
     <iconUrl>https://svn.softwareborsen.dk/oiosaml.net/logo/oiosaml_logo.png</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>$description$</description>
-    <releaseNotes>Summary of changes made in this release of the package.</releaseNotes>
+    <releaseNotes>The first initial release on nuget. See https://svn.softwareborsen.dk/oiosaml.net/trunk/src/dk.nita.saml20/dk.nita.saml20/Documentation for release notes.</releaseNotes>
     <copyright>Copyright 2013</copyright>
     <tags>SAML OIOSAML SAML2 NEMLOGIN NEMLOG-IN</tags>
   </metadata>
