@@ -247,8 +247,6 @@ namespace dk.nita.saml20.config
         
         private FileSystemWatcher _fileSystemWatcher;
 
-        private object _lockSync = new object();
-
         /// <summary>
         /// Initializes a new instance of the <see cref="IDPEndpoints"/> class.
         /// </summary>
@@ -264,7 +262,7 @@ namespace dk.nita.saml20.config
         {
             _fileSystemWatcher = new FileSystemWatcher();
             _fileSystemWatcher.Filter = "*.*";
-            _fileSystemWatcher.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName;
+            //_fileSystemWatcher.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName;
             _fileSystemWatcher.Changed += new FileSystemEventHandler(_fileSystemWatcher_Changed);
             _fileSystemWatcher.Created += new FileSystemEventHandler(_fileSystemWatcher_Changed);
             _fileSystemWatcher.Deleted += new FileSystemEventHandler(_fileSystemWatcher_Changed);
@@ -291,18 +289,29 @@ namespace dk.nita.saml20.config
 
                 _fileSystemWatcher.Path = _metadataLocation;
                 _fileSystemWatcher.EnableRaisingEvents = true;
-                Refresh();
+                Initialize();
             }
         }
 
         void _fileSystemWatcher_Renamed(object sender, RenamedEventArgs e)
         {
-            Refresh();
+            HandleRenamedIdp(e.OldFullPath, e.FullPath);
         }
 
         void _fileSystemWatcher_Changed(object sender, FileSystemEventArgs e)
         {
-            Refresh();
+            switch (e.ChangeType)
+            {
+                case WatcherChangeTypes.Created:
+                    HandleCreateIdp(e.FullPath);
+                    break;
+                case WatcherChangeTypes.Changed:
+                    HandleUpdateIdp(e.FullPath);
+                    break;
+                case WatcherChangeTypes.Deleted:
+                    HandleDeleteIdp(e.FullPath);
+                    break;
+            }
         }
 
         /// <summary>
@@ -383,10 +392,82 @@ namespace dk.nita.saml20.config
         [XmlIgnore] 
         private Dictionary<string, string> _fileToEntity;
 
+        private void HandleRenamedIdp(string oldFilename, string filename)
+        {
+            var metadataDoc = ParseFile(filename);
+            if (metadataDoc != null)
+            {
+                var endp = FindEndPoint(metadataDoc.EntityId);
+                if (endp != null && _fileToEntity.ContainsKey(oldFilename))
+                {
+                    _fileToEntity.Remove(oldFilename);
+                    _fileToEntity.Add(filename, metadataDoc.EntityId);
+                    HandleUpdateIdp(filename);
+                }
+            }
+        }
+
+        private void HandleDeleteIdp(string filename)
+        {
+            if (_fileToEntity.ContainsKey(filename))
+            {
+                var idpEndpoint = FindEndPoint(_fileToEntity[filename]);
+                if (idpEndpoint != null)
+                {
+                    IDPEndPoints.Remove(idpEndpoint);
+                }
+                _fileToEntity.Remove(filename);
+            }
+        }
+
+        private void HandleUpdateIdp(string filename)
+        {
+            var metadataDoc = ParseFile(filename);
+            // First we try and find the endpoint based on the entity id in the metadata
+            var endp = FindEndPoint(metadataDoc.EntityId);
+            if (endp == null && _fileToEntity.ContainsKey(filename)) 
+            {
+                // Otherwise we find it in our dictionary - this means that the entity id has been changed
+                endp = FindEndPoint(_fileToEntity[filename]);
+            }
+            
+            // If we found it - we will update
+            if (endp != null)
+            {
+                endp.Id = endp.Name = metadataDoc.EntityId;
+                endp.metadata = metadataDoc;
+                _fileToEntity[filename] = metadataDoc.EntityId;
+            }
+        }
+
+        private void HandleCreateIdp(string filename)
+        {
+            if (!_fileToEntity.ContainsKey(filename))
+            {
+                var metadataDoc = ParseFile(filename);
+                var endp = FindEndPoint(metadataDoc.EntityId);
+                if (endp == null) // If the endpoint does not exist, create it.
+                {
+                    endp = new IDPEndPoint()
+                    {
+                        Id = metadataDoc.EntityId,
+                        Name = metadataDoc.EntityId,
+                        metadata = metadataDoc
+                    };
+                    IDPEndPoints.Add(endp);
+                    _fileToEntity.Add(filename, endp.Id);
+                }
+            }
+            else
+            {
+                HandleUpdateIdp(filename);
+            }
+        }
+
         /// <summary>
         /// Refreshes the information retrieved from the directory containing metadata files.
         /// </summary>
-        private void Refresh()
+        private void Initialize()
         {
             if (MetadataLocation == null)
                 return;
@@ -394,58 +475,10 @@ namespace dk.nita.saml20.config
             if (!Directory.Exists(MetadataLocation))
                 throw new DirectoryNotFoundException(Resources.MetadataLocationNotFoundFormat(MetadataLocation));
 
-            lock (_lockSync)
+            string[] files = Directory.GetFiles(MetadataLocation);
+            foreach (string file in files)
             {
-                // Start by removing information on files that are no long in the directory.
-                List<string> keys = new List<string>(_fileInfo.Keys.Count);
-                keys.AddRange(_fileInfo.Keys);
-                foreach (string file in keys)
-                    if (!File.Exists(file))
-                    {
-                        _fileInfo.Remove(file);
-                        if (_fileToEntity.ContainsKey(file))
-                        {
-                            IDPEndPoint endp = FindEndPoint(_fileToEntity[file]);
-                            if (endp != null)
-                                endp.metadata = null;
-                            _fileToEntity.Remove(file);
-                        }                    
-                    }
-
-                // Detect added classes
-                string[] files = Directory.GetFiles(MetadataLocation);
-                foreach (string file in files)
-                {
-                    Saml20MetadataDocument metadataDoc;
-                    if (_fileInfo.ContainsKey(file))
-                    {
-                        if (_fileInfo[file] != File.GetLastWriteTime(file))                    
-                            metadataDoc = ParseFile(file);                                            
-                        else
-                            continue;                    
-                    } else
-                    {
-                        metadataDoc = ParseFile(file);
-                    }
-
-                    if (metadataDoc != null)
-                    {
-                        IDPEndPoint endp = FindEndPoint(metadataDoc.EntityId);
-                        if (endp == null) // If the endpoint does not exist, create it.
-                        {                        
-                            endp = new IDPEndPoint();                        
-                            IDPEndPoints.Add(endp);
-                        }
-
-                        endp.Id = endp.Name = metadataDoc.EntityId; // Set some default valuDes.
-                        endp.metadata = metadataDoc;                    
-
-                        if (_fileToEntity.ContainsKey(file))
-                            _fileToEntity.Remove(file);
-
-                        _fileToEntity.Add(file, metadataDoc.EntityId);
-                    }
-                }
+                HandleCreateIdp(file);
             }
         }
 
