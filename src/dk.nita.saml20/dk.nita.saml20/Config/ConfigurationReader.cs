@@ -144,6 +144,12 @@ namespace dk.nita.saml20.config
                 if (_config == null)
                     throw new ConfigurationErrorsException(
                         string.Format("Configuration section \"{0}\" not found", typeof (T).Name));
+
+                // If the configuration instance supports initialization the instance is configured after the config has been deserialized
+                if (_config is IInitializableConfigurationInstance)
+                {
+                    ((IInitializableConfigurationInstance)_config).Initialize();
+                }
             }
 
             return _config;
@@ -157,5 +163,16 @@ namespace dk.nita.saml20.config
             _config = null;
             ConfigurationReader.RefreshConfig<T>();
         }
+    }
+
+    /// <summary>
+    /// Adds support for initialization for a configuration instance.
+    /// </summary>
+    public interface IInitializableConfigurationInstance
+    {
+        /// <summary>
+        /// The initialize method is called after the object has been created and is used for initializing the instance.
+        /// </summary>
+        void Initialize();
     }
 }

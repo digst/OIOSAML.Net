@@ -25,7 +25,7 @@ namespace dk.nita.saml20.config
     [Serializable]
     [XmlType(Namespace = ConfigurationConstants.NamespaceUri)]
     [XmlRoot(ConfigurationConstants.SectionNames.SAML20Federation, Namespace = ConfigurationConstants.NamespaceUri, IsNullable = false)]    
-    public class SAML20FederationConfig : ConfigurationInstance<SAML20FederationConfig>
+    public class SAML20FederationConfig : ConfigurationInstance<SAML20FederationConfig>, IInitializableConfigurationInstance
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="SAML20FederationConfig"/> class.
@@ -133,7 +133,14 @@ namespace dk.nita.saml20.config
         {
             return IDPEndPoints.Find(delegate(IDPEndPoint ep) { return ep.Id == endPointId; });
         }
-        
+
+        /// <summary>
+        /// Initializes the config section by initializing the idp-endpoints
+        /// </summary>
+        public void Initialize()
+        {
+            _idpEndpoints.Initialize();
+        }
     }
 
     /// <summary>
@@ -190,8 +197,6 @@ namespace dk.nita.saml20.config
         /// </summary>
         [XmlElement("att")]
         public List<Attribute> Attributes;        
-
-
     }
 
     /// <summary>
@@ -245,6 +250,9 @@ namespace dk.nita.saml20.config
         [XmlIgnore]
         private string _metadataLocation;
         
+        /// <summary>
+        /// Watches the metadata location for changes
+        /// </summary>
         private FileSystemWatcher _fileSystemWatcher;
 
         /// <summary>
@@ -253,20 +261,7 @@ namespace dk.nita.saml20.config
         public IDPEndpoints()
         {
             IDPEndPoints = new List<IDPEndPoint>();            
-            _fileInfo = new Dictionary<string, DateTime>();
             _fileToEntity = new Dictionary<string, string>();
-            InitializeFileSystemWatcher();
-        }
-
-        private void InitializeFileSystemWatcher()
-        {
-            _fileSystemWatcher = new FileSystemWatcher();
-            _fileSystemWatcher.Filter = "*.*";
-            //_fileSystemWatcher.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName;
-            _fileSystemWatcher.Changed += new FileSystemEventHandler(_fileSystemWatcher_Changed);
-            _fileSystemWatcher.Created += new FileSystemEventHandler(_fileSystemWatcher_Changed);
-            _fileSystemWatcher.Deleted += new FileSystemEventHandler(_fileSystemWatcher_Changed);
-            _fileSystemWatcher.Renamed += new RenamedEventHandler(_fileSystemWatcher_Renamed);
         }
 
         /// <summary>
@@ -286,31 +281,6 @@ namespace dk.nita.saml20.config
                 {
                     _metadataLocation = value;
                 }
-
-                _fileSystemWatcher.Path = _metadataLocation;
-                _fileSystemWatcher.EnableRaisingEvents = true;
-                Initialize();
-            }
-        }
-
-        void _fileSystemWatcher_Renamed(object sender, RenamedEventArgs e)
-        {
-            HandleRenamedIdp(e.OldFullPath, e.FullPath);
-        }
-
-        void _fileSystemWatcher_Changed(object sender, FileSystemEventArgs e)
-        {
-            switch (e.ChangeType)
-            {
-                case WatcherChangeTypes.Created:
-                    HandleCreateIdp(e.FullPath);
-                    break;
-                case WatcherChangeTypes.Changed:
-                    HandleUpdateIdp(e.FullPath);
-                    break;
-                case WatcherChangeTypes.Deleted:
-                    HandleDeleteIdp(e.FullPath);
-                    break;
             }
         }
 
@@ -381,16 +351,46 @@ namespace dk.nita.saml20.config
         #region Handling of metadata files 
 
         /// <summary>
-        /// A list of the files that have currently been loaded. The filename is used as key, while last seen modification time is used as value.
-        /// </summary>
-        [XmlIgnore]
-        private Dictionary<string, DateTime> _fileInfo;
-
-        /// <summary>
         /// This dictionary links a file name to the entity id of the metadata document in the file.
         /// </summary>
         [XmlIgnore] 
         private Dictionary<string, string> _fileToEntity;
+
+        /// <summary>
+        /// Initializes the file system watcher to watch for changes in the metadata location
+        /// </summary>
+        private void InitializeFileSystemWatcher()
+        {
+            _fileSystemWatcher = new FileSystemWatcher();
+            _fileSystemWatcher.Filter = "*.*";
+            _fileSystemWatcher.Changed += new FileSystemEventHandler(_fileSystemWatcher_Changed);
+            _fileSystemWatcher.Created += new FileSystemEventHandler(_fileSystemWatcher_Changed);
+            _fileSystemWatcher.Deleted += new FileSystemEventHandler(_fileSystemWatcher_Changed);
+            _fileSystemWatcher.Renamed += new RenamedEventHandler(_fileSystemWatcher_Renamed);
+            _fileSystemWatcher.Path = _metadataLocation;
+            _fileSystemWatcher.EnableRaisingEvents = true;
+        }
+
+        private void _fileSystemWatcher_Renamed(object sender, RenamedEventArgs e)
+        {
+            HandleRenamedIdp(e.OldFullPath, e.FullPath);
+        }
+
+        private void _fileSystemWatcher_Changed(object sender, FileSystemEventArgs e)
+        {
+            switch (e.ChangeType)
+            {
+                case WatcherChangeTypes.Created:
+                    HandleCreateIdp(e.FullPath);
+                    break;
+                case WatcherChangeTypes.Changed:
+                    HandleUpdateIdp(e.FullPath);
+                    break;
+                case WatcherChangeTypes.Deleted:
+                    HandleDeleteIdp(e.FullPath);
+                    break;
+            }
+        }
 
         private void HandleRenamedIdp(string oldFilename, string filename)
         {
@@ -427,7 +427,7 @@ namespace dk.nita.saml20.config
             var endp = FindEndPoint(metadataDoc.EntityId);
             if (endp == null && _fileToEntity.ContainsKey(filename)) 
             {
-                // Otherwise we find it in our dictionary - this means that the entity id has been changed
+                // Otherwise we find it in our dictionary - this means that the entity id has been changed in the file
                 endp = FindEndPoint(_fileToEntity[filename]);
             }
             
@@ -457,6 +457,10 @@ namespace dk.nita.saml20.config
                     IDPEndPoints.Add(endp);
                     _fileToEntity.Add(filename, endp.Id);
                 }
+                else
+                {
+                    HandleUpdateIdp(filename);
+                }
             }
             else
             {
@@ -467,7 +471,7 @@ namespace dk.nita.saml20.config
         /// <summary>
         /// Refreshes the information retrieved from the directory containing metadata files.
         /// </summary>
-        private void Initialize()
+        internal void Initialize()
         {
             if (MetadataLocation == null)
                 return;
@@ -480,6 +484,8 @@ namespace dk.nita.saml20.config
             {
                 HandleCreateIdp(file);
             }
+
+            InitializeFileSystemWatcher();
         }
 
         /// <summary>
