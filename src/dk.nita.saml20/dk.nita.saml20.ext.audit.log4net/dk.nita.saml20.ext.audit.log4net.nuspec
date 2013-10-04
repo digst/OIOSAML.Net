@@ -15,7 +15,4 @@
     <copyright>Copyright 2013</copyright>
     <tags>SAML OIOSAML SAML2 NEMLOGIN NEMLOG-IN</tags>
   </metadata>
-  <files>
-     <file src="readme.txt" target="" />
-   </files>
 </package>

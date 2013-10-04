@@ -25,6 +25,7 @@ using System.Web.UI;
 
 [assembly: AssemblyVersion("1.7.8.0")]
 [assembly: AssemblyFileVersion("1.7.8.0")]
+[assembly: AssemblyInformationalVersion("1.7.8-alpha")]
 
 [assembly: InternalsVisibleTo("Safewhere.IntegrationTest")]
 [assembly: InternalsVisibleTo("Safewhere.UnitTest")]
