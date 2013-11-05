@@ -7,6 +7,7 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.Xml;
 using dk.nita.saml20.Logging;
 using dk.nita.saml20.Schema.Metadata;
+using dk.nita.saml20.Schema.Protocol;
 using dk.nita.saml20.Utils;
 
 namespace dk.nita.saml20.Bindings
@@ -142,6 +143,20 @@ namespace dk.nita.saml20.Bindings
         {
             return XmlSignatureUtils.IsSigned(_document);
         }
-    
+
+        /// <summary>
+        /// Returns the LogoutRequest string in deserialized form.
+        /// </summary>
+        /// <returns></returns>
+        public LogoutRequest LogoutRequest
+        {
+            get
+            {
+                if (_isRequest)
+                    return Serialization.DeserializeFromXmlString<LogoutRequest>(_message);
+                else
+                    return null;
+            }
+        }
     }
 }

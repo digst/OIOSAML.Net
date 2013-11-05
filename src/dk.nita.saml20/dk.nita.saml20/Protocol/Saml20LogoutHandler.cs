@@ -408,36 +408,38 @@ namespace dk.nita.saml20.protocol
         {
             Trace.TraceMethodCalled(GetType(), "HandleRequest()");
 
-            //Fetch the endpoint configuration
-            IDPEndPoint idpEndpoint = RetrieveIDPConfiguration(context.Session[IDPLoginSessionKey].ToString());
-
-            IDPEndPointElement destination =
-                DetermineEndpointConfiguration(SAMLBinding.REDIRECT, idpEndpoint.SLOEndpoint, idpEndpoint.metadata.SLOEndpoints());
-
             //Fetch config object
-            SAML20FederationConfig config = ConfigurationReader.GetConfig<SAML20FederationConfig>();
-                        
-            //Build the response object
-            Saml20LogoutResponse response = new Saml20LogoutResponse();
-            response.Issuer = config.ServiceProvider.ID;
-            response.Destination = destination.Url;
-            response.StatusCode = Saml20Constants.StatusCodes.Success;
+            SAML20FederationConfig config = SAML20FederationConfig.GetConfig();
 
+            LogoutRequest logoutRequest = null;
+            IDPEndPoint endpoint = null;
             string message = string.Empty;
 
+            //Build the response object
+            var response = new Saml20LogoutResponse();
+            response.Issuer = config.ServiceProvider.ID;
+            response.StatusCode = Saml20Constants.StatusCodes.Success; // Default success. Is overwritten if something fails.
+            
             if(context.Request.RequestType == "GET") // HTTP Redirect binding
             {
                 HttpRedirectBindingParser parser = new HttpRedirectBindingParser(context.Request.Url);
                 AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST,
                                       string.Format("Binding: redirect, Signature algorithm: {0}  Signature:  {1}, Message: {2}", parser.SignatureAlgorithm, parser.Signature, parser.Message));
 
-                
-                IDPEndPoint endpoint = config.FindEndPoint(idpEndpoint.Id);
+                if (!parser.IsSigned)
+                {
+                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Signature not present, msg: " + parser.Message);
+                    response.StatusCode = Saml20Constants.StatusCodes.RequestDenied;
+                }
+
+                logoutRequest = parser.LogoutRequest;
+                endpoint = config.FindEndPoint(logoutRequest.Issuer.Value);
 
                 if (endpoint.metadata == null)
                 {
-                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Cannot find metadata for IdP");
-                    HandleError(context, "Cannot find metadata for IdP " + idpEndpoint.Id);
+                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Cannot find metadata for IdP: " + logoutRequest.Issuer.Value);
+                    // Not able to return a response as we do not know the IdP.
+                    HandleError(context, "Cannot find metadata for IdP " + logoutRequest.Issuer.Value);
                     return;
                 }
 
@@ -445,9 +447,8 @@ namespace dk.nita.saml20.protocol
 
                 if (!parser.VerifySignature(metadata.GetKeys(KeyTypes.signing)))
                 {
-                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Invalid signature redirect-binding, msg: " + parser.Message);
-                    HandleError(context, Resources.SignatureInvalid);
-                    return;
+                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Request has been denied. Invalid signature redirect-binding, msg: " + parser.Message);
+                    response.StatusCode = Saml20Constants.StatusCodes.RequestDenied;
                 }
 
                 message = parser.Message;
@@ -461,14 +462,16 @@ namespace dk.nita.saml20.protocol
                 if (!parser.IsSigned())
                 {
                     AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Signature not present, msg: " + parser.Message);
-                    HandleError(context, Resources.SignatureNotPresent);
+                    response.StatusCode = Saml20Constants.StatusCodes.RequestDenied;
                 }
 
-                IDPEndPoint endpoint = config.FindEndPoint(idpEndpoint.Id);
+                logoutRequest = parser.LogoutRequest;
+                endpoint = config.FindEndPoint(logoutRequest.Issuer.Value);
                 if (endpoint.metadata == null)
                 {
                     AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Cannot find metadata for IdP");
-                    HandleError(context, "Cannot find metadata for IdP " + idpEndpoint.Id);
+                    // Not able to return a response as we do not know the IdP.
+                    HandleError(context, "Cannot find metadata for IdP " + logoutRequest.Issuer.Value);
                     return;
                 }
 
@@ -477,25 +480,49 @@ namespace dk.nita.saml20.protocol
                 // handle a logout-request
                 if (!parser.CheckSignature(metadata.GetKeys(KeyTypes.signing)))
                 {
-                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Invalid signature post-binding, msg: " + parser.Message);
-                    HandleError(context, Resources.SignatureInvalid);
+                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Request has been denied. Invalid signature post-binding, msg: " + parser.Message);
+                    response.StatusCode = Saml20Constants.StatusCodes.RequestDenied;
                 }
 
                 message = parser.Message;
             }else
             {
                 //Error: We don't support HEAD, PUT, CONNECT, TRACE, DELETE and OPTIONS
+                // Not able to return a response as we do not understand the request.
                 HandleError(context, Resources.UnsupportedRequestTypeFormat(context.Request.RequestType));
             }
 
             AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, message);
+            
+            // Check that idp in session and request matches.
+            string idpRequest = logoutRequest.Issuer.Value;
+            if (!context.Session.IsNewSession)
+            {
+                object idpSession = context.Session[IDPLoginSessionKey];
+            
+                if (idpSession != null && idpSession.ToString() != idpRequest)
+                {
+                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, Resources.IdPMismatchBetweenRequestAndSessionFormat(idpSession, idpRequest), message);
+                    response.StatusCode = Saml20Constants.StatusCodes.RequestDenied;
+                }
+            }
+            else
+            {
+                // All other status codes than Success results in the IdP throwing an error page. Therefore we return default Success even if we do not have a session.
+                AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Session does not exist. Continues the redirect logout procedure with status code success." + idpRequest, message);
+            }
 
-            //Log the user out locally
-            DoLogout(context, true);
+            //  Only logout if request is valid and we are working on an existing Session.
+            if (Saml20Constants.StatusCodes.Success == response.StatusCode && !context.Session.IsNewSession)
+            {
+                // Execute all actions that the service provider has configured
+                DoLogout(context, true);
+            }
 
-            LogoutRequest req = Serialization.DeserializeFromXmlString<LogoutRequest>(message);
-
-            response.InResponseTo = req.ID;
+            // Update the response object with informations that first is available when request has been parsed.
+            IDPEndPointElement destination = DetermineEndpointConfiguration(SAMLBinding.REDIRECT, endpoint.SLOEndpoint, endpoint.metadata.SLOEndpoints());
+            response.Destination = destination.Url;
+            response.InResponseTo = logoutRequest.ID;
 
             //Respond using redirect binding
             if(destination.Binding == SAMLBinding.REDIRECT)
