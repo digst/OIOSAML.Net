@@ -72,10 +72,10 @@ namespace dk.nita.saml20.protocol
 
         private void CreateMetadataDocument(HttpContext context, bool sign)
         {
-            SAML20FederationConfig configuration = ConfigurationReader.GetConfig<SAML20FederationConfig>();
+            SAML20FederationConfig configuration = SAML20FederationConfig.GetConfig();
 
             KeyInfo keyinfo = new KeyInfo();
-            KeyInfoX509Data keyClause = new KeyInfoX509Data(ConfigurationReader.GetConfig<FederationConfig>().SigningCertificate.GetCertificate(), X509IncludeOption.EndCertOnly);
+            KeyInfoX509Data keyClause = new KeyInfoX509Data(FederationConfig.GetConfig().SigningCertificate.GetCertificate(), X509IncludeOption.EndCertOnly);
             keyinfo.AddClause(keyClause);
 
             Saml20MetadataDocument doc = new Saml20MetadataDocument(configuration, keyinfo, sign);

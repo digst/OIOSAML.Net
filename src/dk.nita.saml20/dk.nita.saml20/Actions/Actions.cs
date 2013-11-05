@@ -29,7 +29,7 @@ namespace dk.nita.saml20.Actions
         public static List<IAction> GetActions()
         {
             List<IAction> actions = GetDefaultActions();
-            FederationConfig config = ConfigurationReader.GetConfig<FederationConfig>();
+            FederationConfig config = FederationConfig.GetConfig();
 
             foreach (ActionConfigAbstract ac in config.Actions.ActionList)
             {

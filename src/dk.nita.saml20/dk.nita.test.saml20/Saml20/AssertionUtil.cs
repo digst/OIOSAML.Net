@@ -202,7 +202,7 @@ namespace dk.nita.test.Saml20
             if (issuer == null)
                 throw new ArgumentNullException("issuer");
 
-            SAML20FederationConfig config = ConfigurationReader.GetConfig<SAML20FederationConfig>();
+            SAML20FederationConfig config = SAML20FederationConfig.GetConfig();
             IDPEndPoint idpEndpoint = config.FindEndPoint(issuer);
             if (idpEndpoint == null)
                 throw new InvalidOperationException(String.Format("No idp endpoint found for issuer {0}", issuer));
