@@ -1,0 +1,68 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<title>Creating a new OIOSAML .Net release</title>
+</head>
+
+<body>
+
+<h1>Creating a new OIOSAML .Net release</h1>
+
+<section>
+This describes how to create a new release for OIOSAML .Net
+</section>
+
+<section>
+<h2>Building the packages</h2>
+<ul>
+	<li>Remember to increment the version number of the assemblies</li>
+	<li>Remember to add the newest version to the list of releases in the documentation</li>
+	<li>Build the project in release mode</li>
+	<li>Build the installer project</li>
+</ul>
+</section>
+
+<section>
+<h2>Build the zip package</h2>
+
+
+</section>
+
+<section>
+<h2>Uploading the install package to digitaliser.dk</h2>
+
+<ul>
+	<li>Login on digitaliser.dk and go to the newest version of the ressource (should be http://digitaliser.dk/resource/2513426)</li>
+	<li>Choose Funktioner and click on "Opret ny version"</li>
+	<li>Change the metadata of the ressource accordingly</li>
+	<li>Delete the old files and upload the new files of the release (zip file + documentation)</li>
+	<li>Publish the new version when ready</li>
+</ul>
+</section>
+
+<section>
+<h2>Change the frontpage of the group</h2>
+
+<ul>
+	<li>Login on digitaliser.dk and go to the oiosaml group (http://digitaliser.dk/group/42063)</li>
+	<li>TODO:</li>
+</ul>
+
+</section>
+
+<section>
+<h2>Create and publish nuget packages</h2>
+<p>This will create new version of the packages and publish them to nuget</p>
+
+<ul>
+	<li>Change the release note in the .nuspec file</li>
+	<li>Pack the dk.nita.saml20 project: <code>nuget pack dk.nita.saml20.csproj -Symbols -Properties Configuration=Release</code></li>
+	<li>Push the package: <code>nuget push <i>pakkenavn</i></code></li>
+	<li>Pack the dk.nita.saml20 project: <code>nuget pack dk.nita.saml20.ext.audit.log4net -Symbols -Properties Configuration=Release</code></li>
+	<li>Push the package: <code>nuget push <i>pakkenavn</i></code></li>
+</ul>
+
+</section>
+
+</body>
+</html>
