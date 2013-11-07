@@ -379,6 +379,7 @@
       <Generator>ResXFileCodeGeneratorEx</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
       <SubType>Designer</SubType>
+      <CustomToolNamespace>Saml2.Properties</CustomToolNamespace>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Saml20Resources.resx">
       <Generator>ResXFileCodeGeneratorEx</Generator>

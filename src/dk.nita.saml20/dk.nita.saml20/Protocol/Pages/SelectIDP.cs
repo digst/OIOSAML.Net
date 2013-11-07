@@ -23,7 +23,7 @@ namespace dk.nita.saml20.protocol.pages
             
             BodyPanel.Controls.Add(new LiteralControl(Resources.ChooseDesc));
             BodyPanel.Controls.Add(new LiteralControl("<br/><br/>"));
-            SAML20FederationConfig config = ConfigurationReader.GetConfig<SAML20FederationConfig>();            
+            SAML20FederationConfig config = SAML20FederationConfig.GetConfig();
             
             foreach (IDPEndPoint endPoint in config.IDPEndPoints)
             {

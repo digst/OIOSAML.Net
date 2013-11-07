@@ -55,7 +55,7 @@ namespace dk.nita.test.Saml20
             FederationConfig config = FederationConfig.GetConfig();
             config.AllowedAudienceUris.Audiences.Add("https://saml.safewhere.net");
 
-            SAML20FederationConfig descr = ConfigurationReader.GetConfig<SAML20FederationConfig>();
+            SAML20FederationConfig descr = SAML20FederationConfig.GetConfig();
             descr.Endpoints.MetadataLocation = @"Saml20\Protocol\MetadataDocs\FOBS"; // Set it manually.     
             Assert.That(Directory.Exists(descr.Endpoints.MetadataLocation));
 

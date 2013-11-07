@@ -127,7 +127,7 @@ namespace dk.nita.saml20.config
     /// Base class for configuration reader.
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public abstract class ConfigurationInstance<T> where T : class
+    public abstract class ConfigurationInstance<T> where T : ConfigurationInstance<T>
     {
         private static T _config;
 
@@ -145,14 +145,19 @@ namespace dk.nita.saml20.config
                     throw new ConfigurationErrorsException(
                         string.Format("Configuration section \"{0}\" not found", typeof (T).Name));
 
-                // If the configuration instance supports initialization the instance is configured after the config has been deserialized
-                if (_config is IInitializableConfigurationInstance)
-                {
-                    ((IInitializableConfigurationInstance)_config).Initialize();
-                }
+                // Do after initialization.
+                _config.Initialize();
             }
 
             return _config;
+        }
+
+        /// <summary>
+        /// Can be used for doing further initialization after web config file has been read into memory
+        /// </summary>
+        protected virtual void Initialize()
+        {
+            // Default do nothing
         }
 
         /// <summary>
@@ -163,16 +168,5 @@ namespace dk.nita.saml20.config
             _config = null;
             ConfigurationReader.RefreshConfig<T>();
         }
-    }
-
-    /// <summary>
-    /// Adds support for initialization for a configuration instance.
-    /// </summary>
-    public interface IInitializableConfigurationInstance
-    {
-        /// <summary>
-        /// The initialize method is called after the object has been created and is used for initializing the instance.
-        /// </summary>
-        void Initialize();
     }
 }

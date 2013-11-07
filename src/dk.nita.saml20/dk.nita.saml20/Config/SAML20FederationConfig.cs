@@ -25,7 +25,7 @@ namespace dk.nita.saml20.config
     [Serializable]
     [XmlType(Namespace = ConfigurationConstants.NamespaceUri)]
     [XmlRoot(ConfigurationConstants.SectionNames.SAML20Federation, Namespace = ConfigurationConstants.NamespaceUri, IsNullable = false)]    
-    public class SAML20FederationConfig : ConfigurationInstance<SAML20FederationConfig>, IInitializableConfigurationInstance
+    public class SAML20FederationConfig : ConfigurationInstance<SAML20FederationConfig>
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="SAML20FederationConfig"/> class.
@@ -137,7 +137,7 @@ namespace dk.nita.saml20.config
         /// <summary>
         /// Initializes the config section by initializing the idp-endpoints
         /// </summary>
-        public void Initialize()
+        protected override void Initialize()
         {
             _idpEndpoints.Initialize();
         }

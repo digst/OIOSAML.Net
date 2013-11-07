@@ -6,7 +6,9 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.Xml;
 using System.Text;
 using System.Web;
+using System.Xml;
 using dk.nita.saml20.Schema.Metadata;
+using dk.nita.saml20.Schema.Protocol;
 using dk.nita.saml20.Utils;
 using CONSTS = dk.nita.saml20.Bindings.HttpRedirectBindingConstants;
 
@@ -274,6 +276,21 @@ namespace dk.nita.saml20.Bindings
                 case "signature" :
                     _signature = value;
                     return;
+            }
+        }
+
+        /// <summary>
+        /// Returns the LogoutRequest string in deserialized form.
+        /// </summary>
+        /// <returns></returns>
+        public LogoutRequest LogoutRequest
+        {
+            get
+            {
+                if (!_isResponse)
+                    return Serialization.DeserializeFromXmlString<LogoutRequest>(_message);
+                else
+                    return null;
             }
         }
     }
