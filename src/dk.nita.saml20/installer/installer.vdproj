@@ -27,6 +27,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_0525C9834C4C49C3B5EDA45CF2BC5918"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_06059EA64BA7465F9F07B1C1D85E0603"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -250,6 +256,12 @@
         "Entry"
         {
         "MsmKey" = "8:_55FCBED358027BE9461BA70166E1E287"
+        "OwnerKey" = "8:_0525C9834C4C49C3B5EDA45CF2BC5918"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_55FCBED358027BE9461BA70166E1E287"
         "OwnerKey" = "8:_FA0BED157FA54E458F32AF85D2A48F2E"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -329,6 +341,12 @@
         {
         "MsmKey" = "8:_6B782B181230AD1425F867545F3B4488"
         "OwnerKey" = "8:_BDCB7AAB587DEFAFDEEA455D37A81103"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_6B782B181230AD1425F867545F3B4488"
+        "OwnerKey" = "8:_0525C9834C4C49C3B5EDA45CF2BC5918"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -647,6 +665,12 @@
         {
         "MsmKey" = "8:_UNDEFINED"
         "OwnerKey" = "8:_FA0BED157FA54E458F32AF85D2A48F2E"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_UNDEFINED"
+        "OwnerKey" = "8:_0525C9834C4C49C3B5EDA45CF2BC5918"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -2905,7 +2929,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:dk.nita.saml20"
         "ProductCode" = "8:{74AD2A29-5034-4DDE-B9C1-0D36E8C3AD02}"
-        "PackageCode" = "8:{8AD85147-C674-4B04-8482-73F023C5A34E}"
+        "PackageCode" = "8:{49F01A77-8B87-431A-89C1-343F0CA42668}"
         "UpgradeCode" = "8:{648E3C15-4718-47C3-BC9C-DED2D52DB7AA}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
@@ -3424,6 +3448,34 @@
         }
         "ProjectOutput"
         {
+            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_0525C9834C4C49C3B5EDA45CF2BC5918"
+            {
+            "SourcePath" = "8:..\\dk.nita.saml20.ext.audit.log4net\\obj\\Release\\dk.nita.saml20.ext.audit.log4net.dll"
+            "TargetName" = "8:"
+            "Tag" = "8:"
+            "Folder" = "8:_6EE5B24FD07645D0969A1356E7073108"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            "ProjectOutputGroupRegister" = "3:1"
+            "OutputConfiguration" = "8:"
+            "OutputGroupCanonicalName" = "8:Built"
+            "OutputProjectGuid" = "8:{E0529CB0-9183-4768-B654-DB0F867F0E5F}"
+            "ShowKeyOutput" = "11:TRUE"
+                "ExcludeFilters"
+                {
+                }
+            }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_083903C36352494B8A90B0287559FE2B"
             {
             "SourcePath" = "8:..\\IdentityProviderDemo\\obj\\Release\\IdentityProviderDemo.dll"
