@@ -23,7 +23,7 @@ namespace dk.nita.saml20.protocol
             try
             {
                 Trace.TraceMethodCalled(GetType(), "ProcessRequest()");
-                SAML20FederationConfig config = ConfigurationReader.GetConfig<SAML20FederationConfig>();
+                SAML20FederationConfig config = SAML20FederationConfig.GetConfig();
 
                 if (config == null)
                     throw new Saml20Exception("Missing SAML20Federation config section in web.config.");

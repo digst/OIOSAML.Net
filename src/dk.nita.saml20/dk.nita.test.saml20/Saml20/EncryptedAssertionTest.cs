@@ -55,10 +55,9 @@ namespace dk.nita.test.Saml20
             FederationConfig config = FederationConfig.GetConfig();
             config.AllowedAudienceUris.Audiences.Add("https://saml.safewhere.net");
 
-            SAML20FederationConfig descr = ConfigurationReader.GetConfig<SAML20FederationConfig>();
-            descr.Endpoints.metadataLocation = @"Saml20\Protocol\MetadataDocs\FOBS"; // Set it manually.     
-            Assert.That(Directory.Exists(descr.Endpoints.metadataLocation));
-            descr.Endpoints.Refresh();
+            SAML20FederationConfig descr = SAML20FederationConfig.GetConfig();
+            descr.Endpoints.MetadataLocation = @"Saml20\Protocol\MetadataDocs\FOBS"; // Set it manually.     
+            Assert.That(Directory.Exists(descr.Endpoints.MetadataLocation));
 
             X509Certificate2 cert = new X509Certificate2(@"Saml20\Certificates\SafewhereTest_SFS.pfx", "test1234");
             Saml20EncryptedAssertion encass = 

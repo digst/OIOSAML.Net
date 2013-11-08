@@ -133,7 +133,14 @@ namespace dk.nita.saml20.config
         {
             return IDPEndPoints.Find(delegate(IDPEndPoint ep) { return ep.Id == endPointId; });
         }
-        
+
+        /// <summary>
+        /// Initializes the config section by initializing the idp-endpoints
+        /// </summary>
+        protected override void Initialize()
+        {
+            _idpEndpoints.Initialize();
+        }
     }
 
     /// <summary>
@@ -190,8 +197,6 @@ namespace dk.nita.saml20.config
         /// </summary>
         [XmlElement("att")]
         public List<Attribute> Attributes;        
-
-
     }
 
     /// <summary>
@@ -242,22 +247,42 @@ namespace dk.nita.saml20.config
     [XmlType(Namespace = ConfigurationConstants.NamespaceUri)]
     public class IDPEndpoints
     {
+        [XmlIgnore]
+        private string _metadataLocation;
+        
+        /// <summary>
+        /// Watches the metadata location for changes
+        /// </summary>
+        private FileSystemWatcher _fileSystemWatcher;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="IDPEndpoints"/> class.
         /// </summary>
         public IDPEndpoints()
         {
             IDPEndPoints = new List<IDPEndPoint>();            
-            _fileInfo = new Dictionary<string, DateTime>();
             _fileToEntity = new Dictionary<string, string>();
-            Refresh();
         }
 
         /// <summary>
         /// The directory in which the metadata files of trusted identity providers should be found.
         /// </summary>
-        [XmlAttribute("metadata")]        
-        public string metadataLocation;
+        [XmlAttribute("metadata")]
+        public string MetadataLocation
+        {
+            get { return _metadataLocation; }
+            set 
+            {
+                if (!Path.IsPathRooted(value))
+                {
+                    _metadataLocation = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, value);
+                }
+                else
+                {
+                    _metadataLocation = value;
+                }
+            }
+        }
 
         /// <summary>
         /// The encodings that should be attempted when a metadata file does not contain an encoding attribute and 
@@ -326,78 +351,141 @@ namespace dk.nita.saml20.config
         #region Handling of metadata files 
 
         /// <summary>
-        /// A list of the files that have currently been loaded. The filename is used as key, while last seen modification time is used as value.
-        /// </summary>
-        [XmlIgnore]
-        private Dictionary<string, DateTime> _fileInfo;
-
-        /// <summary>
         /// This dictionary links a file name to the entity id of the metadata document in the file.
         /// </summary>
         [XmlIgnore] 
         private Dictionary<string, string> _fileToEntity;
 
         /// <summary>
-        /// Refreshes the information retrieved from the directory containing metadata files.
+        /// Initializes the file system watcher to watch for changes in the metadata location
         /// </summary>
-        public void Refresh()
+        private void InitializeFileSystemWatcher()
         {
-            if (metadataLocation == null)
-                return;
+            _fileSystemWatcher = new FileSystemWatcher();
+            _fileSystemWatcher.Filter = "*.*";
+            _fileSystemWatcher.Changed += new FileSystemEventHandler(_fileSystemWatcher_Changed);
+            _fileSystemWatcher.Created += new FileSystemEventHandler(_fileSystemWatcher_Changed);
+            _fileSystemWatcher.Deleted += new FileSystemEventHandler(_fileSystemWatcher_Changed);
+            _fileSystemWatcher.Renamed += new RenamedEventHandler(_fileSystemWatcher_Renamed);
+            _fileSystemWatcher.Path = _metadataLocation;
+            _fileSystemWatcher.EnableRaisingEvents = true;
+        }
 
-            if (!Directory.Exists(metadataLocation))
-                throw new DirectoryNotFoundException(Resources.MetadataLocationNotFoundFormat(metadataLocation));
+        private void _fileSystemWatcher_Renamed(object sender, RenamedEventArgs e)
+        {
+            HandleRenamedIdp(e.OldFullPath, e.FullPath);
+        }
 
-            // Start by removing information on files that are no long in the directory.
-            List<string> keys = new List<string>(_fileInfo.Keys.Count);
-            keys.AddRange(_fileInfo.Keys);
-            foreach (string file in keys)
-                if (!File.Exists(file))
-                {
-                    _fileInfo.Remove(file);
-                    if (_fileToEntity.ContainsKey(file))
-                    {
-                        IDPEndPoint endp = FindEndPoint(_fileToEntity[file]);
-                        if (endp != null)
-                            endp.metadata = null;
-                        _fileToEntity.Remove(file);
-                    }                    
-                }
-
-            // Detect added classes
-            string[] files = Directory.GetFiles(metadataLocation);
-            foreach (string file in files)
+        private void _fileSystemWatcher_Changed(object sender, FileSystemEventArgs e)
+        {
+            switch (e.ChangeType)
             {
-                Saml20MetadataDocument metadataDoc;
-                if (_fileInfo.ContainsKey(file))
+                case WatcherChangeTypes.Created:
+                    HandleCreateIdp(e.FullPath);
+                    break;
+                case WatcherChangeTypes.Changed:
+                    HandleUpdateIdp(e.FullPath);
+                    break;
+                case WatcherChangeTypes.Deleted:
+                    HandleDeleteIdp(e.FullPath);
+                    break;
+            }
+        }
+
+        private void HandleRenamedIdp(string oldFilename, string filename)
+        {
+            var metadataDoc = ParseFile(filename);
+            if (metadataDoc != null)
+            {
+                var endp = FindEndPoint(metadataDoc.EntityId);
+                if (endp != null && _fileToEntity.ContainsKey(oldFilename))
                 {
-                    if (_fileInfo[file] != File.GetLastWriteTime(file))                    
-                        metadataDoc = ParseFile(file);                                            
-                    else
-                        continue;                    
-                } else
-                {
-                    metadataDoc = ParseFile(file);
-                }
-
-                if (metadataDoc != null)
-                {
-                    IDPEndPoint endp = FindEndPoint(metadataDoc.EntityId);
-                    if (endp == null) // If the endpoint does not exist, create it.
-                    {                        
-                        endp = new IDPEndPoint();                        
-                        IDPEndPoints.Add(endp);
-                    }
-
-                    endp.Id = endp.Name = metadataDoc.EntityId; // Set some default valuDes.
-                    endp.metadata = metadataDoc;                    
-
-                    if (_fileToEntity.ContainsKey(file))
-                        _fileToEntity.Remove(file);
-
-                    _fileToEntity.Add(file, metadataDoc.EntityId);
+                    _fileToEntity.Remove(oldFilename);
+                    _fileToEntity.Add(filename, metadataDoc.EntityId);
+                    HandleUpdateIdp(filename);
                 }
             }
+        }
+
+        private void HandleDeleteIdp(string filename)
+        {
+            if (_fileToEntity.ContainsKey(filename))
+            {
+                var idpEndpoint = FindEndPoint(_fileToEntity[filename]);
+                if (idpEndpoint != null)
+                {
+                    IDPEndPoints.Remove(idpEndpoint);
+                }
+                _fileToEntity.Remove(filename);
+            }
+        }
+
+        private void HandleUpdateIdp(string filename)
+        {
+            var metadataDoc = ParseFile(filename);
+            // First we try and find the endpoint based on the entity id in the metadata
+            var endp = FindEndPoint(metadataDoc.EntityId);
+            if (endp == null && _fileToEntity.ContainsKey(filename)) 
+            {
+                // Otherwise we find it in our dictionary - this means that the entity id has been changed in the file
+                endp = FindEndPoint(_fileToEntity[filename]);
+            }
+            
+            // If we found it - we will update
+            if (endp != null)
+            {
+                endp.Id = endp.Name = metadataDoc.EntityId;
+                endp.metadata = metadataDoc;
+                _fileToEntity[filename] = metadataDoc.EntityId;
+            }
+        }
+
+        private void HandleCreateIdp(string filename)
+        {
+            if (!_fileToEntity.ContainsKey(filename))
+            {
+                var metadataDoc = ParseFile(filename);
+                var endp = FindEndPoint(metadataDoc.EntityId);
+                if (endp == null) // If the endpoint does not exist, create it.
+                {
+                    endp = new IDPEndPoint()
+                    {
+                        Id = metadataDoc.EntityId,
+                        Name = metadataDoc.EntityId,
+                        metadata = metadataDoc
+                    };
+                    IDPEndPoints.Add(endp);
+                    _fileToEntity.Add(filename, endp.Id);
+                }
+                else
+                {
+                    HandleUpdateIdp(filename);
+                }
+            }
+            else
+            {
+                HandleUpdateIdp(filename);
+            }
+        }
+
+        /// <summary>
+        /// Refreshes the information retrieved from the directory containing metadata files.
+        /// </summary>
+        internal void Initialize()
+        {
+            if (MetadataLocation == null)
+                return;
+
+            if (!Directory.Exists(MetadataLocation))
+                throw new DirectoryNotFoundException(Resources.MetadataLocationNotFoundFormat(MetadataLocation));
+
+            string[] files = Directory.GetFiles(MetadataLocation);
+            foreach (string file in files)
+            {
+                HandleCreateIdp(file);
+            }
+
+            InitializeFileSystemWatcher();
         }
 
         /// <summary>

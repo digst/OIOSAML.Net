@@ -106,8 +106,7 @@ namespace dk.nita.saml20.protocol
         public IDPEndPoint RetrieveIDP(HttpContext context)
         {
             SAML20FederationConfig config = SAML20FederationConfig.GetConfig();
-            config.Endpoints.Refresh();
-
+            
             //If idpChoice is set, use it value
             if (!string.IsNullOrEmpty(context.Request.Params[IDPChoiceParameterName]))
             {
@@ -180,7 +179,6 @@ namespace dk.nita.saml20.protocol
         public IDPEndPoint RetrieveIDPConfiguration(string IDPId)
         {
             SAML20FederationConfig config = SAML20FederationConfig.GetConfig();
-            config.Endpoints.Refresh();
             return config.FindEndPoint(IDPId);
         }
 

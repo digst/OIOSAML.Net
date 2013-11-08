@@ -127,7 +127,7 @@ namespace dk.nita.saml20.config
     /// Base class for configuration reader.
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public abstract class ConfigurationInstance<T> where T : class
+    public abstract class ConfigurationInstance<T> where T : ConfigurationInstance<T>
     {
         private static T _config;
 
@@ -144,9 +144,20 @@ namespace dk.nita.saml20.config
                 if (_config == null)
                     throw new ConfigurationErrorsException(
                         string.Format("Configuration section \"{0}\" not found", typeof (T).Name));
+
+                // Do after initialization.
+                _config.Initialize();
             }
 
             return _config;
+        }
+
+        /// <summary>
+        /// Can be used for doing further initialization after web config file has been read into memory
+        /// </summary>
+        protected virtual void Initialize()
+        {
+            // Default do nothing
         }
 
         /// <summary>

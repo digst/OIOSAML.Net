@@ -115,10 +115,6 @@
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="log4net, Version=1.2.10.0, Culture=neutral, PublicKeyToken=1b44e1d426115821, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\log4net.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.configuration" />
     <Reference Include="System.Configuration.Install" />
@@ -154,6 +150,8 @@
     <Compile Include="Bindings\HttpSOAPBindingParser.cs" />
     <Compile Include="Bindings\SOAPConstants.cs" />
     <Compile Include="Logging\AuditLogging.cs" />
+    <Compile Include="Logging\IAuditLogger.cs" />
+    <Compile Include="Logging\TraceAuditLogger.cs" />
     <Compile Include="Protocol\Saml20CDCIdPReturnPoint.cs" />
     <Compile Include="Protocol\Saml20CDCReader.cs" />
     <Compile Include="Saml20ArtifactResolve.cs" />
@@ -381,15 +379,13 @@
       <Generator>ResXFileCodeGeneratorEx</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
       <SubType>Designer</SubType>
+      <CustomToolNamespace>Saml2.Properties</CustomToolNamespace>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Saml20Resources.resx">
       <Generator>ResXFileCodeGeneratorEx</Generator>
       <LastGenOutput>Saml20Resources.Designer.cs</LastGenOutput>
       <SubType>Designer</SubType>
     </EmbeddedResource>
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="bin\log4net.dll" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Protocol\Resources\DefaultStyle.css" />
@@ -418,6 +414,9 @@
       <ProductName>Windows Installer 3.1</ProductName>
       <Install>true</Install>
     </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="bin\" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

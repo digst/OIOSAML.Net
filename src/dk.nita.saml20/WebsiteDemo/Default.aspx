@@ -8,7 +8,7 @@
         <h3>Metadata</h3>
         <p style="width: 50em;">
         The identity provider and the service provider must exchange metadata in order to establish SAML connections. 
-        <% if (string.IsNullOrEmpty(SAML20FederationConfig.GetConfig().Endpoints.metadataLocation)) { %>
+        <% if (string.IsNullOrEmpty(SAML20FederationConfig.GetConfig().Endpoints.MetadataLocation)) { %>
             You must add the <b>&lt;IDPEndPoints&gt;</b> tag to the <b>"<%= ConfigurationConstants.SectionNames.SAML20Federation %>"</b> section of the
             application's configuration file in order to continue.
         <% } else if (certificateMissing) { %>
@@ -17,7 +17,7 @@
             the certificate information in the "<%= ConfigurationConstants.SectionNames.Federation %>" section of the configuration file.
             </div>
         <% } else { %>
-            The Identity provider's metadata should be put in the directory <b>"<%= SAML20FederationConfig.GetConfig().Endpoints.metadataLocation %>"</b>.<br/><br/>
+            The Identity provider's metadata should be put in the directory <b>"<%= SAML20FederationConfig.GetConfig().Endpoints.MetadataLocation %>"</b>.<br/><br/>
             The metadata of the service provider can be downloaded <a href="metadata.ashx">here</a>.            
         <% } %>
                 

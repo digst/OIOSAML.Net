@@ -492,6 +492,9 @@ AppID={1}</value>
   <data name="UnsupportedRequestType" xml:space="preserve">
     <value>RequestType "{0}" is not supported.</value>
   </data>
+  <data name="IdPMismatchBetweenRequestAndSession" xml:space="preserve">
+    <value>IdP specified in LogoutRequest {0} does not match IdP stored in session {1}.</value>
+  </data>
   <data name="UnsupportedTokenTypeReturned" xml:space="preserve">
     <value>Token type {0} is not supported</value>
   </data>

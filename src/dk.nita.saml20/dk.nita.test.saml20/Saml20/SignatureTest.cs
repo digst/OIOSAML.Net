@@ -93,7 +93,7 @@ namespace dk.nita.test.Saml20
             bool verified = VerifySignature(token);
             Assert.That(verified);
 
-            WriteToFile(@"\signedassertion.xml", token.DocumentElement);
+            WriteToFile(@"signedassertion.xml", token.DocumentElement);
         }
 
         /// <summary>

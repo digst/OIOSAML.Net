@@ -7,9 +7,9 @@ using System.Web.UI;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("dk.nita.saml20")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("OIOSAML.NET is a. Net-based SAML 2.0 toolkit with a reference implementation that complies with the Danish OIOSAML 2.0 profile. The Toolkit can be used by service providers to be included in the joint public single sign-on federation services (NemLog-in).")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("IT- og Telestyrelsen")]
+[assembly: AssemblyCompany("Digitaliseringsstyrelsen")]
 [assembly: AssemblyProduct("dk.nita.saml20")]
 [assembly: AssemblyCopyright("")]
 [assembly: AssemblyTrademark("")]
@@ -23,8 +23,9 @@ using System.Web.UI;
 // The following GUID is for the ID of the typelib if this project is exposed to COM
 [assembly: Guid("f4f0d144-1636-403e-8b49-b2611a005b80")]
 
-[assembly: AssemblyVersion("1.7.7.0")]
-[assembly: AssemblyFileVersion("1.7.7.0")]
+[assembly: AssemblyVersion("1.7.8.0")]
+[assembly: AssemblyFileVersion("1.7.8.0")]
+[assembly: AssemblyInformationalVersion("1.7.8")]
 
 [assembly: InternalsVisibleTo("Safewhere.IntegrationTest")]
 [assembly: InternalsVisibleTo("Safewhere.UnitTest")]

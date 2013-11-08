@@ -5,8 +5,8 @@ using System.Web;
 using System.Xml;
 using dk.nita.saml20.identity;
 using dk.nita.saml20.Schema.Metadata;
-using log4net;
-using log4net.Repository.Hierarchy;
+using dk.nita.saml20.config;
+using dk.nita.saml20.Utils;
 
 namespace dk.nita.saml20.Logging
 {
@@ -16,10 +16,34 @@ namespace dk.nita.saml20.Logging
     {
         static AuditLogging()
         {
-            log4net.Config.XmlConfigurator.Configure();
+            var type = FederationConfig.GetConfig().AuditLoggingType;
+            if (!string.IsNullOrEmpty(type))
+            {
+                try
+                {
+                    var t = Type.GetType(type);
+                    if (t != null) 
+                    { 
+                        AuditLogger = (IAuditLogger)Activator.CreateInstance(t); 
+                    }
+                    else
+                    {
+                        throw new Exception(string.Format("The type {0} is not available for the audit logging. Please check the type name and assembly", type));
+                    }
+                }
+                catch (Exception e)
+                {
+                    Trace.TraceData(System.Diagnostics.TraceEventType.Critical, "Could not instantiate the configured auditLogger. Message: " + e.Message);
+                    throw;
+                }
+            }
+            else
+            {
+                AuditLogger = new TraceAuditLogger();
+            }
         }
 
-        private static ILog logger = LogManager.GetLogger("OIOSAML_AUDIT_LOGGER");
+        private static IAuditLogger AuditLogger;
         
         ///<summary>
         ///</summary>
@@ -83,7 +107,10 @@ namespace dk.nita.saml20.Logging
         ///<param name="data"></param>
         public static void logEntry(Direction dir, Operation op, string msg, string data)
         {
-            logger.Info(String.Format("Session id: {6}, Direction: {0}, Operation: {1}, User IP: {2}, Idp ID: {3}, Assertion ID: {4}, Message: {5}, Data: {7}", dir, op, HttpContext.Current.Request.UserHostAddress, IdpId, AssertionId, msg, HttpContext.Current.Session.SessionID, data != null ? data : ""));
+            var userHostAddress = HttpContext.Current != null ? HttpContext.Current.Request.UserHostAddress : "<no ip>";
+            var sessionId = HttpContext.Current != null ? HttpContext.Current.Session.SessionID : "<no session id>";
+
+            AuditLogger.LogEntry(dir, op, msg, data, userHostAddress, IdpId, AssertionId, sessionId);
         }
     }
     ///<summary>

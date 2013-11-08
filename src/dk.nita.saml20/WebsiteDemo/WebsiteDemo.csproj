@@ -94,7 +94,6 @@
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="log4net, Version=1.2.10.0, Culture=neutral, PublicKeyToken=1b44e1d426115821, processorArchitecture=MSIL" />
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -112,7 +111,9 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Default.aspx" />
-    <Content Include="Web.config" />
+    <Content Include="Web.config">
+      <SubType>Designer</SubType>
+    </Content>
     <Content Include="MyPage.aspx" />
   </ItemGroup>
   <ItemGroup>
@@ -164,6 +165,10 @@
     <Content Include="sp.Master" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\dk.nita.saml20.ext.audit.log4net\dk.nita.saml20.ext.audit.log4net.csproj">
+      <Project>{E0529CB0-9183-4768-B654-DB0F867F0E5F}</Project>
+      <Name>dk.nita.saml20.ext.audit.log4net</Name>
+    </ProjectReference>
     <ProjectReference Include="..\dk.nita.saml20\dk.nita.saml20.csproj">
       <Project>{55520059-38BB-48BB-A30E-BFD385293D78}</Project>
       <Name>dk.nita.saml20</Name>

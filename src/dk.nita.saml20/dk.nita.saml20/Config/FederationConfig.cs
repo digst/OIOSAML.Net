@@ -45,6 +45,12 @@ namespace dk.nita.saml20.config
         [XmlArrayItem("TrustedIssuers", IsNullable = false)]
         public Certificate[] TrustedIssuers;
 
+        /// <summary>
+        /// The type of the audit logging provider. Provide the fully qualified name of the type implementing the IAuditLogger interface.
+        /// </summary>
+        [XmlAttribute("auditLoggingType")]
+        public string AuditLoggingType;
+
         private ActionsConfig _actions;
 
         /// <summary>
