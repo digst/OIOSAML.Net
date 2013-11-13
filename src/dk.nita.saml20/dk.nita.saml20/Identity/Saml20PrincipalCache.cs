@@ -1,5 +1,6 @@
 ﻿using System.Web;
 using System.Security.Principal;
+using dk.nita.saml20.Session;
 using dk.nita.saml20.identity;
 
 namespace dk.nita.saml20.Identity
@@ -15,7 +16,7 @@ namespace dk.nita.saml20.Identity
         /// <param name="principal">The principal.</param>
         internal static void AddPrincipal(IPrincipal principal)
         {
-            HttpContext.Current.Session[typeof (Saml20Identity).FullName] = principal;
+            SessionFactory.Session[SessionConstants.Saml20Identity] = principal;
         }
 
         /// <summary>
@@ -24,7 +25,7 @@ namespace dk.nita.saml20.Identity
         /// <returns></returns>
         internal static IPrincipal GetPrincipal()
         {
-            return HttpContext.Current.Session[typeof(Saml20Identity).FullName] as GenericPrincipal;
+            return (IPrincipal) SessionFactory.Session[SessionConstants.Saml20Identity];
         }
 
         /// <summary>
@@ -32,7 +33,7 @@ namespace dk.nita.saml20.Identity
         /// </summary>
         internal static void Clear()
         {
-            HttpContext.Current.Session.Remove(typeof(Saml20Identity).FullName);
+            SessionFactory.Session.InvalidateKey(SessionConstants.Saml20Identity);
         }
     }
 }

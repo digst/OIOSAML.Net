@@ -8,6 +8,7 @@ using System.Web;
 using System.Xml;
 using dk.nita.saml20;
 using dk.nita.saml20.Bindings;
+using dk.nita.saml20.Session;
 using dk.nita.saml20.config;
 using dk.nita.saml20.identity;
 using dk.nita.saml20.Properties;
@@ -116,7 +117,7 @@ namespace dk.nita.saml20
         public void PerformQuery(HttpContext context)
         {
             SAML20FederationConfig config = SAML20FederationConfig.GetConfig();
-            string endpointId = context.Session[Saml20AbstractEndpointHandler.IDPLoginSessionKey].ToString();
+            string endpointId = SessionFactory.Session[SessionConstants.LoginIdpId].ToString();
 
             if (string.IsNullOrEmpty(endpointId))
             {
@@ -139,7 +140,7 @@ namespace dk.nita.saml20
         /// <param name="endPoint">The IdP to perform the query against.</param>
         public void PerformQuery(HttpContext context, IDPEndPoint endPoint)
         {
-            string nameIdFormat = context.Session[Saml20AbstractEndpointHandler.IDPNameIdFormat].ToString();
+            string nameIdFormat = SessionFactory.Session[SessionConstants.IdpNameIdFormat].ToString();
             if(string.IsNullOrEmpty(nameIdFormat))
                 nameIdFormat = Saml20Constants.NameIdentifierFormats.Persistent;
             PerformQuery(context, endPoint, nameIdFormat);

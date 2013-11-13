@@ -43,10 +43,11 @@ namespace dk.nita.saml20.Utils
         /// Usually not called directly, but called from IDPEndPoint.GetIDPLoginUrl()
         /// </summary>
         /// <param name="idpId">Id of IDP that an authentication URL is needed for</param>
+        /// <param name="forceAuthn">Specifies wether or not the user is forced to login even if the user is already logged in.</param>
         /// <returns>A URL that can be used for logging in at the IDP</returns>
-        public static string GetIDPLoginUrl(string idpId)
+        public static string GetIDPLoginUrl(string idpId, bool forceAuthn)
         {
-            return string.Format("{0}?{1}={2}", SAML20FederationConfig.GetConfig().ServiceProvider.SignOnEndpoint.localPath, Saml20SignonHandler.IDPChoiceParameterName, HttpUtility.UrlEncode(idpId));
+            return string.Format("{0}?{1}={2}&{3}={4}", SAML20FederationConfig.GetConfig().ServiceProvider.SignOnEndpoint.localPath, Saml20SignonHandler.IDPChoiceParameterName, HttpUtility.UrlEncode(idpId), Saml20SignonHandler.ForceAuthenticationName, forceAuthn.ToString());
         }
     }
 }

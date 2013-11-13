@@ -6,14 +6,13 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Security.Cryptography.Xml;
 using System.Text;
-using System.Threading;
 using System.Web;
 using System.Web.Caching;
 using System.Xml;
 using dk.nita.saml20.Actions;
 using dk.nita.saml20.Bindings;
+using dk.nita.saml20.Session;
 using dk.nita.saml20.config;
-using dk.nita.saml20.identity;
 using dk.nita.saml20.Logging;
 using dk.nita.saml20.Properties;
 using dk.nita.saml20.protocol.pages;
@@ -33,11 +32,6 @@ namespace dk.nita.saml20.protocol
     public class Saml20SignonHandler : Saml20AbstractEndpointHandler
     {
         private readonly X509Certificate2  _certificate;
-
-        /// <summary>
-        /// Session key used to save the current message id with the purpose of preventing replay attacks
-        /// </summary>
-        public const string ExpectedInResponseToSessionKey = "ExpectedInResponseTo";
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Saml20SignonHandler"/> class.
@@ -68,6 +62,8 @@ namespace dk.nita.saml20.protocol
         protected override void Handle(HttpContext context)
         {
             Trace.TraceMethodCalled(GetType(), "Handle()");
+
+            
 
             //Some IdP's are known to fail to set an actual value in the SOAPAction header
             //so we just check for the existence of the header field.
@@ -188,8 +184,8 @@ namespace dk.nita.saml20.protocol
 
             // See if the "ReturnUrl" - parameter is set.
             string returnUrl = context.Request.QueryString["ReturnUrl"];
-            if (!string.IsNullOrEmpty(returnUrl))            
-                context.Session["RedirectUrl"] = returnUrl;            
+            if (!string.IsNullOrEmpty(returnUrl))
+                SessionFactory.Session[SessionConstants.RedirectUrl] = returnUrl;            
 
             IDPEndPoint idpEndpoint = RetrieveIDP(context);
 
@@ -317,7 +313,7 @@ namespace dk.nita.saml20.protocol
 
         private static void CheckReplayAttack(HttpContext context, string inResponseTo)
         {
-            var expectedInResponseToSessionState = context.Session[ExpectedInResponseToSessionKey];
+            var expectedInResponseToSessionState = SessionFactory.Session[SessionConstants.ExpectedInResponseTo];
             if (expectedInResponseToSessionState == null)
                 throw new Saml20Exception("Your session has been disconnected, please logon again");
 
@@ -524,10 +520,10 @@ namespace dk.nita.saml20.protocol
         private void DoLogin(HttpContext context, Saml20Assertion assertion)
         {
             //User is now logged in at IDP specified in tmp
-            context.Session[IDPLoginSessionKey] = context.Session[IDPTempSessionKey];
-            context.Session[IDPSessionIdKey] = assertion.SessionIndex;
-            context.Session[IDPNameIdFormat] = assertion.Subject.Format;
-            context.Session[IDPNameId] = assertion.Subject.Value;
+            SessionFactory.Session[SessionConstants.LoginIdpId] = SessionFactory.Session[SessionConstants.TempIdpId];
+            SessionFactory.Session[SessionConstants.IdpSessionId] = assertion.SessionIndex;
+            SessionFactory.Session[SessionConstants.IdpNameIdFormat] = assertion.Subject.Format;
+            SessionFactory.Session[SessionConstants.IdpNameId] = assertion.Subject.Value;
 
             if(Trace.ShouldTrace(TraceEventType.Information))
             {
@@ -566,7 +562,7 @@ namespace dk.nita.saml20.protocol
             AuditLogging.IdpId = idpEndpoint.Id;
 
             //Set the last IDP we attempted to login at.
-            context.Session[IDPTempSessionKey]= idpEndpoint.Id;
+            SessionFactory.Session[SessionConstants.TempIdpId] = idpEndpoint.Id;
 
             // Determine which endpoint to use from the configuration file or the endpoint metadata.
             IDPEndPointElement destination = 
@@ -579,23 +575,22 @@ namespace dk.nita.saml20.protocol
             if (idpEndpoint.ForceAuthn)
                 request.ForceAuthn = true;
 
-            object isPassiveFlag = context.Session[IDPIsPassive];
+            object isPassiveFlag = SessionFactory.Session[SessionConstants.IdpIsPassive];
 
             if (isPassiveFlag != null && (bool)isPassiveFlag)
             {
                 request.IsPassive = true;
-                context.Session[IDPIsPassive] = null;
+                SessionFactory.Session.InvalidateKey(SessionConstants.IdpIsPassive);
             }
 
             if (idpEndpoint.IsPassive)
                 request.IsPassive = true;
 
-            object forceAuthnFlag = context.Session[IDPForceAuthn];
-
-            if (forceAuthnFlag != null && (bool)forceAuthnFlag)
+            bool forceAuthn;
+            string forceAuthnAsString = context.Request.Params[ForceAuthenticationName];
+            if (bool.TryParse(forceAuthnAsString, out forceAuthn))
             {
-                request.ForceAuthn = true;
-                context.Session[IDPForceAuthn] = null;
+                request.ForceAuthn = forceAuthn;
             }
 
             if (idpEndpoint.SSOEndpoint != null)
@@ -607,7 +602,7 @@ namespace dk.nita.saml20.protocol
             }
 
             //Save request message id to session
-            context.Session.Add(ExpectedInResponseToSessionKey, request.ID);
+            SessionFactory.Session[SessionConstants.ExpectedInResponseTo] = request.ID;
 
             if (destination.Binding == SAMLBinding.REDIRECT)
             {

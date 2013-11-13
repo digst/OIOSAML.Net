@@ -1,5 +1,6 @@
 ﻿using System.Web;
 using System.Web.Security;
+using dk.nita.saml20.Session;
 using dk.nita.saml20.identity;
 using dk.nita.saml20.protocol;
 using System.Security.Principal;
@@ -27,7 +28,7 @@ namespace dk.nita.saml20.Actions
         public void LoginAction(AbstractEndpointHandler handler, HttpContext context, Saml20Assertion assertion)
         {
             Saml20SignonHandler signonhandler = (Saml20SignonHandler)handler;
-            IPrincipal prince = Saml20Identity.InitSaml20Identity(assertion, signonhandler.RetrieveIDPConfiguration((string)context.Session[Saml20AbstractEndpointHandler.IDPTempSessionKey]));
+            IPrincipal prince = Saml20Identity.InitSaml20Identity(assertion, signonhandler.RetrieveIDPConfiguration(SessionFactory.Session[SessionConstants.LoginIdpId].ToString()));
 
             Saml20PrincipalCache.AddPrincipal(prince);
 

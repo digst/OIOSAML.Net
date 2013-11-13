@@ -24,6 +24,10 @@ namespace dk.nita.saml20.protocol
         /// </summary>
         public const string IDPChoiceParameterName = "cidp";
         /// <summary>
+        /// Parameter name for idp choice
+        /// </summary>
+        public const string ForceAuthenticationName = "forceAuthn";
+        /// <summary>
         /// Key used to save login session
         /// </summary>
         public const string IDPLoginSessionKey = "LoginIDPId";
@@ -35,11 +39,6 @@ namespace dk.nita.saml20.protocol
         /// Key used to save SessionId
         /// </summary>
         public const string IDPSessionIdKey = "IDPSessionID";
-
-        /// <summary>
-        /// Key used to override ForceAuthn setting
-        /// </summary>
-        public const string IDPForceAuthn = "IDPForceAuthn";
 
         /// <summary>
         /// Key used to override IsPassive setting
