@@ -132,7 +132,7 @@ namespace dk.nita.saml20.protocol
                 var redirectUrl = (string) currentSession[SessionConstants.RedirectUrl];
                 if (!string.IsNullOrEmpty(redirectUrl))
                 {
-                    // currentSession.Remove(SessionConstants.RedirectUrl);
+                    currentSession.Remove(SessionConstants.RedirectUrl);
                     context.Response.Redirect(redirectUrl);
                     return;
                 }

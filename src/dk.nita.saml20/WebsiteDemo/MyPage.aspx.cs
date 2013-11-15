@@ -33,17 +33,17 @@ namespace WebsiteDemo
 
         protected void Btn_Relogin_Click(object sender, EventArgs e)
         {
-            Response.Redirect("/demo/login.ashx?" + Saml20SignonHandler.IDPForceAuthn + "=true");
+            Response.Redirect("/demo/login.ashx?" + Saml20SignonHandler.IDPForceAuthn + "=true&ReturnUrl=" + HttpContext.Current.Request.Url.AbsolutePath);
         }
 
         protected void Btn_Passive_Click(object sender, EventArgs e)
         {
-            Response.Redirect("/demo/login.ashx?" + Saml20SignonHandler.IDPIsPassive + "=true");
+            Response.Redirect("/demo/login.ashx?" + Saml20SignonHandler.IDPIsPassive + "=true&ReturnUrl=" + HttpContext.Current.Request.Url.AbsolutePath);
         }
 
         protected void Btn_ReloginNoForceAuthn_Click(object sender, EventArgs e)
         {
-            Response.Redirect("/demo/login.ashx");
+            Response.Redirect("/demo/login.ashx?ReturnUrl=" + HttpContext.Current.Request.Url.AbsolutePath);
         }
 
         protected void Btn_Logoff_Click(object sender, EventArgs e)
