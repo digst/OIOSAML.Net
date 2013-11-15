@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Web;
+using dk.nita.saml20.Identity;
 using dk.nita.saml20.Session;
 using dk.nita.saml20.config;
 using dk.nita.saml20.protocol;
@@ -32,7 +33,7 @@ namespace dk.nita.saml20.Actions
         /// <param name="assertion">The saml assertion of the currently logged in user.</param>
         public void LoginAction(AbstractEndpointHandler handler, HttpContext context, Saml20Assertion assertion)
         {
-            string idpKey = SessionFactory.Session[SessionConstants.LoginIdpId].ToString();
+            string idpKey = Saml20PrincipalCache.GetSaml20Assertion().Issuer;
             Saml20SignonHandler h = (Saml20SignonHandler) handler;
             IDPEndPoint ep = h.RetrieveIDPConfiguration(idpKey);
             if (ep.CDC.ExtraSettings != null)

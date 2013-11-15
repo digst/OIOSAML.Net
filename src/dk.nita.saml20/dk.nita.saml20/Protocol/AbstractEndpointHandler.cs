@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 using System.Threading;
@@ -110,7 +111,7 @@ namespace dk.nita.saml20.protocol
         private string _redirectUrl;
 
         /// <summary>
-        /// Gets or sets the redirect URL.
+        /// Gets or sets the default redirect URL.
         /// </summary>
         /// <value>The redirect URL.</value>
         public string RedirectUrl
@@ -125,18 +126,20 @@ namespace dk.nita.saml20.protocol
         /// <param name="context">The context.</param>
         public void DoRedirect(HttpContext context)
         {
-            string redirectUrl = (string) SessionFactory.Session[SessionConstants.RedirectUrl];
-            if (!string.IsNullOrEmpty(redirectUrl))
+            IDictionary<string, object> currentSession = SessionFactory.Sessions.Current;
+            if (currentSession != null)
             {
-                SessionFactory.Session.InvalidateKey(SessionConstants.RedirectUrl);
-                context.Response.Redirect(redirectUrl);
-            } else if(string.IsNullOrEmpty(RedirectUrl))
-            {
-                context.Response.Redirect("~/");
-            }else
-            {
-                context.Response.Redirect(RedirectUrl);
+                var redirectUrl = (string) currentSession[SessionConstants.RedirectUrl];
+                if (!string.IsNullOrEmpty(redirectUrl))
+                {
+                    // currentSession.Remove(SessionConstants.RedirectUrl);
+                    context.Response.Redirect(redirectUrl);
+                    return;
+                }
             }
+
+            // Use default redirect url
+            context.Response.Redirect(string.IsNullOrEmpty(RedirectUrl) ? "~/" : RedirectUrl);
         }
     }
 }

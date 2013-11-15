@@ -33,7 +33,12 @@ namespace WebsiteDemo
 
         protected void Btn_Relogin_Click(object sender, EventArgs e)
         {
-            Response.Redirect("/demo/login.ashx?" + Saml20SignonHandler.ForceAuthenticationName + "=true");
+            Response.Redirect("/demo/login.ashx?" + Saml20SignonHandler.IDPForceAuthn + "=true");
+        }
+
+        protected void Btn_Passive_Click(object sender, EventArgs e)
+        {
+            Response.Redirect("/demo/login.ashx?" + Saml20SignonHandler.IDPIsPassive + "=true");
         }
 
         protected void Btn_ReloginNoForceAuthn_Click(object sender, EventArgs e)

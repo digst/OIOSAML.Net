@@ -126,7 +126,7 @@ namespace dk.nita.saml20.protocol
                 {
                     HandleError(context, "Invalid Saml message signature");
                     AuditLogging.logEntry(Direction.IN, Operation.ARTIFACTRESOLVE, "Could not verify signature", parser.SamlMessage);
-                };
+                }
                 builder.RespondToArtifactResolve(parser.ArtifactResolve);
             }else if(parser.IsArtifactResponse())
             {
@@ -185,7 +185,7 @@ namespace dk.nita.saml20.protocol
             // See if the "ReturnUrl" - parameter is set.
             string returnUrl = context.Request.QueryString["ReturnUrl"];
             if (!string.IsNullOrEmpty(returnUrl))
-                SessionFactory.Session[SessionConstants.RedirectUrl] = returnUrl;            
+                SessionFactory.Sessions.Current[SessionConstants.RedirectUrl] = returnUrl;            
 
             IDPEndPoint idpEndpoint = RetrieveIDP(context);
 
@@ -313,7 +313,7 @@ namespace dk.nita.saml20.protocol
 
         private static void CheckReplayAttack(HttpContext context, string inResponseTo)
         {
-            var expectedInResponseToSessionState = SessionFactory.Session[SessionConstants.ExpectedInResponseTo];
+            var expectedInResponseToSessionState = SessionFactory.Sessions.Current[SessionConstants.ExpectedInResponseTo];
             if (expectedInResponseToSessionState == null)
                 throw new Saml20Exception("Your session has been disconnected, please logon again");
 
@@ -520,19 +520,12 @@ namespace dk.nita.saml20.protocol
         private void DoLogin(HttpContext context, Saml20Assertion assertion)
         {
             //User is now logged in at IDP specified in tmp
-            SessionFactory.Session[SessionConstants.LoginIdpId] = SessionFactory.Session[SessionConstants.TempIdpId];
-            SessionFactory.Session[SessionConstants.IdpSessionId] = assertion.SessionIndex;
-            SessionFactory.Session[SessionConstants.IdpNameIdFormat] = assertion.Subject.Format;
-            SessionFactory.Session[SessionConstants.IdpNameId] = assertion.Subject.Value;
-
+            SessionFactory.Sessions.Current[SessionConstants.Saml20Assertion] = assertion;
+            
             if(Trace.ShouldTrace(TraceEventType.Information))
             {
                 Trace.TraceData(TraceEventType.Information, string.Format(Tracing.Login, assertion.Subject.Value, assertion.SessionIndex, assertion.Subject.Format));
             }
-
-            string inResponseTo = "(unknown)";
-            if (assertion.GetSubjectConfirmationData() != null && assertion.GetSubjectConfirmationData().InResponseTo != null)
-                inResponseTo = assertion.GetSubjectConfirmationData().InResponseTo;
 
             string assuranceLevel = "(unknown)";
             foreach(var attribute in assertion.Attributes)
@@ -561,9 +554,6 @@ namespace dk.nita.saml20.protocol
             AuditLogging.AssertionId = request.ID;
             AuditLogging.IdpId = idpEndpoint.Id;
 
-            //Set the last IDP we attempted to login at.
-            SessionFactory.Session[SessionConstants.TempIdpId] = idpEndpoint.Id;
-
             // Determine which endpoint to use from the configuration file or the endpoint metadata.
             IDPEndPointElement destination = 
                 DetermineEndpointConfiguration(SAMLBinding.REDIRECT, idpEndpoint.SSOEndpoint, idpEndpoint.metadata.SSOEndpoints());
@@ -572,26 +562,25 @@ namespace dk.nita.saml20.protocol
     
             request.Destination = destination.Url;
 
-            if (idpEndpoint.ForceAuthn)
-                request.ForceAuthn = true;
-
-            object isPassiveFlag = SessionFactory.Session[SessionConstants.IdpIsPassive];
-
-            if (isPassiveFlag != null && (bool)isPassiveFlag)
+            bool isPassive;
+            string isPassiveAsString = context.Request.Params[IDPIsPassive];
+            if (bool.TryParse(isPassiveAsString, out isPassive))
             {
-                request.IsPassive = true;
-                SessionFactory.Session.InvalidateKey(SessionConstants.IdpIsPassive);
+                request.IsPassive = isPassive;
             }
 
             if (idpEndpoint.IsPassive)
                 request.IsPassive = true;
 
             bool forceAuthn;
-            string forceAuthnAsString = context.Request.Params[ForceAuthenticationName];
+            string forceAuthnAsString = context.Request.Params[IDPForceAuthn];
             if (bool.TryParse(forceAuthnAsString, out forceAuthn))
             {
                 request.ForceAuthn = forceAuthn;
             }
+
+            if (idpEndpoint.ForceAuthn)
+                request.ForceAuthn = true;
 
             if (idpEndpoint.SSOEndpoint != null)
             {
@@ -602,7 +591,7 @@ namespace dk.nita.saml20.protocol
             }
 
             //Save request message id to session
-            SessionFactory.Session[SessionConstants.ExpectedInResponseTo] = request.ID;
+            SessionFactory.Sessions.Current[SessionConstants.ExpectedInResponseTo] = request.ID;
 
             if (destination.Binding == SAMLBinding.REDIRECT)
             {

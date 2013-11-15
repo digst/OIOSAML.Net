@@ -1,4 +1,4 @@
-﻿using System.Web;
+﻿using System.Collections.Generic;
 using System.Security.Principal;
 using dk.nita.saml20.Session;
 using dk.nita.saml20.identity;
@@ -11,29 +11,30 @@ namespace dk.nita.saml20.Identity
     internal class Saml20PrincipalCache
     {
         /// <summary>
-        /// Adds the principal.
+        /// Gets the principal.
         /// </summary>
-        /// <param name="principal">The principal.</param>
-        internal static void AddPrincipal(IPrincipal principal)
+        /// <returns></returns>
+        internal static IPrincipal GetPrincipal()
         {
-            SessionFactory.Session[SessionConstants.Saml20Identity] = principal;
+            var saml20Assertion = GetSaml20Assertion();
+            if (saml20Assertion != null)
+                return Saml20Identity.InitSaml20Identity(saml20Assertion);
+            return null;
         }
 
         /// <summary>
         /// Gets the principal.
         /// </summary>
         /// <returns></returns>
-        internal static IPrincipal GetPrincipal()
+        internal static Saml20Assertion GetSaml20Assertion()
         {
-            return (IPrincipal) SessionFactory.Session[SessionConstants.Saml20Identity];
-        }
+            IDictionary<string, object> session = SessionFactory.Sessions.Current;
 
-        /// <summary>
-        /// Clears this instance.
-        /// </summary>
-        internal static void Clear()
-        {
-            SessionFactory.Session.InvalidateKey(SessionConstants.Saml20Identity);
+            if (session != null)
+            {
+                return session[SessionConstants.Saml20Assertion] as Saml20Assertion;
+            }
+            return null;
         }
     }
 }

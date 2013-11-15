@@ -136,7 +136,6 @@
   <ItemGroup>
     <Compile Include="Actions\Actions.cs" />
     <Compile Include="Actions\CDCRedirectAction.cs" />
-    <Compile Include="Actions\SessionAction.cs" />
     <Compile Include="Actions\IAction.cs" />
     <Compile Include="Actions\RedirectAction.cs" />
     <Compile Include="Actions\SamlPrincipalAction.cs" />
@@ -290,12 +289,13 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Tracing.resx</DependentUpon>
     </Compile>
-    <Compile Include="Session\AbstractSession.cs" />
-    <Compile Include="Session\InProcSession.cs" />
-    <Compile Include="Session\ISession.cs" />
+    <Compile Include="Session\AbstractSessions.cs" />
+    <Compile Include="Session\InProcSessions.cs" />
+    <Compile Include="Session\ISessions.cs" />
     <Compile Include="Session\SessionConstants.cs" />
     <Compile Include="Session\SessionFactory.cs" />
     <Compile Include="Session\SessionHttpModule.cs" />
+    <Compile Include="Session\SessionStateUtil.cs" />
     <Compile Include="Specification\DefaultCertificateSpecification.cs" />
     <Compile Include="Specification\ICertificateSpecification.cs" />
     <Compile Include="Specification\SelfIssuedCertificateSpecification.cs" />
