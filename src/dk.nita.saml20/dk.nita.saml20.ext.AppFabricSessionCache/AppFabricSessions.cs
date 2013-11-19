@@ -19,7 +19,7 @@ namespace dk.nita.saml20.ext.appfabricsessioncache
                 DataCache sessions = CacheFactory.GetDefaultCache();
                 if (SessionId.HasValue && sessions.Get(SessionId.ToString()) != null)
                 {
-                    sessions.ResetObjectTimeout(SessionId.ToString(), new TimeSpan(0, 0, 30, 0)); // Needed in order to simluate sliding expiration
+                    sessions.ResetObjectTimeout(SessionId.ToString(), new TimeSpan(0, 0, SessionTimeout, 0)); // Needed in order to simluate sliding expiration
                     return new AppFabricSession(SessionId.Value);
                 }
                 return null;
