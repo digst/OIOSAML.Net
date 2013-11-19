@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Threading;
 using System.Web;
-using dk.nita.saml20.Session;
+using dk.nita.saml20.session;
 using dk.nita.saml20.config;
 using System.Web.SessionState;
 using dk.nita.saml20.protocol.pages;
@@ -126,7 +126,7 @@ namespace dk.nita.saml20.protocol
         /// <param name="context">The context.</param>
         public void DoRedirect(HttpContext context)
         {
-            IDictionary<string, object> currentSession = SessionFactory.Sessions.Current;
+            ISession currentSession = SessionFactory.Sessions.Current;
             if (currentSession != null)
             {
                 var redirectUrl = (string) currentSession[SessionConstants.RedirectUrl];

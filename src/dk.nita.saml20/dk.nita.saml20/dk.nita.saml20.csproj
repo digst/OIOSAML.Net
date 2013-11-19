@@ -290,8 +290,11 @@
       <DependentUpon>Tracing.resx</DependentUpon>
     </Compile>
     <Compile Include="Session\AbstractSessions.cs" />
-    <Compile Include="Session\InProcSessions.cs" />
+    <Compile Include="Session\InProc\InProcSessions.cs" />
+    <Compile Include="Session\InProc\InProcSession.cs" />
+    <Compile Include="Session\ISession.cs" />
     <Compile Include="Session\ISessions.cs" />
+    <Compile Include="Session\Saml20AssertionLite.cs" />
     <Compile Include="Session\SessionConstants.cs" />
     <Compile Include="Session\SessionFactory.cs" />
     <Compile Include="Session\SessionHttpModule.cs" />

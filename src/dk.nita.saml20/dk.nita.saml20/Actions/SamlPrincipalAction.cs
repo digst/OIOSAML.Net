@@ -1,6 +1,6 @@
 ﻿using System.Web;
 using System.Web.Security;
-using dk.nita.saml20.Session;
+using dk.nita.saml20.session;
 using dk.nita.saml20.identity;
 using dk.nita.saml20.protocol;
 using System.Security.Principal;

@@ -12,6 +12,7 @@ using System.Xml;
 using dk.nita.saml20.Actions;
 using dk.nita.saml20.Bindings;
 using dk.nita.saml20.Session;
+using dk.nita.saml20.session;
 using dk.nita.saml20.config;
 using dk.nita.saml20.Logging;
 using dk.nita.saml20.Properties;
@@ -520,7 +521,7 @@ namespace dk.nita.saml20.protocol
         private void DoLogin(HttpContext context, Saml20Assertion assertion)
         {
             //User is now logged in at IDP specified in tmp
-            SessionFactory.Sessions.Current[SessionConstants.Saml20Assertion] = assertion;
+            SessionFactory.Sessions.Current[SessionConstants.Saml20AssertionLite] = Saml20AssertionLite.ToLite(assertion);
             
             if(Trace.ShouldTrace(TraceEventType.Information))
             {

@@ -1,7 +1,7 @@
 using System;
 using System.Web;
 using System.Web.UI;
-using dk.nita.saml20.Session;
+using dk.nita.saml20.session;
 using dk.nita.saml20.config;
 using dk.nita.saml20.identity;
 using dk.nita.saml20.Logging;

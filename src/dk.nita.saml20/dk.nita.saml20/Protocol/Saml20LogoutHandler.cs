@@ -8,6 +8,7 @@ using System.Xml;
 using dk.nita.saml20.Bindings;
 using dk.nita.saml20.Identity;
 using dk.nita.saml20.Session;
+using dk.nita.saml20.session;
 using dk.nita.saml20.config;
 using dk.nita.saml20.Logging;
 using dk.nita.saml20.Properties;
@@ -80,10 +81,10 @@ namespace dk.nita.saml20.protocol
                 else
                 {
                     IDPEndPoint idpEndpoint = null;
-                    Saml20Assertion saml20Assertion = Saml20PrincipalCache.GetSaml20Assertion();
-                    if (saml20Assertion != null)
+                    Saml20AssertionLite saml20AssertionLite = Saml20PrincipalCache.GetSaml20AssertionLite();
+                    if (saml20AssertionLite != null)
                     {
-                        idpEndpoint = RetrieveIDPConfiguration(saml20Assertion.Issuer);
+                        idpEndpoint = RetrieveIDPConfiguration(saml20AssertionLite.Issuer);
                     }
 
                     if (idpEndpoint == null)
@@ -165,8 +166,8 @@ namespace dk.nita.saml20.protocol
                     LogoutRequest req = Serialization.DeserializeFromXmlString<LogoutRequest>(parser.ArtifactResponse.Any.OuterXml);
                     response.StatusCode = Saml20Constants.StatusCodes.Success;
                     response.InResponseTo = req.ID;
-                    Saml20Assertion saml20Assertion = Saml20PrincipalCache.GetSaml20Assertion();
-                    IDPEndPoint endpoint = RetrieveIDPConfiguration(saml20Assertion.Issuer);
+                    Saml20AssertionLite saml20AssertionLite = Saml20PrincipalCache.GetSaml20AssertionLite();
+                    IDPEndPoint endpoint = RetrieveIDPConfiguration(saml20AssertionLite.Issuer);
                     IDPEndPointElement destination =
                         DetermineEndpointConfiguration(SAMLBinding.REDIRECT, endpoint.SLOEndpoint, endpoint.metadata.SLOEndpoints());
 
@@ -235,15 +236,15 @@ namespace dk.nita.saml20.protocol
             
             request.Destination = destination.Url;
 
-            request.SubjectToLogOut.Format = Saml20PrincipalCache.GetSaml20Assertion().Subject.Format;
+            request.SubjectToLogOut.Format = Saml20PrincipalCache.GetSaml20AssertionLite().Subject.Format;
             
             if (destination.Binding == SAMLBinding.POST)
             {
                 HttpPostBindingBuilder builder = new HttpPostBindingBuilder(destination);
                 request.Destination = destination.Url;
                 request.Reason = Saml20Constants.Reasons.User;
-                request.SubjectToLogOut.Value = Saml20PrincipalCache.GetSaml20Assertion().Subject.Value;
-                request.SessionIndex = Saml20PrincipalCache.GetSaml20Assertion().SessionIndex;
+                request.SubjectToLogOut.Value = Saml20PrincipalCache.GetSaml20AssertionLite().Subject.Value;
+                request.SessionIndex = Saml20PrincipalCache.GetSaml20AssertionLite().SessionIndex;
                 XmlDocument requestDocument = request.GetXml();
                 XmlSignatureUtils.SignDocument(requestDocument, request.ID);
                 builder.Request = requestDocument.OuterXml;
@@ -263,8 +264,8 @@ namespace dk.nita.saml20.protocol
                 builder.signingKey = FederationConfig.GetConfig().SigningCertificate.GetCertificate().PrivateKey;
                 request.Destination = destination.Url;
                 request.Reason = Saml20Constants.Reasons.User;
-                request.SubjectToLogOut.Value = Saml20PrincipalCache.GetSaml20Assertion().Subject.Value;
-                request.SessionIndex = Saml20PrincipalCache.GetSaml20Assertion().SessionIndex;
+                request.SubjectToLogOut.Value = Saml20PrincipalCache.GetSaml20AssertionLite().Subject.Value;
+                request.SessionIndex = Saml20PrincipalCache.GetSaml20AssertionLite().SessionIndex;
                 builder.Request = request.GetXml().OuterXml;
                 
                 string redirectUrl = destination.Url + "?" + builder.ToQuery();
@@ -284,8 +285,8 @@ namespace dk.nita.saml20.protocol
 
                 request.Destination = destination.Url;
                 request.Reason = Saml20Constants.Reasons.User;
-                request.SubjectToLogOut.Value = Saml20PrincipalCache.GetSaml20Assertion().Subject.Value;
-                request.SessionIndex = Saml20PrincipalCache.GetSaml20Assertion().SessionIndex;
+                request.SubjectToLogOut.Value = Saml20PrincipalCache.GetSaml20AssertionLite().Subject.Value;
+                request.SessionIndex = Saml20PrincipalCache.GetSaml20AssertionLite().SessionIndex;
 
                 HttpArtifactBindingBuilder builder = new HttpArtifactBindingBuilder(context);
                 AuditLogging.logEntry(Direction.OUT, Operation.LOGOUTREQUEST, "Method: Artifact");
@@ -500,7 +501,7 @@ namespace dk.nita.saml20.protocol
             string idpRequest = logoutRequest.Issuer.Value;
             if (SessionFactory.Sessions.Current != null)
             {
-                object idpId = Saml20PrincipalCache.GetSaml20Assertion().Issuer;
+                object idpId = Saml20PrincipalCache.GetSaml20AssertionLite().Issuer;
             
                 if (idpId != null && idpId.ToString() != idpRequest)
                 {

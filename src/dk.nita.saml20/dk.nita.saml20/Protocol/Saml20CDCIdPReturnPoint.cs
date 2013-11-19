@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Web;
-using dk.nita.saml20.Session;
+using dk.nita.saml20.session;
 using dk.nita.saml20.config;
 using dk.nita.saml20.protocol;
 using dk.nita.saml20.Utils;

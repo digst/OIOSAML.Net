@@ -5,6 +5,7 @@ using System.Security.Principal;
 using System.Threading;
 using System.Web;
 using System.Web.Security;
+using dk.nita.saml20.Session;
 using dk.nita.saml20.config;
 using dk.nita.saml20.Schema.Core;
 using dk.nita.saml20.Identity;
@@ -77,7 +78,7 @@ namespace dk.nita.saml20.identity
         /// <summary>
         /// This method converts the received Saml assertion into a .Net principal.
         /// </summary>
-        internal static IPrincipal InitSaml20Identity(Saml20Assertion assertion)
+        internal static IPrincipal InitSaml20Identity(Saml20AssertionLite assertion)
         {
             // Find IDPEndPoint
             IDPEndPoint point = SAML20FederationConfig.GetConfig().FindEndPoint(assertion.Issuer);
