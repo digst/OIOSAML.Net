@@ -18,7 +18,7 @@ namespace dk.nita.saml20.ext.appfabricsessioncache
         {
             get
             {
-                DataCache sessions = CacheFactory.GetDefaultCache();
+                DataCache sessions = CacheFactory.GetCache(AppFabricSessions.CacheName);
                 var session = sessions.Get(Id.ToString()) as IDictionary<string, object>;
                 if (session != null && session.ContainsKey(key))
                     return session[key];
@@ -27,7 +27,7 @@ namespace dk.nita.saml20.ext.appfabricsessioncache
             }
             set
             {
-                DataCache sessions = CacheFactory.GetDefaultCache();
+                DataCache sessions = CacheFactory.GetCache(AppFabricSessions.CacheName);
                 var session = sessions.Get(Id.ToString()) as IDictionary<string, object>;
                 if (session != null)
                 {
@@ -41,7 +41,7 @@ namespace dk.nita.saml20.ext.appfabricsessioncache
 
         public void Remove(string key)
         {
-            DataCache sessions = CacheFactory.GetDefaultCache();
+            DataCache sessions = CacheFactory.GetCache(AppFabricSessions.CacheName);
             var session = sessions.Get(Id.ToString()) as IDictionary<string, object>;
             if (session != null)
             {

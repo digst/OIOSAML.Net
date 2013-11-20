@@ -12,10 +12,19 @@ namespace dk.nita.saml20.ext.appfabricsessioncache
         // Use configuration from the application configuration file.
         private static readonly DataCacheFactory CacheFactory = new DataCacheFactory();
 
+        public static string CacheName;
+
+        static AppFabricSessions()
+        {
+            CacheName = System.Configuration.ConfigurationManager.AppSettings["CacheName"];
+            if(CacheName == null)
+                throw new InvalidOperationException("Not able to initialize AppFabricSessions because no app setting with key CacheName was found.");
+        }
+
         protected override ISession GetSession()
         {
             ISession session = null;
-            DataCache sessions = CacheFactory.GetDefaultCache();
+            DataCache sessions = CacheFactory.GetCache(CacheName);
             if (SessionId.HasValue && sessions.Get(SessionId.ToString()) != null)
             {
                 sessions.ResetObjectTimeout(SessionId.ToString(), new TimeSpan(0, 0, SessionTimeout, 0));
@@ -36,7 +45,7 @@ namespace dk.nita.saml20.ext.appfabricsessioncache
         {
             lock (Locker)
             {
-                DataCache sessions = CacheFactory.GetDefaultCache();
+                DataCache sessions = CacheFactory.GetCache(CacheName);
                 sessions.Remove(sessionId.ToString()); // Remove is not thread safe.
             }
         }
@@ -44,7 +53,7 @@ namespace dk.nita.saml20.ext.appfabricsessioncache
         private Guid CreateSession()
         {
             Guid sessionId = Guid.NewGuid();
-            DataCache sessions = CacheFactory.GetDefaultCache();
+            DataCache sessions = CacheFactory.GetCache(CacheName);
 
             sessions.Add(sessionId.ToString(), new Dictionary<string, object>(), new TimeSpan(0, 0, SessionTimeout, 0));
 
