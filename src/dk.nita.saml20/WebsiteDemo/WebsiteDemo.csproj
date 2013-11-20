@@ -165,10 +165,6 @@
     <Content Include="sp.Master" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\dk.nita.saml20.ext.AppFabricSessionCache\dk.nita.saml20.ext.appfabricsessioncache.csproj">
-      <Project>{2A462F41-50A8-47CD-8585-1D28DF6610E4}</Project>
-      <Name>dk.nita.saml20.ext.appfabricsessioncache</Name>
-    </ProjectReference>
     <ProjectReference Include="..\dk.nita.saml20.ext.audit.log4net\dk.nita.saml20.ext.audit.log4net.csproj">
       <Project>{E0529CB0-9183-4768-B654-DB0F867F0E5F}</Project>
       <Name>dk.nita.saml20.ext.audit.log4net</Name>
