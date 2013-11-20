@@ -1,5 +1,6 @@
 using System;
 using System.Xml.Serialization;
+using dk.nita.saml20.session;
 
 namespace dk.nita.saml20.config
 {
@@ -28,6 +29,19 @@ namespace dk.nita.saml20.config
         /// </summary>
         [XmlElement] 
         public Certificate SigningCertificate;
+
+        // default to 30 minutes
+        private int _sessionTimeout = 30;
+
+        /// <summary>
+        /// Gets or sets the SessionTimeout configuration
+        /// </summary>
+        [XmlElement(ElementName = "SessionTimeout")]
+        public int SessionTimeout
+        {
+            get { return _sessionTimeout; }
+            set { _sessionTimeout = value; }
+        }
         
         /// <summary>
         /// The list of audience uris that are allowed by a receiver
@@ -50,6 +64,12 @@ namespace dk.nita.saml20.config
         /// </summary>
         [XmlAttribute("auditLoggingType")]
         public string AuditLoggingType;
+
+        /// <summary>
+        /// The type of the session provider. Provide the fully qualified name of the type implementing the <see cref="ISessions"/> interface.
+        /// </summary>
+        [XmlAttribute("sessionType")]
+        public string SessionType;
 
         private ActionsConfig _actions;
 

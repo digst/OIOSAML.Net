@@ -186,7 +186,7 @@ namespace dk.nita.saml20.protocol
             // See if the "ReturnUrl" - parameter is set.
             string returnUrl = context.Request.QueryString["ReturnUrl"];
             if (!string.IsNullOrEmpty(returnUrl))
-                SessionFactory.Sessions.Current[SessionConstants.RedirectUrl] = returnUrl;            
+                SessionFactory.SessionContext.Current[SessionConstants.RedirectUrl] = returnUrl;            
 
             IDPEndPoint idpEndpoint = RetrieveIDP(context);
 
@@ -314,7 +314,7 @@ namespace dk.nita.saml20.protocol
 
         private static void CheckReplayAttack(HttpContext context, string inResponseTo)
         {
-            var expectedInResponseToSessionState = SessionFactory.Sessions.Current[SessionConstants.ExpectedInResponseTo];
+            var expectedInResponseToSessionState = SessionFactory.SessionContext.Current[SessionConstants.ExpectedInResponseTo];
             if (expectedInResponseToSessionState == null)
                 throw new Saml20Exception("Your session has been disconnected, please logon again");
 
@@ -521,7 +521,7 @@ namespace dk.nita.saml20.protocol
         private void DoLogin(HttpContext context, Saml20Assertion assertion)
         {
             //User is now logged in at IDP specified in tmp
-            SessionFactory.Sessions.Current[SessionConstants.Saml20AssertionLite] = Saml20AssertionLite.ToLite(assertion);
+            SessionFactory.SessionContext.Current[SessionConstants.Saml20AssertionLite] = Saml20AssertionLite.ToLite(assertion);
             
             if(Trace.ShouldTrace(TraceEventType.Information))
             {
@@ -592,7 +592,7 @@ namespace dk.nita.saml20.protocol
             }
 
             //Save request message id to session
-            SessionFactory.Sessions.Current[SessionConstants.ExpectedInResponseTo] = request.ID;
+            SessionFactory.SessionContext.Current[SessionConstants.ExpectedInResponseTo] = request.ID;
 
             if (destination.Binding == SAMLBinding.REDIRECT)
             {

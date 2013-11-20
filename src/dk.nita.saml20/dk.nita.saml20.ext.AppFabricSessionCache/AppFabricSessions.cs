@@ -12,18 +12,24 @@ namespace dk.nita.saml20.ext.appfabricsessioncache
         // Use configuration from the application configuration file.
         private static readonly DataCacheFactory CacheFactory = new DataCacheFactory();
 
-        public override ISession Current
+        protected override ISession GetSession()
         {
-            get
+            ISession session = null;
+            DataCache sessions = CacheFactory.GetDefaultCache();
+            if (SessionId.HasValue && sessions.Get(SessionId.ToString()) != null)
             {
-                DataCache sessions = CacheFactory.GetDefaultCache();
-                if (SessionId.HasValue && sessions.Get(SessionId.ToString()) != null)
-                {
-                    sessions.ResetObjectTimeout(SessionId.ToString(), new TimeSpan(0, 0, SessionTimeout, 0)); // Needed in order to simluate sliding expiration
-                    return new AppFabricSession(SessionId.Value);
-                }
-                return null;
-            } 
+                sessions.ResetObjectTimeout(SessionId.ToString(), new TimeSpan(0, 0, SessionTimeout, 0));
+                    // Needed in order to simluate sliding expiration
+                session =  new AppFabricSession(SessionId.Value);
+            }
+
+            if (session == null)
+            {
+                session = new AppFabricSession(CreateSession());
+                session.New = true;
+            }
+            
+            return session;
         }
 
         public override void AbandonSession(Guid sessionId)
@@ -35,19 +41,14 @@ namespace dk.nita.saml20.ext.appfabricsessioncache
             }
         }
 
-        public override void CreateSession()
+        private Guid CreateSession()
         {
-            lock (Locker)
-            {
-                if (SessionExists())
-                    throw new InvalidOperationException("A session with id: " + SessionId + " already exists!!!");
-                if(SessionId == null)
-                    throw new InvalidOperationException("Not able to create a session because SessionId is not set!!!");
+            Guid sessionId = Guid.NewGuid();
+            DataCache sessions = CacheFactory.GetDefaultCache();
 
-                DataCache sessions = CacheFactory.GetDefaultCache();
+            sessions.Add(sessionId.ToString(), new Dictionary<string, object>(), new TimeSpan(0, 0, SessionTimeout, 0));
 
-                sessions.Add(SessionId.ToString(), new Dictionary<string, object>(), new TimeSpan(0, 0, SessionTimeout, 0));
-            }
+            return sessionId;
         }
     }
 }

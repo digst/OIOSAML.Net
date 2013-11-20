@@ -6,20 +6,27 @@ namespace dk.nita.saml20.session.inproc
 {
     internal class InProcSessions : AbstractSessions
     {
-        private static readonly object Locker = new object();
-
         private static readonly Cache Sessions = HttpRuntime.Cache;
 
-        public override ISession Current
+        protected override ISession GetSession()
         {
-            get
+            ISession session = null;
+            if (SessionId.HasValue)
             {
-                if (SessionId.HasValue)
+                session = Sessions[SessionId.ToString()] as ISession;
+                if (session != null)
                 {
-                    return Sessions[SessionId.ToString()] as ISession;
+                    // Set to false as it already existed.
+                    session.New = false;
                 }
-                return null;
             }
+
+            if (session == null)
+            {
+                session = CreateSession();
+                session.New = true;
+            }
+            return session;
         }
 
         public override void AbandonSession(Guid sessionId)
@@ -30,18 +37,13 @@ namespace dk.nita.saml20.session.inproc
             }
         }
 
-        public override void CreateSession()
+        private ISession CreateSession()
         {
-            lock (Locker)
-            {
-                if (SessionExists())
-                    throw new InvalidOperationException("A session with id: " + SessionId + " already exists!!!");
-                if (SessionId == null)
-                    throw new InvalidOperationException("Not able to create session a because SessionId is not set!!!");
-
-                Sessions.Insert(SessionId.ToString(), new InProcSession(), null,
-                                Cache.NoAbsoluteExpiration, new TimeSpan(0, 0, SessionTimeout, 0));
-            }
+            Guid sessionId = Guid.NewGuid();
+            var session = new InProcSession(sessionId);
+            Sessions.Insert(sessionId.ToString(), session, null,
+                            Cache.NoAbsoluteExpiration, new TimeSpan(0, 0, SessionTimeout, 0));
+            return session;
         }
     }
 }

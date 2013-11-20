@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Diagnostics;
 using dk.nita.saml20.config;
+using Trace = dk.nita.saml20.Utils.Trace;
 
 namespace dk.nita.saml20.session
 {
     /// <summary>
-    /// This abstract class must be used by all session implementations. It encapsulates the logic of how session id and session timeout is retrieved.
+    /// This abstract class can be used instead of implementing <see cref="ISessions"/>. This class makes use of cookies to track the session for each user.
     /// </summary>
     public abstract class AbstractSessions : ISessions
     {
@@ -25,36 +27,42 @@ namespace dk.nita.saml20.session
         }
 
         /// <summary>
-        /// Checks whether a current session exists.
+        /// Returns the current session or creates a new one if one did not exists. <see cref="ISession.New"/> must be true if a new session has been created.
         /// </summary>
-        /// <returns>True if a session exists.</returns>
-        protected bool SessionExists()
-        {
-            return Current != null;
-        }
+        /// <returns></returns>
+        protected abstract ISession GetSession();
 
         /// <summary>
         /// The timeout as set in the configuration file.
         /// </summary>
         protected int SessionTimeout
         {
-            get { return SAML20FederationConfig.GetConfig().SessionTimeout; }
+            get { return FederationConfig.GetConfig().SessionTimeout; }
         }
 
         /// <summary>
         /// <see cref="ISessions.Current"/>
         /// </summary>
-        public abstract ISession Current { get; }
+        public ISession Current
+        {
+            get
+            {
+                ISession session = GetSession();
+
+                if (session.New)
+                {
+                    SessionStateUtil.CreateSessionId(session.Id);
+                    Trace.TraceData(TraceEventType.Information, "New session created with id: " + session.Id);
+                }
+
+                return session;
+            }
+        }
         
         /// <summary>
         ///  <see cref="ISessions.AbandonSession"/>
         /// </summary>
         /// <param name="sessionId"></param>
         public abstract void AbandonSession(Guid sessionId);
-
-        /// <summary>
-        /// <see cref="ISessions.CreateSession"/>
-        /// </summary>
-        public abstract void CreateSession();
     }
 }

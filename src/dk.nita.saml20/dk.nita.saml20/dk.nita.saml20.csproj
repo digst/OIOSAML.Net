@@ -297,7 +297,6 @@
     <Compile Include="Session\Saml20AssertionLite.cs" />
     <Compile Include="Session\SessionConstants.cs" />
     <Compile Include="Session\SessionFactory.cs" />
-    <Compile Include="Session\SessionHttpModule.cs" />
     <Compile Include="Session\SessionStateUtil.cs" />
     <Compile Include="Specification\DefaultCertificateSpecification.cs" />
     <Compile Include="Specification\ICertificateSpecification.cs" />

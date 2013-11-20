@@ -9,11 +9,9 @@ namespace dk.nita.saml20.ext.appfabricsessioncache
     {
         private static readonly DataCacheFactory CacheFactory = new DataCacheFactory();
 
-        private readonly Guid _sessionId;
-
         public AppFabricSession(Guid sessionId)
         {
-            _sessionId = sessionId;
+            Id = sessionId;
         }
 
         public object this[string key]
@@ -21,8 +19,8 @@ namespace dk.nita.saml20.ext.appfabricsessioncache
             get
             {
                 DataCache sessions = CacheFactory.GetDefaultCache();
-                var session = sessions.Get(_sessionId.ToString()) as IDictionary<string, object>;
-                if (session != null)
+                var session = sessions.Get(Id.ToString()) as IDictionary<string, object>;
+                if (session != null && session.ContainsKey(key))
                     return session[key];
                 
                 return null;
@@ -30,28 +28,32 @@ namespace dk.nita.saml20.ext.appfabricsessioncache
             set
             {
                 DataCache sessions = CacheFactory.GetDefaultCache();
-                var session = sessions.Get(_sessionId.ToString()) as IDictionary<string, object>;
+                var session = sessions.Get(Id.ToString()) as IDictionary<string, object>;
                 if (session != null)
                 {
                     session[key] = value;
-                    sessions.Put(_sessionId.ToString(), session);
+                    sessions.Put(Id.ToString(), session);
                 }
                 else
-                 throw new InvalidOperationException("Session with session id: " + _sessionId + " does not exist. Not able to add key: " + key + " and value: " + value +" to session.");
+                 throw new InvalidOperationException("Session with session id: " + Id + " does not exist. Not able to add key: " + key + " and value: " + value +" to session.");
             }
         }
 
         public void Remove(string key)
         {
             DataCache sessions = CacheFactory.GetDefaultCache();
-            var session = sessions.Get(_sessionId.ToString()) as IDictionary<string, object>;
+            var session = sessions.Get(Id.ToString()) as IDictionary<string, object>;
             if (session != null)
             {
                 session.Remove(key);
-                sessions.Put(_sessionId.ToString(), session);
+                sessions.Put(Id.ToString(), session);
             }
             else
-                throw new InvalidOperationException("Session with session id: " + _sessionId + " does not exist. Not able to remove key: " + key + " from session.");
+                throw new InvalidOperationException("Session with session id: " + Id + " does not exist. Not able to remove key: " + key + " from session.");
         }
+
+        public bool New { get; set; }
+
+        public Guid Id { get; private set; }
     }
 }

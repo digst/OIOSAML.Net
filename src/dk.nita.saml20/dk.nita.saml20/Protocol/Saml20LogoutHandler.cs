@@ -499,7 +499,8 @@ namespace dk.nita.saml20.protocol
             
             // Check that idp in session and request matches.
             string idpRequest = logoutRequest.Issuer.Value;
-            if (SessionFactory.Sessions.Current != null)
+            bool newSession = SessionFactory.SessionContext.Current.New; // This call to Current must be the first in this request. Otherwise the value will always be false.
+            if (!newSession) 
             {
                 object idpId = Saml20PrincipalCache.GetSaml20AssertionLite().Issuer;
             
@@ -516,7 +517,7 @@ namespace dk.nita.saml20.protocol
             }
 
             //  Only logout if request is valid and we are working on an existing Session.
-            if (Saml20Constants.StatusCodes.Success == response.StatusCode && SessionFactory.Sessions.Current != null)
+            if (Saml20Constants.StatusCodes.Success == response.StatusCode && !newSession)
             {
                 // Execute all actions that the service provider has configured
                 DoLogout(context, true);
@@ -564,16 +565,24 @@ namespace dk.nita.saml20.protocol
 
         private void DoLogout(HttpContext context, bool IdPInitiated)
         {
-            // Logout of the session as the first thing and then notify IActions
-            SessionFactory.Sessions.AbandonCurrentSession();
-            
-            foreach (IAction action in Actions.Actions.GetActions())
+         
+            try
             {
-                Trace.TraceMethodCalled(action.GetType(), "LogoutAction()");
+                foreach (IAction action in Actions.Actions.GetActions())
+                {
+                    Trace.TraceMethodCalled(action.GetType(), "LogoutAction()");
                 
-                action.LogoutAction(this, context, IdPInitiated);
+                    action.LogoutAction(this, context, IdPInitiated);
 
-                Trace.TraceMethodDone(action.GetType(), "LogoutAction()");
+                    Trace.TraceMethodDone(action.GetType(), "LogoutAction()");
+                }
+            }
+            finally
+            {
+                // Always end with abandoning the session.
+                Trace.TraceData(TraceEventType.Information, "Clearing session with id: " + SessionFactory.SessionContext.Current.Id);
+                SessionFactory.SessionContext.AbandonCurrentSession();
+                Trace.TraceData(TraceEventType.Verbose, "Session cleared." );
             }
         }
                 

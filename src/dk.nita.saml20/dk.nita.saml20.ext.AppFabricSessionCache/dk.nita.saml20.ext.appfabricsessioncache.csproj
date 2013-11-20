@@ -32,11 +32,11 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.ApplicationServer.Caching.Client">
-      <HintPath>..\..\..\..\..\Program Files\AppFabric 1.1 for Windows Server\Microsoft.ApplicationServer.Caching.Client.dll</HintPath>
+    <Reference Include="Microsoft.ApplicationServer.Caching.Client, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\ServerAppFabric.Client.1.1.2106\lib\Microsoft.ApplicationServer.Caching.Client.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.ApplicationServer.Caching.Core">
-      <HintPath>..\..\..\..\..\Program Files\AppFabric 1.1 for Windows Server\Microsoft.ApplicationServer.Caching.Core.dll</HintPath>
+    <Reference Include="Microsoft.ApplicationServer.Caching.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\ServerAppFabric.Client.1.1.2106\lib\Microsoft.ApplicationServer.Caching.Core.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -56,6 +56,9 @@
       <Project>{55520059-38BB-48BB-A30E-BFD385293D78}</Project>
       <Name>dk.nita.saml20</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

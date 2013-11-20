@@ -126,7 +126,7 @@ namespace dk.nita.saml20.protocol
         /// <param name="context">The context.</param>
         public void DoRedirect(HttpContext context)
         {
-            ISession currentSession = SessionFactory.Sessions.Current;
+            ISession currentSession = SessionFactory.SessionContext.Current;
             if (currentSession != null)
             {
                 var redirectUrl = (string) currentSession[SessionConstants.RedirectUrl];

@@ -95,19 +95,6 @@ namespace dk.nita.saml20.config
             set { _showError = value; }
         }
 
-        // default to 30 minutes
-        private int _sessionTimeout = 30;
-
-        /// <summary>
-        /// Gets or sets the SessionTimeout configuration
-        /// </summary>
-        [XmlElement(ElementName = "SessionTimeout")]
-        public int SessionTimeout
-        {
-            get { return _sessionTimeout; }
-            set { _sessionTimeout = value; }
-        }
-
         private IDPEndpoints _idpEndpoints;
 
         /// <summary>

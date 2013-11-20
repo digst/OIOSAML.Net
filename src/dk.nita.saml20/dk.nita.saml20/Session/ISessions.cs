@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ServiceModel.Channels;
 
 namespace dk.nita.saml20.session
 {
@@ -12,6 +13,7 @@ namespace dk.nita.saml20.session
     {
         /// <summary>
         /// Gets the current session. Accessing the session must result in the session timeout being reset. Thus, it must work according to the sliding expiration principle.
+        /// If no session exist a new one must be returned where <see cref="ISession.New"/> must be true for the remaining of the HTTP request.
         /// </summary>
         /// <returns>The current session or null if none exists</returns>
         ISession Current { get; }
@@ -29,12 +31,12 @@ namespace dk.nita.saml20.session
         /// </summary>
         void AbandonCurrentSession();
 
-        /// <summary>
-        /// Creates a session with the id taken from the cookie with name <see cref="SessionConstants.SessionCookieName"/>.
-        /// Use <see cref="Current" /> prior to creating a session.
-        /// Is thread safe.
-        /// </summary>
-        /// <exception cref="InvalidOperationException">Is thrown if a session with the given id already exists.</exception>
-        void CreateSession();
+        ///// <summary>
+        ///// Creates a session with the id taken from the cookie with name <see cref="SessionConstants.SessionCookieName"/>.
+        ///// Use <see cref="Current" /> prior to creating a session.
+        ///// Is thread safe.
+        ///// </summary>
+        ///// <exception cref="InvalidOperationException">Is thrown if a session with the given id already exists.</exception>
+        //void CreateSession();
     }
 }

@@ -29,7 +29,7 @@ namespace dk.nita.saml20.Identity
         /// <returns></returns>
         internal static Saml20AssertionLite GetSaml20AssertionLite()
         {
-            ISession session = SessionFactory.Sessions.Current;
+            ISession session = SessionFactory.SessionContext.Current;
 
             if (session != null)
             {
