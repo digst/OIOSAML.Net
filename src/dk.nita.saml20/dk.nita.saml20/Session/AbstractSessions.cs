@@ -21,10 +21,7 @@ namespace dk.nita.saml20.session
         /// <summary>
         /// <see cref="ISessions.AbandonCurrentSession"/>
         /// </summary>
-        public void AbandonCurrentSession()
-        {
-            AbandonSession(SessionId.GetValueOrDefault());
-        }
+        public abstract void AbandonCurrentSession();
 
         /// <summary>
         /// Returns the current session or creates a new one if one did not exists. <see cref="ISession.New"/> must be true if a new session has been created.
@@ -60,9 +57,15 @@ namespace dk.nita.saml20.session
         }
         
         /// <summary>
-        ///  <see cref="ISessions.AbandonSession"/>
+        ///  <see cref="ISessions.AbandonAllSessions"/>
         /// </summary>
-        /// <param name="sessionId"></param>
-        public abstract void AbandonSession(Guid sessionId);
+        /// <param name="userId"></param>
+        public abstract void AbandonAllSessions(string userId);
+
+        /// <summary>
+        ///  <see cref="ISessions.AssociateUserIdWithCurrentSession"/>
+        /// </summary>
+        /// <param name="userId"></param>
+        public abstract void AssociateUserIdWithCurrentSession(string userId);
     }
 }

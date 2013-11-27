@@ -9,6 +9,8 @@ namespace dk.nita.saml20.ext.appfabricsessioncache
     {
         private static readonly object Locker = new object();
 
+        private const string UserId = "UserId";
+
         // Use configuration from the application configuration file.
         private static readonly DataCacheFactory CacheFactory = new DataCacheFactory();
 
@@ -27,9 +29,16 @@ namespace dk.nita.saml20.ext.appfabricsessioncache
             DataCache sessions = CacheFactory.GetCache(CacheName);
             if (SessionId.HasValue && sessions.Get(SessionId.ToString()) != null)
             {
-                sessions.ResetObjectTimeout(SessionId.ToString(), new TimeSpan(0, 0, SessionTimeout, 0));
-                    // Needed in order to simluate sliding expiration
+                // Needed in order to simluate sliding expiration
+                sessions.ResetObjectTimeout(SessionId.ToString(), new TimeSpan(0, 0, SessionTimeout, 0)); 
                 session =  new AppFabricSession(SessionId.Value);
+
+                // Ping user id cache to extend the timeout
+                var userId = session[UserId] as string;
+                if (!string.IsNullOrEmpty(userId))
+                {
+                    sessions.ResetObjectTimeout(userId, new TimeSpan(0, 0, SessionTimeout, 0)); 
+                }
             }
 
             if (session == null)
@@ -41,12 +50,52 @@ namespace dk.nita.saml20.ext.appfabricsessioncache
             return session;
         }
 
-        public override void AbandonSession(Guid sessionId)
+        public override void AbandonAllSessions(string userId)
         {
-            lock (Locker)
+            string userIdLowerCase = userId.ToLower();
+            DataCache sessions = CacheFactory.GetCache(CacheName);
+            var sessionIds = sessions[userIdLowerCase] as IList<Guid>;
+
+            if (sessionIds != null)
             {
-                DataCache sessions = CacheFactory.GetCache(CacheName);
-                sessions.Remove(sessionId.ToString()); // Remove is not thread safe.
+                foreach (var sessionId in sessionIds)
+                {
+                    sessions.Remove(sessionId.ToString());
+                }
+            }
+
+            sessions.Remove(userId);
+        }
+
+        public override void AssociateUserIdWithCurrentSession(string userId)
+        {
+            string userIdLowerCase = userId.ToLower();
+            DataCache sessions = CacheFactory.GetCache(CacheName);
+            IList<Guid> sessionIds = sessions[userIdLowerCase] as IList<Guid>;
+
+            if (sessionIds == null)
+            {
+                sessionIds = new List<Guid>();
+                sessions.Add(userIdLowerCase, sessionIds, new TimeSpan(0, 0, SessionTimeout, 0));
+            }
+
+            // Update cache from user id perspective
+            sessionIds = sessions[userIdLowerCase] as IList<Guid>;
+            sessionIds.Add(Current.Id);
+
+            // Update cache from session id perspective so that we have a bi-directional reference.
+            Current[UserId] = userIdLowerCase;
+        }
+
+        public override void AbandonCurrentSession()
+        {
+            if (SessionId.HasValue)
+            {
+                lock (Locker)
+                {
+                    DataCache sessions = CacheFactory.GetCache(CacheName);
+                    sessions.Remove(SessionId.ToString()); // Remove is not thread safe.
+                }
             }
         }
 

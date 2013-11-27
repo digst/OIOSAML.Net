@@ -520,7 +520,7 @@ namespace dk.nita.saml20.protocol
 
         private void DoLogin(HttpContext context, Saml20Assertion assertion)
         {
-            //User is now logged in at IDP specified in tmp
+            SessionFactory.SessionContext.AssociateUserIdWithCurrentSession(assertion.Subject.Value);
             SessionFactory.SessionContext.Current[SessionConstants.Saml20AssertionLite] = Saml20AssertionLite.ToLite(assertion);
             
             if(Trace.ShouldTrace(TraceEventType.Information))

@@ -8,6 +8,7 @@ using System.Xml;
 using dk.nita.saml20.Bindings;
 using dk.nita.saml20.Identity;
 using dk.nita.saml20.Session;
+using dk.nita.saml20.identity;
 using dk.nita.saml20.session;
 using dk.nita.saml20.config;
 using dk.nita.saml20.Logging;
@@ -189,12 +190,43 @@ namespace dk.nita.saml20.protocol
                 if (Trace.ShouldTrace(TraceEventType.Information))
                     Trace.TraceData(TraceEventType.Information, string.Format(Tracing.LogoutRequest, parser.SamlMessage.OuterXml));
 
+                Saml20LogoutResponse response = new Saml20LogoutResponse();
+                
+                if (!parser.IsSigned())
+                {
+                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Signature not present in SOAP logout request, msg: " + parser.SamlMessage.OuterXml);
+                    response.StatusCode = Saml20Constants.StatusCodes.RequestDenied;
+                }
+
+                if (idp.metadata == null)
+                {
+                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Cannot find metadata for IdP: " + parser.Issuer);
+                    // Not able to process the request as we do not know the IdP.
+                    response.StatusCode = Saml20Constants.StatusCodes.NoAvailableIDP;
+                }
+                else
+                {
+                    Saml20MetadataDocument metadata = idp.metadata;
+
+                    if (!parser.CheckSignature(metadata.GetKeys(KeyTypes.signing)))
+                    {
+                        AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Request has been denied. Invalid signature SOAP logout, msg: " + parser.SamlMessage.OuterXml);
+                        response.StatusCode = Saml20Constants.StatusCodes.RequestDenied;
+                    }
+                }
+
+                if (parser.GetNameID() != null && !string.IsNullOrEmpty(parser.GetNameID().Value))
+                    DoSoapLogout(context, parser.GetNameID().Value);
+                else
+                {
+                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Request has been denied. No user ID was supplied in SOAP logout request, msg: " + parser.SamlMessage.OuterXml);
+                    response.StatusCode = Saml20Constants.StatusCodes.NoAuthnContext;
+                }
+
                 LogoutRequest req = parser.LogoutRequest;
                 
                 //Build the response object
-                Saml20LogoutResponse response = new Saml20LogoutResponse();
                 response.Issuer = config.ServiceProvider.ID;
-                //response.Destination = destination.Url;
                 response.StatusCode = Saml20Constants.StatusCodes.Success;
                 response.InResponseTo = req.ID;
                 XmlDocument doc = response.GetXml();
@@ -581,8 +613,31 @@ namespace dk.nita.saml20.protocol
             {
                 // Always end with abandoning the session.
                 Trace.TraceData(TraceEventType.Information, "Clearing session with id: " + SessionFactory.SessionContext.Current.Id);
-                SessionFactory.SessionContext.AbandonCurrentSession();
+                SessionFactory.SessionContext.AbandonAllSessions(Saml20Identity.Current.Name);
+                //SessionFactory.SessionContext.AbandonCurrentSession();
                 Trace.TraceData(TraceEventType.Verbose, "Session cleared." );
+            }
+        }
+
+        private void DoSoapLogout(HttpContext context, string userId)
+        {
+            try
+            {
+                foreach (IAction action in Actions.Actions.GetActions())
+                {
+                    Trace.TraceMethodCalled(action.GetType(), "SoapLogoutAction()");
+
+                    action.SoapLogoutAction(this, context, userId);
+
+                    Trace.TraceMethodDone(action.GetType(), "SoapLogoutAction()");
+                }
+            }
+            finally
+            {
+                // Always end with abandoning the session.
+                Trace.TraceData(TraceEventType.Information, "Clearing all sessions related to user with id: " + userId);
+                SessionFactory.SessionContext.AbandonAllSessions(Saml20Identity.Current.Name);
+                Trace.TraceData(TraceEventType.Verbose, "Sessions cleared.");
             }
         }
                 

@@ -39,6 +39,15 @@ namespace dk.nita.saml20.Actions
         public void LogoutAction(AbstractEndpointHandler handler, HttpContext context, bool IdPInitiated)
         {
             FormsAuthentication.SignOut();
+            HttpContext.Current.User = new GenericPrincipal(new GenericIdentity(string.Empty), null); // Makes User.Identity.IsAuthenticated false in the current request.
+        }
+
+        /// <summary>
+        /// <see cref="IAction.SoapLogoutAction"/>
+        /// </summary>
+        public void SoapLogoutAction(AbstractEndpointHandler handler, HttpContext context, string userId)
+        {
+            // Do nothing
         }
 
         private string _name;

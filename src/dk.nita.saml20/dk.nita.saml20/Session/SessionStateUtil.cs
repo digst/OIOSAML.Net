@@ -22,7 +22,7 @@ namespace dk.nita.saml20.session
 
         internal static void CreateSessionId(Guid sessionId)
         {
-            HttpContext.Current.Request.Cookies.Remove(SessionConstants.SessionCookieName); // Remove cookie from request when creating a new session id. This is necessary because adding a cookie with same name does not override cookies in request.
+            HttpContext.Current.Request.Cookies.Remove(SessionConstants.SessionCookieName); // Remove cookie from request when creating a new session id. This is necessary because adding a cookie with the same name does not override cookies in the request.
             var httpCookie = new HttpCookie(SessionConstants.SessionCookieName, sessionId.ToString());
             httpCookie.Secure = true;
             httpCookie.HttpOnly = true;

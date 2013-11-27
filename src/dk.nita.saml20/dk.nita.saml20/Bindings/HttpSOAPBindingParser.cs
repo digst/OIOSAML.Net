@@ -4,6 +4,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Security.Cryptography.Xml;
 using System.Xml;
+using dk.nita.saml20.Schema.Core;
 using dk.nita.saml20.Schema.Metadata;
 using dk.nita.saml20.Schema.Protocol;
 using dk.nita.saml20.Utils;
@@ -153,6 +154,19 @@ namespace dk.nita.saml20.Bindings
         }
 
         /// <summary>
+        /// Gets the status of the current message.
+        /// </summary>
+        /// <returns></returns>
+        public NameID GetNameID()
+        {
+            if (LogoutRequest != null && LogoutRequest.Item != null)
+            {
+                return LogoutRequest.Item as NameID;
+            }
+            return null;
+        }
+
+        /// <summary>
         /// Loads the SAML message.
         /// </summary>
         protected void LoadSamlMessage()
@@ -173,6 +187,47 @@ namespace dk.nita.saml20.Bindings
                     // Artifact resolve special case
                     _samlMessage = doc.DocumentElement;
             }
+        }
+
+        /// <summary>
+        /// Checks the signature of the message, using a specific set of keys
+        /// </summary>
+        /// <param name="keys">The set of keys to check the signature against</param>
+        /// <returns></returns>
+        public bool CheckSignature(IEnumerable<KeyDescriptor> keys)
+        {
+            var xmlDocument = new XmlDocument();
+            xmlDocument.AppendChild(_samlMessage);
+
+            foreach (KeyDescriptor keyDescriptor in keys)
+            {
+                KeyInfo ki = (KeyInfo)keyDescriptor.KeyInfo;
+
+                foreach (KeyInfoClause clause in ki)
+                {
+                    AsymmetricAlgorithm key = XmlSignatureUtils.ExtractKey(clause);
+
+                    if (key != null && XmlSignatureUtils.CheckSignature(xmlDocument, key))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Determines whether the message is signed.
+        /// </summary>
+        /// <returns>
+        /// 	<c>true</c> if the message is signed; otherwise, <c>false</c>.
+        /// </returns>
+        public bool IsSigned()
+        {
+            var xmlDocument = new XmlDocument();
+            xmlDocument.AppendChild(_samlMessage);
+            return XmlSignatureUtils.IsSigned(xmlDocument);
         }
     }
 }
