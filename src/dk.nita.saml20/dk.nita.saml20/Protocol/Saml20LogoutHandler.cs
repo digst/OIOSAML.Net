@@ -377,6 +377,7 @@ namespace dk.nita.saml20.protocol
             }
 
             XmlDocument doc = new XmlDocument();
+            doc.XmlResolver = null;
             doc.PreserveWhitespace = true;
             doc.LoadXml(message);
 

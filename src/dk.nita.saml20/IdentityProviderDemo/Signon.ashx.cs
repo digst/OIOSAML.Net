@@ -50,7 +50,7 @@ namespace IdentityProviderDemo
                 return;
             }
 
-            HttpContext.Current.Application["authenticationrequest"] = req;
+            HttpContext.Current.Session["authenticationrequest"] = req;
             HttpContext.Current.Server.Transfer("SignonForm.aspx");
         }
     }

@@ -117,6 +117,7 @@ namespace IdentityProviderDemo.Logic
                     try
                     {
                         XmlDocument doc = new XmlDocument();
+                        doc.XmlResolver = null;
                         doc.PreserveWhitespace = true;
                         doc.LoadXml(metadataString);
 

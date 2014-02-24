@@ -338,6 +338,7 @@ namespace dk.nita.saml20.protocol
             string base64 = context.Request.Params["SAMLResponse"];
 
             XmlDocument doc = new XmlDocument();
+            doc.XmlResolver = null;
             doc.PreserveWhitespace = true;
             string samlResponse = encoding.GetString(Convert.FromBase64String(base64));
             if (Trace.ShouldTrace(TraceEventType.Information))

@@ -164,6 +164,7 @@ namespace dk.nita.saml20
 
             _attrQuery.SamlAttribute = _attributes.ToArray();
             XmlDocument query = new XmlDocument();
+            query.XmlResolver = null;
             query.LoadXml(Serialization.SerializeToXmlString(_attrQuery));
 
             XmlSignatureUtils.SignDocument(query, ID);
