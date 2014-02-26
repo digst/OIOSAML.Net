@@ -55,6 +55,7 @@ namespace dk.nita.saml20.Bindings
             _message = Encoding.UTF8.GetString(Convert.FromBase64String(base64));
 
             _document = new XmlDocument();
+            _document.XmlResolver = null;
             _document.PreserveWhitespace = true;
             _document.LoadXml(_message);
         }

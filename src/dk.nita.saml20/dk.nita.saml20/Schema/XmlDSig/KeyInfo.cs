@@ -45,6 +45,7 @@ namespace dk.nita.saml20.Schema.XmlDSig
         {
             System.Security.Cryptography.Xml.KeyInfo result = new System.Security.Cryptography.Xml.KeyInfo();
             XmlDocument doc = new XmlDocument();
+            doc.XmlResolver = null;
             doc.LoadXml(Serialization.SerializeToXmlString(ki));
             result.LoadXml(doc.DocumentElement);
             return result;

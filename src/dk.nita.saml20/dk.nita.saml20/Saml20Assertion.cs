@@ -465,6 +465,7 @@ namespace dk.nita.saml20
             }
 
             XmlDocument assertionDocument = new XmlDocument();
+            assertionDocument.XmlResolver = null;
             assertionDocument.Load(new StringReader(Serialization.SerializeToXmlString(_samlAssertion)));
 
             AddSignature(assertionDocument, cert);
