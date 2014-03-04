@@ -8,8 +8,6 @@ using System.Web;
 using System.Xml;
 using dk.nita.saml20;
 using dk.nita.saml20.Bindings;
-using dk.nita.saml20.Identity;
-using dk.nita.saml20.session;
 using dk.nita.saml20.config;
 using dk.nita.saml20.identity;
 using dk.nita.saml20.Properties;
@@ -118,7 +116,7 @@ namespace dk.nita.saml20
         public void PerformQuery(HttpContext context)
         {
             SAML20FederationConfig config = SAML20FederationConfig.GetConfig();
-            string endpointId = Saml20PrincipalCache.GetSaml20AssertionLite().Issuer;
+            string endpointId = context.Session[Saml20AbstractEndpointHandler.IDPLoginSessionKey].ToString();
 
             if (string.IsNullOrEmpty(endpointId))
             {
@@ -141,7 +139,7 @@ namespace dk.nita.saml20
         /// <param name="endPoint">The IdP to perform the query against.</param>
         public void PerformQuery(HttpContext context, IDPEndPoint endPoint)
         {
-            string nameIdFormat = Saml20PrincipalCache.GetSaml20AssertionLite().Subject.Format;
+            string nameIdFormat = context.Session[Saml20AbstractEndpointHandler.IDPNameIdFormat].ToString();
             if(string.IsNullOrEmpty(nameIdFormat))
                 nameIdFormat = Saml20Constants.NameIdentifierFormats.Persistent;
             PerformQuery(context, endPoint, nameIdFormat);
@@ -166,6 +164,7 @@ namespace dk.nita.saml20
 
             _attrQuery.SamlAttribute = _attributes.ToArray();
             XmlDocument query = new XmlDocument();
+            query.XmlResolver = null;
             query.LoadXml(Serialization.SerializeToXmlString(_attrQuery));
 
             XmlSignatureUtils.SignDocument(query, ID);

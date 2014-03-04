@@ -63,6 +63,7 @@ namespace IdentityProviderDemo
 
             descriptor.Attributes = atts.ToArray();
             XmlDocument doc = new XmlDocument();
+            doc.XmlResolver = null;
             doc.PreserveWhitespace = true;
             doc.LoadXml(Serialization.SerializeToXmlString(metadata));
 

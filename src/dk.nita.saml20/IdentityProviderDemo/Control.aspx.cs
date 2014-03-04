@@ -135,6 +135,7 @@ namespace IdentityProviderDemo
                 try
                 {
                     doc = new XmlDocument();
+                    doc.XmlResolver = null;
                     doc.PreserveWhitespace = true;
                     doc.Load(new StreamReader(_fileupload.FileContent, Encoding.UTF8));
                 }

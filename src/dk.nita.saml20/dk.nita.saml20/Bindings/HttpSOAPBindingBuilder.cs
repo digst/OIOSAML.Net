@@ -129,6 +129,7 @@ namespace dk.nita.saml20.Bindings
             Console.WriteLine(response);
             reqChannel.Close();
             XmlDocument xDoc = new XmlDocument();
+            xDoc.XmlResolver = null;
             xDoc.Load(response.GetReaderAtBodyContents());
             string outerXml = xDoc.DocumentElement.OuterXml;
             MemoryStream memStream = new MemoryStream(Encoding.UTF8.GetBytes(outerXml));

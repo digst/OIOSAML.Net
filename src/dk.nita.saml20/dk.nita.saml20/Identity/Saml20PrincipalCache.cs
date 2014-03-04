@@ -1,7 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Web;
 using System.Security.Principal;
-using dk.nita.saml20.Session;
-using dk.nita.saml20.session;
 using dk.nita.saml20.identity;
 
 namespace dk.nita.saml20.Identity
@@ -12,30 +10,29 @@ namespace dk.nita.saml20.Identity
     internal class Saml20PrincipalCache
     {
         /// <summary>
-        /// Gets the principal.
+        /// Adds the principal.
         /// </summary>
-        /// <returns></returns>
-        internal static IPrincipal GetPrincipal()
+        /// <param name="principal">The principal.</param>
+        internal static void AddPrincipal(IPrincipal principal)
         {
-            var saml20Assertion = GetSaml20AssertionLite();
-            if (saml20Assertion != null)
-                return Saml20Identity.InitSaml20Identity(saml20Assertion);
-            return null;
+            HttpContext.Current.Session[typeof (Saml20Identity).FullName] = principal;
         }
 
         /// <summary>
         /// Gets the principal.
         /// </summary>
         /// <returns></returns>
-        internal static Saml20AssertionLite GetSaml20AssertionLite()
+        internal static IPrincipal GetPrincipal()
         {
-            ISession session = SessionFactory.SessionContext.Current;
+            return HttpContext.Current.Session[typeof(Saml20Identity).FullName] as GenericPrincipal;
+        }
 
-            if (session != null)
-            {
-                return session[SessionConstants.Saml20AssertionLite] as Saml20AssertionLite;
-            }
-            return null;
+        /// <summary>
+        /// Clears this instance.
+        /// </summary>
+        internal static void Clear()
+        {
+            HttpContext.Current.Session.Remove(typeof(Saml20Identity).FullName);
         }
     }
 }

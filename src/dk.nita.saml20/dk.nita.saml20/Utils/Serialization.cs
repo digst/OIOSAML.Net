@@ -53,6 +53,7 @@ namespace dk.nita.saml20.Utils
 
             // create the XmlDocument to return
             XmlDocument doc = new XmlDocument();
+            doc.XmlResolver = null;
             stream.Seek(0, SeekOrigin.Begin);
             doc.Load(stream);
 
@@ -86,6 +87,7 @@ namespace dk.nita.saml20.Utils
         public static T DeserializeFromXmlString<T>(string xml)
         {
             XmlTextReader reader = new XmlTextReader(new StringReader(xml));
+            reader.XmlResolver = null;
             return Deserialize<T>(reader);
         }
 

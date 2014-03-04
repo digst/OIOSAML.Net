@@ -507,7 +507,8 @@ namespace dk.nita.saml20
         /// </summary>
         public string ToXml(Encoding enc)
         {
-            XmlDocument doc = new XmlDocument();            
+            XmlDocument doc = new XmlDocument();
+            doc.XmlResolver = null;
             doc.PreserveWhitespace = true;            
             
             doc.LoadXml( Serialization.SerializeToXmlString(_entity));
