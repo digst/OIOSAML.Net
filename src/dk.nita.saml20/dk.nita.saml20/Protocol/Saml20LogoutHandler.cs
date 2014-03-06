@@ -16,7 +16,7 @@ using dk.nita.saml20.Schema.Metadata;
 using dk.nita.saml20.Schema.Protocol;
 using dk.nita.saml20.Utils;
 using Saml2.Properties;
-using Trace=dk.nita.saml20.Utils.Trace;
+using Trace = dk.nita.saml20.Utils.Trace;
 using dk.nita.saml20.Actions;
 
 namespace dk.nita.saml20.protocol
@@ -44,7 +44,7 @@ namespace dk.nita.saml20.protocol
             }
         }
 
-        #region IHttpHandler related 
+        #region IHttpHandler related
 
         /// <summary>
         /// Handles a request.
@@ -53,7 +53,7 @@ namespace dk.nita.saml20.protocol
         protected override void Handle(HttpContext context)
         {
             Trace.TraceMethodCalled(GetType(), "Handle()");
-            
+
             try
             {
                 //Some IdP's are known to fail to set an actual value in the SOAPAction header
@@ -74,7 +74,7 @@ namespace dk.nita.saml20.protocol
                 {
                     HandleResponse(context);
                 }
-                else if(!string.IsNullOrEmpty(context.Request.Params["SAMLRequest"]))
+                else if (!string.IsNullOrEmpty(context.Request.Params["SAMLRequest"]))
                 {
                     HandleRequest(context);
                 }
@@ -96,16 +96,17 @@ namespace dk.nita.saml20.protocol
 
                     TransferClient(idpEndpoint, context);
                 }
-            }catch(Exception e)
+            }
+            catch (Exception e)
             {
                 //ThreadAbortException is thrown by response.Redirect so don't worry about it
-                if(e is ThreadAbortException)
+                if (e is ThreadAbortException)
                     throw;
-                    
+
                 HandleError(context, e.Message);
             }
         }
-        
+
         #endregion
 
         #region SP Initiated logout
@@ -129,7 +130,7 @@ namespace dk.nita.saml20.protocol
             IDPEndPoint idp = RetrieveIDPConfiguration(parser.Issuer);
             AuditLogging.IdpId = idp.Id;
 
-            
+
             if (parser.IsArtifactResolve())
             {
                 Trace.TraceData(TraceEventType.Information, Tracing.ArtifactResolveIn);
@@ -157,7 +158,7 @@ namespace dk.nita.saml20.protocol
 
                 if (parser.ArtifactResponse.Any.LocalName == LogoutRequest.ELEMENT_NAME)
                 {
-                    if(Trace.ShouldTrace(TraceEventType.Information))
+                    if (Trace.ShouldTrace(TraceEventType.Information))
                         Trace.TraceData(TraceEventType.Information, string.Format(Tracing.LogoutRequest, parser.ArtifactResponse.Any.OuterXml));
 
                     //Send logoutresponse via artifact
@@ -172,7 +173,8 @@ namespace dk.nita.saml20.protocol
                         DetermineEndpointConfiguration(SAMLBinding.REDIRECT, endpoint.SLOEndpoint, endpoint.metadata.SLOEndpoints());
 
                     builder.RedirectFromLogout(destination, response);
-                }else if(parser.ArtifactResponse.Any.LocalName == LogoutResponse.ELEMENT_NAME)
+                }
+                else if (parser.ArtifactResponse.Any.LocalName == LogoutResponse.ELEMENT_NAME)
                 {
                     DoLogout(context);
                 }
@@ -184,13 +186,13 @@ namespace dk.nita.saml20.protocol
                                               parser.ArtifactResponse.Any.LocalName));
                 }
             }
-            else if(parser.IsLogoutReqest())
+            else if (parser.IsLogoutReqest())
             {
                 if (Trace.ShouldTrace(TraceEventType.Information))
                     Trace.TraceData(TraceEventType.Information, string.Format(Tracing.LogoutRequest, parser.SamlMessage.OuterXml));
 
                 LogoutRequest req = parser.LogoutRequest;
-                
+
                 //Build the response object
                 Saml20LogoutResponse response = new Saml20LogoutResponse();
                 response.Issuer = config.ServiceProvider.ID;
@@ -201,9 +203,9 @@ namespace dk.nita.saml20.protocol
                 XmlSignatureUtils.SignDocument(doc, response.ID);
                 if (doc.FirstChild is XmlDeclaration)
                     doc.RemoveChild(doc.FirstChild);
-                
+
                 builder.SendResponseMessage(doc.OuterXml);
-                
+
             }
             else
             {
@@ -224,20 +226,20 @@ namespace dk.nita.saml20.protocol
         private void TransferClient(IDPEndPoint endpoint, HttpContext context)
         {
             Trace.TraceMethodCalled(GetType(), "TransferClient()");
-            
+
             Saml20LogoutRequest request = Saml20LogoutRequest.GetDefault();
-            
+
             AuditLogging.AssertionId = request.ID;
             AuditLogging.IdpId = endpoint.Id;
-            
+
             // Determine which endpoint to use from the configuration file or the endpoint metadata.
             IDPEndPointElement destination =
                 DetermineEndpointConfiguration(SAMLBinding.REDIRECT, endpoint.SLOEndpoint, endpoint.metadata.SLOEndpoints());
-            
+
             request.Destination = destination.Url;
 
             request.SubjectToLogOut.Format = Saml20PrincipalCache.GetSaml20AssertionLite().Subject.Format;
-            
+
             if (destination.Binding == SAMLBinding.POST)
             {
                 HttpPostBindingBuilder builder = new HttpPostBindingBuilder(destination);
@@ -249,7 +251,7 @@ namespace dk.nita.saml20.protocol
                 XmlSignatureUtils.SignDocument(requestDocument, request.ID);
                 builder.Request = requestDocument.OuterXml;
 
-                if(Trace.ShouldTrace(TraceEventType.Information))
+                if (Trace.ShouldTrace(TraceEventType.Information))
                     Trace.TraceData(TraceEventType.Information, string.Format(Tracing.SendLogoutRequest, "POST", endpoint.Id, requestDocument.OuterXml));
 
                 AuditLogging.logEntry(Direction.OUT, Operation.LOGOUTREQUEST, "Binding: POST");
@@ -258,7 +260,7 @@ namespace dk.nita.saml20.protocol
                 return;
             }
 
-            if(destination.Binding == SAMLBinding.REDIRECT)
+            if (destination.Binding == SAMLBinding.REDIRECT)
             {
                 HttpRedirectBindingBuilder builder = new HttpRedirectBindingBuilder();
                 builder.signingKey = FederationConfig.GetConfig().SigningCertificate.GetCertificate().PrivateKey;
@@ -267,7 +269,7 @@ namespace dk.nita.saml20.protocol
                 request.SubjectToLogOut.Value = Saml20PrincipalCache.GetSaml20AssertionLite().Subject.Value;
                 request.SessionIndex = Saml20PrincipalCache.GetSaml20AssertionLite().SessionIndex;
                 builder.Request = request.GetXml().OuterXml;
-                
+
                 string redirectUrl = destination.Url + "?" + builder.ToQuery();
 
                 if (Trace.ShouldTrace(TraceEventType.Information))
@@ -278,7 +280,7 @@ namespace dk.nita.saml20.protocol
                 return;
             }
 
-            if(destination.Binding == SAMLBinding.ARTIFACT)
+            if (destination.Binding == SAMLBinding.ARTIFACT)
             {
                 if (Trace.ShouldTrace(TraceEventType.Information))
                     Trace.TraceData(TraceEventType.Information, string.Format(Tracing.SendLogoutRequest, "ARTIFACT", endpoint.Id, string.Empty));
@@ -295,7 +297,7 @@ namespace dk.nita.saml20.protocol
 
             HandleError(context, Resources.BindingError);
         }
-        
+
         #endregion
 
         #region SAMLResponse related
@@ -307,7 +309,7 @@ namespace dk.nita.saml20.protocol
 
             string message = string.Empty;
 
-            if(context.Request.RequestType == "GET")
+            if (context.Request.RequestType == "GET")
             {
                 HttpRedirectBindingParser parser = new HttpRedirectBindingParser(context.Request.Url);
                 LogoutResponse response = Serialization.DeserializeFromXmlString<LogoutResponse>(parser.Message);
@@ -316,10 +318,10 @@ namespace dk.nita.saml20.protocol
                                       string.Format("Binding: redirect, Signature algorithm: {0}  Signature:  {1}, Message: {2}", parser.SignatureAlgorithm, parser.Signature, parser.Message));
 
                 IDPEndPoint idp = RetrieveIDPConfiguration(response.Issuer.Value);
-                
+
                 AuditLogging.IdpId = idp.Id;
                 AuditLogging.AssertionId = response.ID;
-                
+
                 if (idp.metadata == null)
                 {
                     AuditLogging.logEntry(Direction.IN, Operation.LOGOUTRESPONSE,
@@ -337,7 +339,8 @@ namespace dk.nita.saml20.protocol
                 }
 
                 message = parser.Message;
-            }else if(context.Request.RequestType == "POST")
+            }
+            else if (context.Request.RequestType == "POST")
             {
                 HttpPostBindingParser parser = new HttpPostBindingParser(context);
                 AuditLogging.logEntry(Direction.IN, Operation.LOGOUTRESPONSE,
@@ -372,7 +375,8 @@ namespace dk.nita.saml20.protocol
                 }
 
                 message = parser.Message;
-            }else
+            }
+            else
             {
                 AuditLogging.logEntry(Direction.IN, Operation.LOGOUTRESPONSE,
                                       string.Format("Unsupported request type format, type: {0}", context.Request.RequestType));
@@ -380,6 +384,7 @@ namespace dk.nita.saml20.protocol
             }
 
             XmlDocument doc = new XmlDocument();
+            doc.XmlResolver = null;
             doc.PreserveWhitespace = true;
             doc.LoadXml(message);
 
@@ -422,8 +427,8 @@ namespace dk.nita.saml20.protocol
             var response = new Saml20LogoutResponse();
             response.Issuer = config.ServiceProvider.ID;
             response.StatusCode = Saml20Constants.StatusCodes.Success; // Default success. Is overwritten if something fails.
-            
-            if(context.Request.RequestType == "GET") // HTTP Redirect binding
+
+            if (context.Request.RequestType == "GET") // HTTP Redirect binding
             {
                 HttpRedirectBindingParser parser = new HttpRedirectBindingParser(context.Request.Url);
                 AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST,
@@ -488,7 +493,8 @@ namespace dk.nita.saml20.protocol
                 }
 
                 message = parser.Message;
-            }else
+            }
+            else
             {
                 //Error: We don't support HEAD, PUT, CONNECT, TRACE, DELETE and OPTIONS
                 // Not able to return a response as we do not understand the request.
@@ -496,14 +502,14 @@ namespace dk.nita.saml20.protocol
             }
 
             AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, message);
-            
+
             // Check that idp in session and request matches.
             string idpRequest = logoutRequest.Issuer.Value;
             bool newSession = SessionFactory.SessionContext.Current.New; // This call to Current must be the first in this request. Otherwise the value will always be false.
             if (!newSession) 
             {
                 object idpId = Saml20PrincipalCache.GetSaml20AssertionLite().Issuer;
-            
+
                 if (idpId != null && idpId.ToString() != idpRequest)
                 {
                     AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, Resources.IdPMismatchBetweenRequestAndSessionFormat(idpId, idpRequest), message);
@@ -529,7 +535,7 @@ namespace dk.nita.saml20.protocol
             response.InResponseTo = logoutRequest.ID;
 
             //Respond using redirect binding
-            if(destination.Binding == SAMLBinding.REDIRECT)
+            if (destination.Binding == SAMLBinding.REDIRECT)
             {
                 HttpRedirectBindingBuilder builder = new HttpRedirectBindingBuilder();
                 builder.RelayState = context.Request.Params["RelayState"];
@@ -544,7 +550,7 @@ namespace dk.nita.saml20.protocol
             if (destination.Binding == SAMLBinding.POST)
             {
                 HttpPostBindingBuilder builder = new HttpPostBindingBuilder(destination);
-                builder.Action = SAMLAction.SAMLResponse;                                
+                builder.Action = SAMLAction.SAMLResponse;
                 XmlDocument responseDocument = response.GetXml();
                 XmlSignatureUtils.SignDocument(responseDocument, response.ID);
                 builder.Response = responseDocument.OuterXml;
@@ -571,7 +577,7 @@ namespace dk.nita.saml20.protocol
                 foreach (IAction action in Actions.Actions.GetActions())
                 {
                     Trace.TraceMethodCalled(action.GetType(), "LogoutAction()");
-                
+
                     action.LogoutAction(this, context, IdPInitiated);
 
                     Trace.TraceMethodDone(action.GetType(), "LogoutAction()");
@@ -585,7 +591,7 @@ namespace dk.nita.saml20.protocol
                 Trace.TraceData(TraceEventType.Verbose, "Session cleared." );
             }
         }
-                
+
         #endregion
     }
 }

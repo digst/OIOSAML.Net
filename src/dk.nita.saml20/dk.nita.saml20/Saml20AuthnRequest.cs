@@ -128,6 +128,7 @@ namespace dk.nita.saml20
         public XmlDocument GetXml()
         {
             XmlDocument doc = new XmlDocument();
+            doc.XmlResolver = null;
             doc.PreserveWhitespace = true;
             doc.LoadXml(Serialization.SerializeToXmlString(request));
             return doc;
