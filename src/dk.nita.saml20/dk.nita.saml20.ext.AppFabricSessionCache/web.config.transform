@@ -1,0 +1,15 @@
+﻿<configuration>
+  <configSections>
+    <section name="dataCacheClient" type="Microsoft.ApplicationServer.Caching.DataCacheClientSection, Microsoft.ApplicationServer.Caching.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" allowLocation="true" allowDefinition="Everywhere" />
+  </configSections>
+  <dataCacheClient>
+    <hosts>
+      <host name="localhost" cachePort="22233" />
+    </hosts>
+    <securityProperties mode="None" protectionLevel="None" />
+  </dataCacheClient>
+  <Federation xmlns="urn:dk.nita.saml20.configuration" sessionType="dk.nita.saml20.ext.appfabricsessioncache.AppFabricSessions, dk.nita.saml20.ext.appfabricsessioncache"/>
+  <appSettings>
+    <add key="CacheName" value="oiosaml"></add>
+  </appSettings>
+</configuration>

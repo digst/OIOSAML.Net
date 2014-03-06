@@ -5,6 +5,7 @@ using System.Security.Principal;
 using System.Threading;
 using System.Web;
 using System.Web.Security;
+using dk.nita.saml20.Session;
 using dk.nita.saml20.config;
 using dk.nita.saml20.Schema.Core;
 using dk.nita.saml20.Identity;
@@ -77,8 +78,11 @@ namespace dk.nita.saml20.identity
         /// <summary>
         /// This method converts the received Saml assertion into a .Net principal.
         /// </summary>
-        internal static IPrincipal InitSaml20Identity(Saml20Assertion assertion, IDPEndPoint point)
+        internal static IPrincipal InitSaml20Identity(Saml20AssertionLite assertion)
         {
+            // Find IDPEndPoint
+            IDPEndPoint point = SAML20FederationConfig.GetConfig().FindEndPoint(assertion.Issuer);
+
             bool isPersistentPseudonym = assertion.Subject.Format == Saml20Constants.NameIdentifierFormats.Persistent;
             // Protocol-level support for persistent pseudonyms: If a mapper has been configured, use it here before constructing the principal.
             string subjectIdentifier = assertion.Subject.Value;
@@ -86,7 +90,7 @@ namespace dk.nita.saml20.identity
                 subjectIdentifier = point.PersistentPseudonym.GetMapper().MapIdentity(assertion.Subject);
 
             // Create identity
-            Saml20Identity identity = new Saml20Identity(subjectIdentifier, assertion.Attributes, isPersistentPseudonym ? assertion.Subject.Value : null);                        
+            var identity = new Saml20Identity(subjectIdentifier, assertion.Attributes, isPersistentPseudonym ? assertion.Subject.Value : null);                        
 
             return new GenericPrincipal(identity, new string[] { });
         }

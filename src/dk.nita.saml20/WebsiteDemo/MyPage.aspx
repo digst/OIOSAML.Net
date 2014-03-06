@@ -67,7 +67,9 @@
 
     <div><asp:Button Id="btnLogoff" runat="server" Enabled="true" Text="Logoff" OnClick="Btn_Logoff_Click" /></div>
     <br />
-    <div>Relogin with IdP: <asp:Button Id="Btn_Relogin" runat="server" Enabled="true" Text="ForceAuthn" OnClick="Btn_Relogin_Click" />
+    <div>Relogin with IdP: 
+    <asp:Button Id="Btn_Relogin" runat="server" Enabled="true" Text="ForceAuthn" OnClick="Btn_Relogin_Click" />
+    <asp:Button Id="Btn_Passive" runat="server" Enabled="true" Text="Passive login" OnClick="Btn_Passive_Click" />
     <asp:Button Id="Btn_ReloginNoForceAuthn" runat="server" Enabled="true" Text="No ForceAuthn" OnClick="Btn_ReloginNoForceAuthn_Click" />
     
     </div>

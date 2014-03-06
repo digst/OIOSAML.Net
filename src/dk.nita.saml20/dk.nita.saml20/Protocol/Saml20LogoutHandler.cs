@@ -6,6 +6,9 @@ using System.Web;
 using System.Web.Security;
 using System.Xml;
 using dk.nita.saml20.Bindings;
+using dk.nita.saml20.Identity;
+using dk.nita.saml20.Session;
+using dk.nita.saml20.session;
 using dk.nita.saml20.config;
 using dk.nita.saml20.Logging;
 using dk.nita.saml20.Properties;
@@ -78,9 +81,10 @@ namespace dk.nita.saml20.protocol
                 else
                 {
                     IDPEndPoint idpEndpoint = null;
-                    if (context.Session[IDPSessionIdKey] != null)
+                    Saml20AssertionLite saml20AssertionLite = Saml20PrincipalCache.GetSaml20AssertionLite();
+                    if (saml20AssertionLite != null)
                     {
-                        idpEndpoint = RetrieveIDPConfiguration((string)context.Session[IDPLoginSessionKey]);
+                        idpEndpoint = RetrieveIDPConfiguration(saml20AssertionLite.Issuer);
                     }
 
                     if (idpEndpoint == null)
@@ -163,16 +167,10 @@ namespace dk.nita.saml20.protocol
                     LogoutRequest req = Serialization.DeserializeFromXmlString<LogoutRequest>(parser.ArtifactResponse.Any.OuterXml);
                     response.StatusCode = Saml20Constants.StatusCodes.Success;
                     response.InResponseTo = req.ID;
-
-                    IDPEndPoint endpoint = RetrieveIDPConfiguration((string)context.Session[IDPLoginSessionKey]);
-                    if (endpoint == null)
-                    {
-                        HandleError(context,
-                                string.Format("Missing IDP Login Session key: {0}",
-                                              parser.ArtifactResponse.Any.LocalName));
-                    }
-
-                    IDPEndPointElement destination = DetermineEndpointConfiguration(SAMLBinding.REDIRECT, endpoint.SLOEndpoint, endpoint.metadata.SLOEndpoints());
+                    Saml20AssertionLite saml20AssertionLite = Saml20PrincipalCache.GetSaml20AssertionLite();
+                    IDPEndPoint endpoint = RetrieveIDPConfiguration(saml20AssertionLite.Issuer);
+                    IDPEndPointElement destination =
+                        DetermineEndpointConfiguration(SAMLBinding.REDIRECT, endpoint.SLOEndpoint, endpoint.metadata.SLOEndpoints());
 
                     builder.RedirectFromLogout(destination, response);
                 }
@@ -240,32 +238,15 @@ namespace dk.nita.saml20.protocol
 
             request.Destination = destination.Url;
 
-            string nameIdFormat = (string)context.Session[IDPNameIdFormat];
-            if (nameIdFormat == null)
-            {
-                HandleError(context, "Missing IDP Name Id Format");
-            }
-
-            request.SubjectToLogOut.Format = nameIdFormat;
+            request.SubjectToLogOut.Format = Saml20PrincipalCache.GetSaml20AssertionLite().Subject.Format;
 
             if (destination.Binding == SAMLBinding.POST)
             {
                 HttpPostBindingBuilder builder = new HttpPostBindingBuilder(destination);
                 request.Destination = destination.Url;
                 request.Reason = Saml20Constants.Reasons.User;
-
-                request.SubjectToLogOut.Value = (string)context.Session[IDPNameId];
-                if (request.SubjectToLogOut.Value == null)
-                {
-                    HandleError(context, "Missing IDP Name Id");
-                }
-
-                request.SessionIndex = (string)context.Session[IDPSessionIdKey];
-                if (request.SessionIndex == null)
-                {
-                    HandleError(context, "Missing IDP Session Id Key");
-                }
-
+                request.SubjectToLogOut.Value = Saml20PrincipalCache.GetSaml20AssertionLite().Subject.Value;
+                request.SessionIndex = Saml20PrincipalCache.GetSaml20AssertionLite().SessionIndex;
                 XmlDocument requestDocument = request.GetXml();
                 XmlSignatureUtils.SignDocument(requestDocument, request.ID);
                 builder.Request = requestDocument.OuterXml;
@@ -285,19 +266,8 @@ namespace dk.nita.saml20.protocol
                 builder.signingKey = FederationConfig.GetConfig().SigningCertificate.GetCertificate().PrivateKey;
                 request.Destination = destination.Url;
                 request.Reason = Saml20Constants.Reasons.User;
-
-                request.SubjectToLogOut.Value = (string)context.Session[IDPNameId];
-                if (request.SubjectToLogOut.Value == null)
-                {
-                    HandleError(context, "Missing IDP Name Id");
-                }
-
-                request.SessionIndex = (string)context.Session[IDPSessionIdKey];
-                if (request.SessionIndex == null)
-                {
-                    HandleError(context, "Missing IDP Session Id Key");
-                }
-
+                request.SubjectToLogOut.Value = Saml20PrincipalCache.GetSaml20AssertionLite().Subject.Value;
+                request.SessionIndex = Saml20PrincipalCache.GetSaml20AssertionLite().SessionIndex;
                 builder.Request = request.GetXml().OuterXml;
 
                 string redirectUrl = destination.Url + "?" + builder.ToQuery();
@@ -317,18 +287,8 @@ namespace dk.nita.saml20.protocol
 
                 request.Destination = destination.Url;
                 request.Reason = Saml20Constants.Reasons.User;
-
-                request.SubjectToLogOut.Value = (string)context.Session[IDPNameId];
-                if (request.SubjectToLogOut.Value == null)
-                {
-                    HandleError(context, "Missing IDP Name Id");
-                }
-
-                request.SessionIndex = (string)context.Session[IDPSessionIdKey];
-                if (request.SessionIndex == null)
-                {
-                    HandleError(context, "Missing IDP session Id Key");
-                }
+                request.SubjectToLogOut.Value = Saml20PrincipalCache.GetSaml20AssertionLite().Subject.Value;
+                request.SessionIndex = Saml20PrincipalCache.GetSaml20AssertionLite().SessionIndex;
 
                 HttpArtifactBindingBuilder builder = new HttpArtifactBindingBuilder(context);
                 AuditLogging.logEntry(Direction.OUT, Operation.LOGOUTREQUEST, "Method: Artifact");
@@ -545,13 +505,14 @@ namespace dk.nita.saml20.protocol
 
             // Check that idp in session and request matches.
             string idpRequest = logoutRequest.Issuer.Value;
-            if (!context.Session.IsNewSession)
+            bool newSession = SessionFactory.SessionContext.Current.New; // This call to Current must be the first in this request. Otherwise the value will always be false.
+            if (!newSession) 
             {
-                object idpSession = context.Session[IDPLoginSessionKey];
+                object idpId = Saml20PrincipalCache.GetSaml20AssertionLite().Issuer;
 
-                if (idpSession != null && idpSession.ToString() != idpRequest)
+                if (idpId != null && idpId.ToString() != idpRequest)
                 {
-                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, Resources.IdPMismatchBetweenRequestAndSessionFormat(idpSession, idpRequest), message);
+                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, Resources.IdPMismatchBetweenRequestAndSessionFormat(idpId, idpRequest), message);
                     response.StatusCode = Saml20Constants.StatusCodes.RequestDenied;
                 }
             }
@@ -562,7 +523,7 @@ namespace dk.nita.saml20.protocol
             }
 
             //  Only logout if request is valid and we are working on an existing Session.
-            if (Saml20Constants.StatusCodes.Success == response.StatusCode && !context.Session.IsNewSession)
+            if (Saml20Constants.StatusCodes.Success == response.StatusCode && !newSession)
             {
                 // Execute all actions that the service provider has configured
                 DoLogout(context, true);
@@ -610,13 +571,24 @@ namespace dk.nita.saml20.protocol
 
         private void DoLogout(HttpContext context, bool IdPInitiated)
         {
-            foreach (IAction action in Actions.Actions.GetActions())
+         
+            try
             {
-                Trace.TraceMethodCalled(action.GetType(), "LogoutAction()");
+                foreach (IAction action in Actions.Actions.GetActions())
+                {
+                    Trace.TraceMethodCalled(action.GetType(), "LogoutAction()");
 
-                action.LogoutAction(this, context, IdPInitiated);
+                    action.LogoutAction(this, context, IdPInitiated);
 
-                Trace.TraceMethodDone(action.GetType(), "LogoutAction()");
+                    Trace.TraceMethodDone(action.GetType(), "LogoutAction()");
+                }
+            }
+            finally
+            {
+                // Always end with abandoning the session.
+                Trace.TraceData(TraceEventType.Information, "Clearing session with id: " + SessionFactory.SessionContext.Current.Id);
+                SessionFactory.SessionContext.AbandonCurrentSession();
+                Trace.TraceData(TraceEventType.Verbose, "Session cleared." );
             }
         }
 
