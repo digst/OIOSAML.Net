@@ -72,7 +72,8 @@ namespace dk.nita.saml20
         {
             CheckEncryptedAssertionElement(element);
             
-            _encryptedAssertion = new XmlDocument();            
+            _encryptedAssertion = new XmlDocument();
+            _encryptedAssertion.XmlResolver = null;
             _encryptedAssertion.AppendChild(_encryptedAssertion.ImportNode(element, true));
         }
 
@@ -163,6 +164,7 @@ namespace dk.nita.saml20
             encryptedAssertion.encryptedData = new SfwEncryptedData();
 
             XmlDocument result = new XmlDocument();
+            result.XmlResolver = null;
             result.LoadXml(Serialization.SerializeToXmlString(encryptedAssertion));
 
             XmlElement encryptedDataElement = GetElement(SfwEncryptedData.ELEMENT_NAME, Saml20Constants.XENC, result.DocumentElement);
@@ -209,6 +211,7 @@ namespace dk.nita.saml20
             byte[] plaintext = encryptedXml.DecryptData(encryptedData, sessionKey);
 
             _assertion = new XmlDocument();
+            _assertion.XmlResolver = null;
             _assertion.PreserveWhitespace = true;
 
             try

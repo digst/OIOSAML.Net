@@ -133,6 +133,7 @@ namespace dk.nita.saml20.Bindings
         private bool CheckSignature(AsymmetricAlgorithm key)
         {
             XmlDocument doc = new XmlDocument();
+            doc.XmlResolver = null;
             doc.PreserveWhitespace = true;
             doc.LoadXml(SamlMessage.OuterXml);
             return XmlSignatureUtils.CheckSignature(doc, key);
@@ -177,6 +178,7 @@ namespace dk.nita.saml20.Bindings
                 _soapEnvelope = reader.ReadToEnd();
 
                 XmlDocument doc = new XmlDocument();
+                doc.XmlResolver = null;
                 doc.PreserveWhitespace = true;
                 doc.LoadXml(_soapEnvelope);
 

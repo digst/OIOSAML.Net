@@ -526,6 +526,7 @@ namespace dk.nita.saml20.config
         private XmlDocument LoadFileAsXmlDocument(string filename)
         {
             XmlDocument doc = new XmlDocument();
+            doc.XmlResolver = null;
             doc.PreserveWhitespace = true;
             
             try
@@ -578,6 +579,7 @@ namespace dk.nita.saml20.config
             if (doc == null) throw new ArgumentNullException("doc");
             if( doc.DocumentElement == null) throw new ArgumentException("DocumentElement cannot be null", "doc");
             XmlDocument other = new XmlDocument();
+            other.XmlResolver = null;
             other.PreserveWhitespace = true;
             
             other.LoadXml(doc.OuterXml);

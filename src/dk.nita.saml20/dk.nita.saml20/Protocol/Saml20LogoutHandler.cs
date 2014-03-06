@@ -97,7 +97,8 @@ namespace dk.nita.saml20.protocol
 
                     TransferClient(idpEndpoint, context);
                 }
-            }catch(Exception e)
+            }
+            catch (Exception e)
             {
                 //ThreadAbortException is thrown by response.Redirect so don't worry about it
                 if(e is ThreadAbortException)
@@ -173,7 +174,8 @@ namespace dk.nita.saml20.protocol
                         DetermineEndpointConfiguration(SAMLBinding.REDIRECT, endpoint.SLOEndpoint, endpoint.metadata.SLOEndpoints());
 
                     builder.RedirectFromLogout(destination, response);
-                }else if(parser.ArtifactResponse.Any.LocalName == LogoutResponse.ELEMENT_NAME)
+                }
+                else if (parser.ArtifactResponse.Any.LocalName == LogoutResponse.ELEMENT_NAME)
                 {
                     DoLogout(context);
                 }
@@ -369,7 +371,8 @@ namespace dk.nita.saml20.protocol
                 }
 
                 message = parser.Message;
-            }else if(context.Request.RequestType == "POST")
+            }
+            else if (context.Request.RequestType == "POST")
             {
                 HttpPostBindingParser parser = new HttpPostBindingParser(context);
                 AuditLogging.logEntry(Direction.IN, Operation.LOGOUTRESPONSE,
@@ -404,7 +407,8 @@ namespace dk.nita.saml20.protocol
                 }
 
                 message = parser.Message;
-            }else
+            }
+            else
             {
                 AuditLogging.logEntry(Direction.IN, Operation.LOGOUTRESPONSE,
                                       string.Format("Unsupported request type format, type: {0}", context.Request.RequestType));
@@ -412,6 +416,7 @@ namespace dk.nita.saml20.protocol
             }
 
             XmlDocument doc = new XmlDocument();
+            doc.XmlResolver = null;
             doc.PreserveWhitespace = true;
             doc.LoadXml(message);
 
@@ -520,7 +525,8 @@ namespace dk.nita.saml20.protocol
                 }
 
                 message = parser.Message;
-            }else
+            }
+            else
             {
                 //Error: We don't support HEAD, PUT, CONNECT, TRACE, DELETE and OPTIONS
                 // Not able to return a response as we do not understand the request.

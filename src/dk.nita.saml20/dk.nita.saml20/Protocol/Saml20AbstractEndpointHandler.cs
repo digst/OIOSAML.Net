@@ -154,6 +154,7 @@ namespace dk.nita.saml20.protocol
         /// </summary>
         public IDPEndPoint RetrieveIDPConfiguration(string IDPId)
         {
+            if (IDPId == null) return null;
             SAML20FederationConfig config = SAML20FederationConfig.GetConfig();
             return config.FindEndPoint(IDPId);
         }

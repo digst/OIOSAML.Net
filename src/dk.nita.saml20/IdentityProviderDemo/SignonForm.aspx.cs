@@ -22,7 +22,7 @@ namespace IdentityProviderDemo
 
         protected override void OnInit(EventArgs e)
         {            
-            request = Context.Application["authenticationrequest"] as AuthnRequest;
+            request = Context.Session["authenticationrequest"] as AuthnRequest;
 
             if (request == null)
             {
@@ -138,6 +138,7 @@ namespace IdentityProviderDemo
 
             // Serialize the response.
             XmlDocument assertionDoc = new XmlDocument();
+            assertionDoc.XmlResolver = null;
             assertionDoc.PreserveWhitespace = true;
             assertionDoc.LoadXml(Serialization.SerializeToXmlString(response));
 
