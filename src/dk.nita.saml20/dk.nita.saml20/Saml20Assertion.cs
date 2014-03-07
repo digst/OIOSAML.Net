@@ -374,13 +374,19 @@ namespace dk.nita.saml20
 
         private bool CheckSignature(AsymmetricAlgorithm key)
         {
-            if (XmlSignatureUtils.CheckSignature(_samlAssertion, key))
+            // HACK: This is a modification done because the WAYF idp returns a saml response
+            // with two signatures and the .Net SignedXml class returns false for the second signature validation.
+            // The modification ensures that the xml document only contains the saml assertion which we want to check
+            // and not the other signature (on the SAML response).
+            var xmlDocument = new XmlDocument() { PreserveWhitespace = true };
+            xmlDocument.LoadXml(_samlAssertion.OuterXml);
+
+            if (XmlSignatureUtils.CheckSignature((XmlElement)xmlDocument.FirstChild, key))
             {
                 SigningKey = key;
                 return true;
             }
             return false;
-            
         }
 
         /// <summary>
