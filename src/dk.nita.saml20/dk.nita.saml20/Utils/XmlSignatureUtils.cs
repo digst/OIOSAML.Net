@@ -360,7 +360,7 @@ namespace dk.nita.saml20.Utils
             {
                 MethodInfo methodInfoAddAlgorithm = typeof(CryptoConfig).GetMethod("AddAlgorithm", BindingFlags.Public | BindingFlags.Static);
                 if (methodInfoAddAlgorithm == null)
-                    throw new InvalidOperationException("This version of .NET does not support CryptoConfig.AddAlgorithm. Enabling sha256 not posible.");
+                    throw new InvalidOperationException("This version of .NET does not support CryptoConfig.AddAlgorithm - you should use .NET 4.0 or greater. Enabling sha256 not possible.");
 
                 methodInfoAddAlgorithm.Invoke(null, new object[] { typeof(RSAPKCS1SHA256SignatureDescription), new string[] { signedXml.SignatureMethod } });
             }

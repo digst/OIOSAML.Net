@@ -146,6 +146,9 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Saml20\Assertions\Assertions.txt" />
+    <Content Include="Saml20\Assertions\SHA256Signedtest.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="Saml20\Protocol\MetadataDocs\FOBS\tfobs-demo-idp-metadata.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
