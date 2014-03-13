@@ -367,9 +367,8 @@ namespace dk.nita.saml20.Utils
                         throw new InvalidOperationException("This version of .NET does not support CryptoConfig.AddAlgorithm - you should use .NET 4.0 or greater. Enabling sha256 not possible.");
 
                     methodInfoAddAlgorithm.Invoke(null, new object[] { typeof(RSAPKCS1SHA256SignatureDescription), new string[] { signedXml.SignatureMethod } });
+                    addSHA256AlgorithmHasBeenCalled = true;
                 }
-
-                addSHA256AlgorithmHasBeenCalled = true;
             }
         }
 
