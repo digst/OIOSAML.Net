@@ -70,6 +70,8 @@ namespace dk.nita.saml20.Utils
     /// </summary>
     public class XmlSignatureUtils
     {
+        private static bool addSHA256AlgorithmHasBeenCalled = false;
+
         /// <summary>
         /// Verifies the signature of the XmlDocument instance using the key enclosed with the signature.
         /// </summary>
@@ -356,13 +358,18 @@ namespace dk.nita.saml20.Utils
         /// <param name="signedXml">SignedXml object</param>
         internal static void EnableSignatureMethod(SignedXml signedXml)
         {
-            if (signedXml.SignatureMethod.Contains("rsa-sha256"))
+            if (!addSHA256AlgorithmHasBeenCalled)
             {
-                MethodInfo methodInfoAddAlgorithm = typeof(CryptoConfig).GetMethod("AddAlgorithm", BindingFlags.Public | BindingFlags.Static);
-                if (methodInfoAddAlgorithm == null)
-                    throw new InvalidOperationException("This version of .NET does not support CryptoConfig.AddAlgorithm. Enabling sha256 not posible.");
+                if (signedXml.SignatureMethod.Contains("rsa-sha256"))
+                {
+                    MethodInfo methodInfoAddAlgorithm = typeof(CryptoConfig).GetMethod("AddAlgorithm", BindingFlags.Public | BindingFlags.Static);
+                    if (methodInfoAddAlgorithm == null)
+                        throw new InvalidOperationException("This version of .NET does not support CryptoConfig.AddAlgorithm - you should use .NET 4.0 or greater. Enabling sha256 not possible.");
 
-                methodInfoAddAlgorithm.Invoke(null, new object[] { typeof(RSAPKCS1SHA256SignatureDescription), new string[] { signedXml.SignatureMethod } });
+                    methodInfoAddAlgorithm.Invoke(null, new object[] { typeof(RSAPKCS1SHA256SignatureDescription), new string[] { signedXml.SignatureMethod } });
+                }
+
+                addSHA256AlgorithmHasBeenCalled = true;
             }
         }
 
