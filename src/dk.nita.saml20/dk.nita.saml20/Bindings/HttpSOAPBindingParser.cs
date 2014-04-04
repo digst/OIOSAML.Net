@@ -145,7 +145,7 @@ namespace dk.nita.saml20.Bindings
         /// <returns></returns>
         public Status GetStatus()
         {
-            XmlElement status = (XmlElement) SamlMessage.GetElementsByTagName(Status.ELEMENT_NAME, Saml20Constants.PROTOCOL)[0];
+            XmlElement status = (XmlElement)SamlMessage.GetElementsByTagName(Status.ELEMENT_NAME, Saml20Constants.PROTOCOL)[0];
             Status result = null;
             if (status != null)
             {
@@ -182,7 +182,7 @@ namespace dk.nita.saml20.Bindings
                 doc.PreserveWhitespace = true;
                 doc.LoadXml(_soapEnvelope);
 
-                XmlElement _soapBody = (XmlElement) doc.GetElementsByTagName(SOAPConstants.SOAPBody, SOAPConstants.SOAPNamespace)[0];
+                XmlElement _soapBody = (XmlElement)doc.GetElementsByTagName(SOAPConstants.SOAPBody, SOAPConstants.SOAPNamespace)[0];
                 if (_soapBody != null)
                     _samlMessage = (XmlElement)_soapBody.FirstChild;
                 else
@@ -198,9 +198,6 @@ namespace dk.nita.saml20.Bindings
         /// <returns></returns>
         public bool CheckSignature(IEnumerable<KeyDescriptor> keys)
         {
-            var xmlDocument = new XmlDocument();
-            xmlDocument.AppendChild(_samlMessage);
-
             foreach (KeyDescriptor keyDescriptor in keys)
             {
                 KeyInfo ki = (KeyInfo)keyDescriptor.KeyInfo;
@@ -209,7 +206,7 @@ namespace dk.nita.saml20.Bindings
                 {
                     AsymmetricAlgorithm key = XmlSignatureUtils.ExtractKey(clause);
 
-                    if (key != null && XmlSignatureUtils.CheckSignature(xmlDocument, key))
+                    if (key != null && XmlSignatureUtils.CheckSignature(_samlMessage, key))
                     {
                         return true;
                     }
@@ -227,9 +224,7 @@ namespace dk.nita.saml20.Bindings
         /// </returns>
         public bool IsSigned()
         {
-            var xmlDocument = new XmlDocument();
-            xmlDocument.AppendChild(_samlMessage);
-            return XmlSignatureUtils.IsSigned(xmlDocument);
+            return XmlSignatureUtils.IsSigned(_samlMessage);
         }
     }
 }
