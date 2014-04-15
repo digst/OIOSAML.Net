@@ -64,7 +64,7 @@ namespace dk.nita.saml20.ext.appfabricsessioncache
                 }
             }
 
-            sessions.Remove(userId);
+            sessions.Remove(userIdLowerCase);
         }
 
         public override void AssociateUserIdWithCurrentSession(string userId)

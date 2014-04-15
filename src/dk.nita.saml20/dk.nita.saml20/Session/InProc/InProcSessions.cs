@@ -60,7 +60,7 @@ namespace dk.nita.saml20.session.inproc
                 }
             }
 
-            Sessions.Remove(userId);
+            Sessions.Remove(userIdLowerCase);
         }
 
         public override void AssociateUserIdWithCurrentSession(string userId)
