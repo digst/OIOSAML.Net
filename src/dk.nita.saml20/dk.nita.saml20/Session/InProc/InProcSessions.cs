@@ -34,7 +34,6 @@ namespace dk.nita.saml20.session.inproc
                         {
                             // DO NOTHING. We just wanted to renew the session timeout on user id cache.
                         }
-
                     }
                 }
             }
