@@ -32,11 +32,10 @@ namespace dk.nita.saml20.protocol
                 if (endp == null)
                     throw new Saml20Exception("Signon endpoint not found in configuration");
 
-                string redirectUrl = (string)SessionFactory.SessionContext.Current[SessionConstants.RedirectUrl];
+                string redirectUrl = (string)HttpContext.Current.Session[SessionConstants.RedirectUrl];
 
                 if (!string.IsNullOrEmpty(redirectUrl))
                 {
-                    SessionFactory.SessionContext.Current.Remove(SessionConstants.RedirectUrl);
                     context.Response.Redirect(redirectUrl);
                 }
                 else if (string.IsNullOrEmpty(endp.RedirectUrl))

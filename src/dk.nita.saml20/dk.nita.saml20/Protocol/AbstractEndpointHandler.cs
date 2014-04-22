@@ -8,7 +8,7 @@ using dk.nita.saml20.session;
 using dk.nita.saml20.config;
 using System.Web.SessionState;
 using dk.nita.saml20.protocol.pages;
-using Trace=dk.nita.saml20.Utils.Trace;
+using Trace = dk.nita.saml20.Utils.Trace;
 
 namespace dk.nita.saml20.protocol
 {
@@ -86,11 +86,11 @@ namespace dk.nita.saml20.protocol
             if (e is ThreadAbortException)
                 return;
 
-            StringBuilder sb = new StringBuilder(1000);            
+            StringBuilder sb = new StringBuilder(1000);
             while (e != null)
             {
-                sb.AppendLine(e.ToString());                
-                e = e.InnerException;                
+                sb.AppendLine(e.ToString());
+                e = e.InnerException;
             }
 
             HandleError(context, sb.ToString());
@@ -117,7 +117,7 @@ namespace dk.nita.saml20.protocol
         public string RedirectUrl
         {
             get { return _redirectUrl; }
-            set{ _redirectUrl = value;}
+            set { _redirectUrl = value; }
         }
 
         /// <summary>
@@ -126,16 +126,11 @@ namespace dk.nita.saml20.protocol
         /// <param name="context">The context.</param>
         public void DoRedirect(HttpContext context)
         {
-            ISession currentSession = SessionFactory.SessionContext.Current;
-            if (currentSession != null)
+            var redirectUrl = (string)HttpContext.Current.Session[SessionConstants.RedirectUrl];
+            if (!string.IsNullOrEmpty(redirectUrl))
             {
-                var redirectUrl = (string) currentSession[SessionConstants.RedirectUrl];
-                if (!string.IsNullOrEmpty(redirectUrl))
-                {
-                    currentSession.Remove(SessionConstants.RedirectUrl);
-                    context.Response.Redirect(redirectUrl);
-                    return;
-                }
+                context.Response.Redirect(redirectUrl);
+                return;
             }
 
             // Use default redirect url

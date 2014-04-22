@@ -13,7 +13,7 @@ namespace dk.nita.saml20.session.inproc
         private static readonly Cache Sessions = HttpRuntime.Cache;
 
         private const string UserId = "UserId";
-            
+
 
         protected override ISession GetSession()
         {
@@ -34,16 +34,20 @@ namespace dk.nita.saml20.session.inproc
                         {
                             // DO NOTHING. We just wanted to renew the session timeout on user id cache.
                         }
-                            
+
                     }
                 }
             }
 
-            if (session == null)
-            {
-                session = CreateSession();
-                session.New = true;
-            }
+            return session;
+        }
+
+        protected override ISession CreateSession()
+        {
+            Guid sessionId = Guid.NewGuid();
+            var session = new InProcSession(sessionId);
+            Sessions.Insert(sessionId.ToString(), session, null, Cache.NoAbsoluteExpiration, new TimeSpan(0, 0, SessionTimeout, 0));
+            session.New = true;
             return session;
         }
 
@@ -52,7 +56,7 @@ namespace dk.nita.saml20.session.inproc
             string userIdLowerCase = userId.ToLower();
             IList<Guid> sessionIds = Sessions[userIdLowerCase] as IList<Guid>;
 
-            if(sessionIds != null)
+            if (sessionIds != null)
             {
                 foreach (var sessionId in sessionIds)
                 {
@@ -68,14 +72,15 @@ namespace dk.nita.saml20.session.inproc
             string userIdLowerCase = userId.ToLower();
             IList<Guid> sessionIds = Sessions[userIdLowerCase] as IList<Guid>;
 
-            if(sessionIds == null)
+            if (sessionIds == null)
             {
                 sessionIds = new List<Guid>();
                 Sessions.Insert(userIdLowerCase, sessionIds, null, Cache.NoAbsoluteExpiration, new TimeSpan(0, 0, SessionTimeout, 0));
             }
 
+            // Register the session for later logout by background system (SOAP-Logout)
+            RegisterSession();
             // Update cache from user id perspective
-            sessionIds = Sessions[userIdLowerCase] as IList<Guid>;
             sessionIds.Add(Current.Id);
 
             // Update cache from session id perspective so that we have a bi-directional reference.
@@ -88,15 +93,6 @@ namespace dk.nita.saml20.session.inproc
             {
                 Sessions.Remove(SessionId.ToString()); // Remove is thread safe. No need to lock.
             }
-        }
-
-        private ISession CreateSession()
-        {
-            Guid sessionId = Guid.NewGuid();
-            var session = new InProcSession(sessionId);
-            Sessions.Insert(sessionId.ToString(), session, null,
-                            Cache.NoAbsoluteExpiration, new TimeSpan(0, 0, SessionTimeout, 0));
-            return session;
         }
     }
 }

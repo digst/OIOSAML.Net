@@ -24,10 +24,16 @@ namespace dk.nita.saml20.session
         public abstract void AbandonCurrentSession();
 
         /// <summary>
-        /// Returns the current session or creates a new one if one did not exists. <see cref="ISession.New"/> must be true if a new session has been created.
+        /// Returns the current session.
         /// </summary>
         /// <returns></returns>
         protected abstract ISession GetSession();
+
+        /// <summary>
+        /// Creates a new session.
+        /// </summary>
+        /// <returns></returns>
+        protected abstract ISession CreateSession();
 
         /// <summary>
         /// The timeout as set in the configuration file.
@@ -44,18 +50,27 @@ namespace dk.nita.saml20.session
         {
             get
             {
-                ISession session = GetSession();
-
-                if (session.New)
-                {
-                    SessionStateUtil.CreateSessionId(session.Id);
-                    Trace.TraceData(TraceEventType.Information, "New session created with id: " + session.Id);
-                }
-
-                return session;
+                return GetSession();
             }
         }
-        
+
+        /// <summary>
+        ///   This is the call that actually registers the session - for later logout
+        /// </summary>
+        /// <returns></returns>
+        public ISession RegisterSession()
+        {
+            ISession session = CreateSession();
+
+            if (session != null && session.New)
+            {
+                SessionStateUtil.CreateSessionId(session.Id);
+                Trace.TraceData(TraceEventType.Information, "New session created with id: " + session.Id);
+            }
+
+            return session;
+        }
+
         /// <summary>
         ///  <see cref="ISessions.AbandonAllSessions"/>
         /// </summary>
