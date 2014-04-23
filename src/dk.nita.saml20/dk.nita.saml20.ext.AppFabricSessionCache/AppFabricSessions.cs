@@ -19,7 +19,7 @@ namespace dk.nita.saml20.ext.appfabricsessioncache
         static AppFabricSessions()
         {
             CacheName = System.Configuration.ConfigurationManager.AppSettings["CacheName"];
-            if (CacheName == null)
+            if(CacheName == null)
                 throw new InvalidOperationException("Not able to initialize AppFabricSessions because no app setting with key CacheName was found.");
         }
 
@@ -30,27 +30,23 @@ namespace dk.nita.saml20.ext.appfabricsessioncache
             if (SessionId.HasValue && sessions.Get(SessionId.ToString()) != null)
             {
                 // Needed in order to simluate sliding expiration
-                sessions.ResetObjectTimeout(SessionId.ToString(), new TimeSpan(0, 0, SessionTimeout, 0));
-                session = new AppFabricSession(SessionId.Value);
+                sessions.ResetObjectTimeout(SessionId.ToString(), new TimeSpan(0, 0, SessionTimeout, 0)); 
+                session =  new AppFabricSession(SessionId.Value);
 
                 // Ping user id cache to extend the timeout
                 var userId = session[UserId] as string;
                 if (!string.IsNullOrEmpty(userId))
                 {
-                    sessions.ResetObjectTimeout(userId, new TimeSpan(0, 0, SessionTimeout, 0));
+                    sessions.ResetObjectTimeout(userId, new TimeSpan(0, 0, SessionTimeout, 0)); 
                 }
             }
 
-            return session;
-        }
-
-        protected override ISession CreateSession()
-        {
-            Guid sessionId = Guid.NewGuid();
-            DataCache sessions = CacheFactory.GetCache(CacheName);
-            sessions.Add(sessionId.ToString(), new Dictionary<string, object>(), new TimeSpan(0, 0, SessionTimeout, 0));
-            ISession session = new AppFabricSession(sessionId);
-            session.New = true;
+            if (session == null)
+            {
+                session = new AppFabricSession(CreateSession());
+                session.New = true;
+            }
+            
             return session;
         }
 
@@ -101,6 +97,16 @@ namespace dk.nita.saml20.ext.appfabricsessioncache
                     sessions.Remove(SessionId.ToString()); // Remove is not thread safe.
                 }
             }
+        }
+
+        private Guid CreateSession()
+        {
+            Guid sessionId = Guid.NewGuid();
+            DataCache sessions = CacheFactory.GetCache(CacheName);
+
+            sessions.Add(sessionId.ToString(), new Dictionary<string, object>(), new TimeSpan(0, 0, SessionTimeout, 0));
+
+            return sessionId;
         }
     }
 }

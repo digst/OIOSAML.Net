@@ -9,19 +9,12 @@
     /// </summary>
     interface ISessions
     {
-
         /// <summary>
         /// Gets the current session. Accessing the session must result in the session timeout being reset. Thus, it must work according to the sliding expiration principle.
         /// If no session exist a new one must be returned where <see cref="ISession.New"/> must be true.
         /// </summary>
         /// <returns>The current session.</returns>
         ISession Current { get; }
-
-        /// <summary>
-        /// Registers the session.
-        /// </summary>
-        /// <returns></returns>
-        ISession RegisterSession();
 
         /// <summary>
         /// Abondon all sessions given a user id. The same user could be logged into the SP in different browsers or different computers.
