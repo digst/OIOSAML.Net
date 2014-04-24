@@ -44,7 +44,7 @@ namespace dk.nita.saml20.ext.appfabricsessioncache
                 }
                 catch (DataCacheException)
                 {
-                    // Do nothing - call to sessions.ResetObjectTimeout will throw a DataCacheException if sessions has been removed by SOAP-Logout
+                    // Do nothing - call to sessions.ResetObjectTimeout will throw a DataCacheException if sessions have been removed by SOAP-Logout
                 }
             }
 
