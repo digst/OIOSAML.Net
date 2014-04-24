@@ -13,7 +13,7 @@ namespace dk.nita.saml20.session.inproc
         private static readonly Cache Sessions = HttpRuntime.Cache;
 
         private const string UserId = "UserId";
-            
+
 
         protected override ISession GetSession()
         {
@@ -34,7 +34,7 @@ namespace dk.nita.saml20.session.inproc
                         {
                             // DO NOTHING. We just wanted to renew the session timeout on user id cache.
                         }
-                            
+
                     }
                 }
             }
@@ -52,7 +52,7 @@ namespace dk.nita.saml20.session.inproc
             string userIdLowerCase = userId.ToLower();
             IList<Guid> sessionIds = Sessions[userIdLowerCase] as IList<Guid>;
 
-            if(sessionIds != null)
+            if (sessionIds != null)
             {
                 foreach (var sessionId in sessionIds)
                 {
@@ -68,7 +68,7 @@ namespace dk.nita.saml20.session.inproc
             string userIdLowerCase = userId.ToLower();
             IList<Guid> sessionIds = Sessions[userIdLowerCase] as IList<Guid>;
 
-            if(sessionIds == null)
+            if (sessionIds == null)
             {
                 sessionIds = new List<Guid>();
                 Sessions.Insert(userIdLowerCase, sessionIds, null, Cache.NoAbsoluteExpiration, new TimeSpan(0, 0, SessionTimeout, 0));
@@ -94,8 +94,7 @@ namespace dk.nita.saml20.session.inproc
         {
             Guid sessionId = Guid.NewGuid();
             var session = new InProcSession(sessionId);
-            Sessions.Insert(sessionId.ToString(), session, null,
-                            Cache.NoAbsoluteExpiration, new TimeSpan(0, 0, SessionTimeout, 0));
+            Sessions.Insert(sessionId.ToString(), session, null, Cache.NoAbsoluteExpiration, new TimeSpan(0, 0, SessionTimeout, 0));
             return session;
         }
     }

@@ -19,7 +19,7 @@ namespace dk.nita.saml20.ext.appfabricsessioncache
         static AppFabricSessions()
         {
             CacheName = System.Configuration.ConfigurationManager.AppSettings["CacheName"];
-            if(CacheName == null)
+            if (CacheName == null)
                 throw new InvalidOperationException("Not able to initialize AppFabricSessions because no app setting with key CacheName was found.");
         }
 
@@ -29,15 +29,22 @@ namespace dk.nita.saml20.ext.appfabricsessioncache
             DataCache sessions = CacheFactory.GetCache(CacheName);
             if (SessionId.HasValue && sessions.Get(SessionId.ToString()) != null)
             {
-                // Needed in order to simluate sliding expiration
-                sessions.ResetObjectTimeout(SessionId.ToString(), new TimeSpan(0, 0, SessionTimeout, 0)); 
-                session =  new AppFabricSession(SessionId.Value);
-
-                // Ping user id cache to extend the timeout
-                var userId = session[UserId] as string;
-                if (!string.IsNullOrEmpty(userId))
+                try
                 {
-                    sessions.ResetObjectTimeout(userId, new TimeSpan(0, 0, SessionTimeout, 0)); 
+                    // Needed in order to simluate sliding expiration
+                    sessions.ResetObjectTimeout(SessionId.ToString(), new TimeSpan(0, 0, SessionTimeout, 0));
+                    session = new AppFabricSession(SessionId.Value);
+
+                    // Ping user id cache to extend the timeout
+                    var userId = session[UserId] as string;
+                    if (!string.IsNullOrEmpty(userId))
+                    {
+                        sessions.ResetObjectTimeout(userId, new TimeSpan(0, 0, SessionTimeout, 0));
+                    }
+                }
+                catch (DataCacheException)
+                {
+                    // Do nothing - call to sessions.ResetObjectTimeout will throw a DataCacheException if sessions has been removed by SOAP-Logout
                 }
             }
 
@@ -46,7 +53,7 @@ namespace dk.nita.saml20.ext.appfabricsessioncache
                 session = new AppFabricSession(CreateSession());
                 session.New = true;
             }
-            
+
             return session;
         }
 
