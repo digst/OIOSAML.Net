@@ -4,6 +4,7 @@ using System.Web;
 using dk.nita.saml20.Actions;
 using dk.nita.saml20.identity;
 using dk.nita.saml20.Logging;
+using dk.nita.saml20.protocol;
 
 namespace WebsiteDemo
 {
@@ -25,6 +26,15 @@ namespace WebsiteDemo
             // The login will be not be cleared until next redirect due to the way FormsAuthentication works, so we will have to check Saml20Identity.IsInitialized() too
             AuditLogging.logEntry(Direction.IN, Operation.LOGOUT, "ServiceProvider logout",
                 "SP local user id: " + (context.User.Identity.IsAuthenticated ? context.User.Identity.Name : "none") + " login status: " + Saml20Identity.IsInitialized());
+        }
+
+        /// <summary>
+        /// <see cref="IAction.SoapLogoutAction"/>
+        /// </summary>
+        public void SoapLogoutAction(AbstractEndpointHandler handler, HttpContext context, string userId)
+        {
+            AuditLogging.logEntry(Direction.IN, Operation.LOGOUT, "ServiceProvider SOAP logout",
+                "IdP user id: " + userId + " login status: " + Saml20Identity.IsInitialized());
         }
 
         public string Name

@@ -146,6 +146,17 @@ namespace dk.nita.saml20
                     
                     continue;
                 }
+
+                if (endpoint.endpointType == EndpointType.SOAPLOGOUT)
+                {
+                    Endpoint logoutEndpoint = new Endpoint();
+                    logoutEndpoint.Location = new Uri(baseURL, endpoint.localPath).ToString();
+                    logoutEndpoint.ResponseLocation = logoutEndpoint.Location;
+                    logoutEndpoint.Binding = GetBinding(endpoint.Binding, Saml20Constants.ProtocolBindings.HTTP_SOAP);
+                    logoutServiceEndpoints.Add(logoutEndpoint);
+
+                    continue;
+                }
             }           
 
             spDescriptor.SingleLogoutService = logoutServiceEndpoints.ToArray();

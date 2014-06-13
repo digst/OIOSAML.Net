@@ -854,6 +854,11 @@ namespace dk.nita.saml20.config
         [XmlEnum("logout")]
         LOGOUT,
         /// <summary>
+        /// Logout endpoint
+        /// </summary>
+        [XmlEnum("soaplogout")]
+        SOAPLOGOUT,
+        /// <summary>
         /// Metadata endpoint
         /// </summary>
         [XmlEnum("metadata")]
