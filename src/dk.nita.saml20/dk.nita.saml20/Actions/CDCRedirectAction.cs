@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Web;
+using dk.nita.saml20.Identity;
+using dk.nita.saml20.session;
 using dk.nita.saml20.config;
 using dk.nita.saml20.protocol;
 
@@ -31,7 +33,7 @@ namespace dk.nita.saml20.Actions
         /// <param name="assertion">The saml assertion of the currently logged in user.</param>
         public void LoginAction(AbstractEndpointHandler handler, HttpContext context, Saml20Assertion assertion)
         {
-            string idpKey = (string) context.Session[Saml20SignonHandler.IDPLoginSessionKey];
+            string idpKey = Saml20PrincipalCache.GetSaml20AssertionLite().Issuer;
             Saml20SignonHandler h = (Saml20SignonHandler) handler;
             IDPEndPoint ep = h.RetrieveIDPConfiguration(idpKey);
             if (ep.CDC.ExtraSettings != null)
@@ -67,6 +69,14 @@ namespace dk.nita.saml20.Actions
         {
             if (!IdPInitiated)
                 handler.DoRedirect(context);
+        }
+
+        /// <summary>
+        /// <see cref="IAction.SoapLogoutAction"/>
+        /// </summary>
+        public void SoapLogoutAction(AbstractEndpointHandler handler, HttpContext context, string userId)
+        {
+            // Do nothing
         }
 
         private string _name = "CDCRedirectAction";

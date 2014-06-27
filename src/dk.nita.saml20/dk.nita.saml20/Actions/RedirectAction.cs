@@ -36,6 +36,14 @@ namespace dk.nita.saml20.Actions
                 handler.DoRedirect(context);
         }
 
+        /// <summary>
+        /// <see cref="IAction.SoapLogoutAction"/>
+        /// </summary>
+        public void SoapLogoutAction(AbstractEndpointHandler handler, HttpContext context, string userId)
+        {
+            // Do nothing
+        }
+
         private string _name;
 
         /// <summary>

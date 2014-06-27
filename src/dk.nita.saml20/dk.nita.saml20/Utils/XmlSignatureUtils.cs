@@ -5,7 +5,9 @@ using System.Security.Cryptography.X509Certificates;
 using System.Security.Cryptography.Xml;
 using System.Xml;
 using dk.nita.saml20.config;
-using Signature=dk.nita.saml20.Schema.XmlDSig.Signature;
+using Signature = dk.nita.saml20.Schema.XmlDSig.Signature;
+using System.Collections.Generic;
+using System.Reflection;
 
 namespace dk.nita.saml20.Utils
 {
@@ -16,9 +18,10 @@ namespace dk.nita.saml20.Utils
         ///<summary>
         ///</summary>
         ///<param name="document"></param>
-        public SignedXMLWithIdResolvement(XmlDocument document) : base(document)
+        public SignedXMLWithIdResolvement(XmlDocument document)
+            : base(document)
         {
-            
+
         }
         ///<summary>
         ///</summary>
@@ -30,9 +33,10 @@ namespace dk.nita.saml20.Utils
         }
         ///<summary>
         ///</summary>
-        public SignedXMLWithIdResolvement() : base()
+        public SignedXMLWithIdResolvement()
+            : base()
         {
-            
+
         }
 
         /// <summary>
@@ -40,18 +44,18 @@ namespace dk.nita.saml20.Utils
         public override XmlElement GetIdElement(XmlDocument document, string idValue)
         {
             XmlElement elem = null;
-            if((elem = base.GetIdElement(document, idValue)) == null)
+            if ((elem = base.GetIdElement(document, idValue)) == null)
             {
                 XmlNodeList nl = document.GetElementsByTagName("*");
                 IEnumerator enumerator = nl.GetEnumerator();
-                while(enumerator.MoveNext())
+                while (enumerator.MoveNext())
                 {
                     var node = (XmlNode)enumerator.Current;
                     var nodeEnum = node.Attributes.GetEnumerator();
-                    while(nodeEnum.MoveNext())
+                    while (nodeEnum.MoveNext())
                     {
-                        var attr = (XmlAttribute) nodeEnum.Current;
-                        if(attr.LocalName.ToLower() == "id" && attr.Value == idValue && node is XmlElement)
+                        var attr = (XmlAttribute)nodeEnum.Current;
+                        if (attr.LocalName.ToLower() == "id" && attr.Value == idValue && node is XmlElement)
                         {
                             return (XmlElement)node;
                         }
@@ -66,6 +70,8 @@ namespace dk.nita.saml20.Utils
     /// </summary>
     public class XmlSignatureUtils
     {
+        private static bool addSHA256AlgorithmHasBeenCalled = false;
+
         /// <summary>
         /// Verifies the signature of the XmlDocument instance using the key enclosed with the signature.
         /// </summary>
@@ -76,7 +82,36 @@ namespace dk.nita.saml20.Utils
         {
             CheckDocument(doc);
             SignedXml signedXml = RetrieveSignature(doc);
+
+            if (signedXml.SignatureMethod.Contains("rsa-sha256"))
+            {
+                List<X509Certificate2> lCert = GetCertificates(doc);
+                if (CheckSignature(signedXml, lCert))
+                    return true;
+            }
+
             return signedXml.CheckSignature();
+        }
+
+        private static List<X509Certificate2> GetCertificates(XmlDocument doc)
+        {
+            List<X509Certificate2> lCert = new List<X509Certificate2>();
+            XmlNodeList nodeList = doc.GetElementsByTagName("ds:X509Certificate");
+
+            if (nodeList.Count == 0)
+                nodeList = doc.GetElementsByTagName("X509Certificate");
+
+            foreach (XmlNode xn in nodeList)
+            {
+                try
+                {
+                    X509Certificate2 xc = new X509Certificate2(Convert.FromBase64String(xn.InnerText));
+                    lCert.Add(xc);
+                }
+                catch { }
+            }
+
+            return lCert;
         }
 
         /// <summary>
@@ -88,7 +123,7 @@ namespace dk.nita.saml20.Utils
         public static bool CheckSignature(XmlDocument doc, AsymmetricAlgorithm alg)
         {
             CheckDocument(doc);
-            SignedXml signedXml = RetrieveSignature(doc);            
+            SignedXml signedXml = RetrieveSignature(doc);
             return signedXml.CheckSignature(alg);
         }
 
@@ -106,13 +141,30 @@ namespace dk.nita.saml20.Utils
         }
 
         /// <summary>
+        /// Checks the signature using a list of certificates
+        /// </summary>
+        /// <param name="signedXml">Signed xml object for signature</param>
+        /// <param name="trustedCertificates">List of certificates</param>
+        /// <returns>true if signature is verified</returns>
+        private static bool CheckSignature(SignedXml signedXml, IEnumerable<X509Certificate2> trustedCertificates)
+        {
+            foreach (X509Certificate2 cert in trustedCertificates)
+            {
+                if (signedXml.CheckSignature(cert.PublicKey.Key))
+                    return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// Verify the given document using a KeyInfo instance. The KeyInfo instance's KeyClauses will be traversed for 
         /// elements that can verify the signature, eg. certificates or keys. If nothing is found, an exception is thrown.
         /// </summary>
         public static bool CheckSignature(XmlDocument doc, KeyInfo keyinfo)
         {
             CheckDocument(doc);
-            SignedXml signedXml = RetrieveSignature(doc);            
+            SignedXml signedXml = RetrieveSignature(doc);
 
             AsymmetricAlgorithm alg = null;
             X509Certificate2 cert = null;
@@ -120,20 +172,22 @@ namespace dk.nita.saml20.Utils
             {
                 if (clause is RSAKeyValue)
                 {
-                    RSAKeyValue key = (RSAKeyValue) clause;
+                    RSAKeyValue key = (RSAKeyValue)clause;
                     alg = key.Key;
                     break;
-                } else if (clause is KeyInfoX509Data)
+                }
+                else if (clause is KeyInfoX509Data)
                 {
-                    KeyInfoX509Data x509data = (KeyInfoX509Data) clause;
+                    KeyInfoX509Data x509data = (KeyInfoX509Data)clause;
                     int count = x509data.Certificates.Count;
-                    cert = (X509Certificate2) x509data.Certificates[count - 1];                    
-                } else if (clause is DSAKeyValue)
+                    cert = (X509Certificate2)x509data.Certificates[count - 1];
+                }
+                else if (clause is DSAKeyValue)
                 {
-                    DSAKeyValue key = (DSAKeyValue) clause;
+                    DSAKeyValue key = (DSAKeyValue)clause;
                     alg = key.Key;
                     break;
-                }                
+                }
             }
 
             if (alg == null && cert == null)
@@ -154,8 +208,8 @@ namespace dk.nita.saml20.Utils
         {
             if (keyInfoClause is RSAKeyValue)
             {
-                RSAKeyValue key = (RSAKeyValue) keyInfoClause;
-                return key.Key;                
+                RSAKeyValue key = (RSAKeyValue)keyInfoClause;
+                return key.Key;
             }
             else if (keyInfoClause is KeyInfoX509Data)
             {
@@ -165,8 +219,8 @@ namespace dk.nita.saml20.Utils
             }
             else if (keyInfoClause is DSAKeyValue)
             {
-                DSAKeyValue key = (DSAKeyValue) keyInfoClause;
-                return key.Key;                
+                DSAKeyValue key = (DSAKeyValue)keyInfoClause;
+                return key.Key;
             }
 
             return null;
@@ -182,7 +236,7 @@ namespace dk.nita.saml20.Utils
             int count = keyInfo.Certificates.Count;
             if (count == 0)
                 return null;
-            
+
             X509Certificate2 cert = (X509Certificate2)keyInfo.Certificates[count - 1];
             return cert;
         }
@@ -215,7 +269,7 @@ namespace dk.nita.saml20.Utils
         public static bool IsSigned(XmlDocument doc)
         {
             CheckDocument(doc);
-            XmlNodeList nodeList = 
+            XmlNodeList nodeList =
                 doc.GetElementsByTagName(Signature.ELEMENT_NAME, Saml20Constants.XMLDSIG);
 
             return nodeList.Count > 0;
@@ -246,7 +300,7 @@ namespace dk.nita.saml20.Utils
             if (nodeList.Count == 0)
                 throw new InvalidOperationException("The XmlDocument does not contain a signature.");
 
-            signedXml.LoadXml((XmlElement) nodeList[0]);
+            signedXml.LoadXml((XmlElement)nodeList[0]);
             return signedXml.KeyInfo;
         }
 
@@ -288,11 +342,34 @@ namespace dk.nita.saml20.Utils
                 throw new InvalidOperationException("Document does not contain a signature to verify.");
 
             signedXml.LoadXml((XmlElement)nodeList[0]);
+            EnableSignatureMethod(signedXml);
 
             // verify that the inlined signature has a valid reference uri
             VerifyRererenceURI(signedXml, el.GetAttribute("ID"));
 
             return signedXml;
+        }
+
+        /// <summary>
+        /// To support SHA256 for XML signatures, an additional algorithm must be enabled.
+        /// This is not supported in .Net versions older than 4.0. In older versions,
+        /// an exception will be raised if an SHA256 signature method is attempted to be used.
+        /// </summary>
+        /// <param name="signedXml">SignedXml object</param>
+        internal static void EnableSignatureMethod(SignedXml signedXml)
+        {
+            if (!addSHA256AlgorithmHasBeenCalled)
+            {
+                if (signedXml.SignatureMethod.Contains("rsa-sha256"))
+                {
+                    MethodInfo methodInfoAddAlgorithm = typeof(CryptoConfig).GetMethod("AddAlgorithm", BindingFlags.Public | BindingFlags.Static);
+                    if (methodInfoAddAlgorithm == null)
+                        throw new InvalidOperationException("This version of .NET does not support CryptoConfig.AddAlgorithm - you should use .NET 4.0 or greater. Enabling sha256 not possible.");
+
+                    methodInfoAddAlgorithm.Invoke(null, new object[] { typeof(RSAPKCS1SHA256SignatureDescription), new string[] { signedXml.SignatureMethod } });
+                    addSHA256AlgorithmHasBeenCalled = true;
+                }
+            }
         }
 
         /// <summary>
@@ -367,12 +444,42 @@ namespace dk.nita.saml20.Utils
         /// configuration file.
         /// </summary>
         /// <param name="doc">The XmlDocument to be signed</param>
-        /// <param name="id">The is of the topmost element in the xmldocument</param>
+        /// <param name="id">The id of the topmost element in the xmldocument</param>
         public static void SignDocument(XmlDocument doc, string id)
         {
             X509Certificate2 cert = FederationConfig.GetConfig().SigningCertificate.GetCertificate();
             SignDocument(doc, id, cert);
         }
 
+    }
+
+    /// <summary>
+    /// Used to validate SHA256 signatures
+    /// </summary>
+    public class RSAPKCS1SHA256SignatureDescription : SignatureDescription
+    {
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        public RSAPKCS1SHA256SignatureDescription()
+        {
+            base.KeyAlgorithm = "System.Security.Cryptography.RSACryptoServiceProvider";
+            base.DigestAlgorithm = "System.Security.Cryptography.SHA256Managed";
+            base.FormatterAlgorithm = "System.Security.Cryptography.RSAPKCS1SignatureFormatter";
+            base.DeformatterAlgorithm = "System.Security.Cryptography.RSAPKCS1SignatureDeformatter";
+        }
+
+        /// <summary>
+        /// Creates signature deformatter
+        /// </summary>
+        /// <param name="key"></param>
+        /// <returns></returns>
+        public override AsymmetricSignatureDeformatter CreateDeformatter(AsymmetricAlgorithm key)
+        {
+            AsymmetricSignatureDeformatter asymmetricSignatureDeformatter = (AsymmetricSignatureDeformatter)CryptoConfig.CreateFromName(base.DeformatterAlgorithm);
+            asymmetricSignatureDeformatter.SetKey(key);
+            asymmetricSignatureDeformatter.SetHashAlgorithm("SHA256");
+            return asymmetricSignatureDeformatter;
+        }
     }
 }

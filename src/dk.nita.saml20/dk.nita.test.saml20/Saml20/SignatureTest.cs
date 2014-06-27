@@ -7,7 +7,8 @@ using System.Text;
 using System.Xml;
 using NUnit.Framework;
 using dk.nita.saml20;
-using Signature=dk.nita.saml20.Schema.XmlDSig.Signature;
+using dk.nita.saml20.Utils;
+using Signature = dk.nita.saml20.Schema.XmlDSig.Signature;
 
 namespace dk.nita.test.Saml20
 {
@@ -27,7 +28,7 @@ namespace dk.nita.test.Saml20
         {
             Assert.That(VerifySignature(@"Saml20\Assertions\Saml2Assertion_01"));
             Assert.That(VerifySignature(@"Saml20\Assertions\Saml2Assertion_02"));
-            Assert.That(VerifySignature(@"Saml20\Assertions\Saml2Assertion_03"));            
+            Assert.That(VerifySignature(@"Saml20\Assertions\Saml2Assertion_03"));
         }
 
         /// <summary>
@@ -106,9 +107,9 @@ namespace dk.nita.test.Saml20
             settings.CloseOutput = true;
             XmlWriter writer = XmlWriter.Create(File.Open(file, FileMode.Create), settings);
             el.OwnerDocument.WriteContentTo(writer);
-            writer.Close();            
+            writer.Close();
         }
-        
+
         /// <summary>
         /// Tests that the manipulation of an assertion is detected by the signature.
         /// </summary>
@@ -119,13 +120,13 @@ namespace dk.nita.test.Saml20
             SignDocument(token);
 
             // Manipulate the #%!;er: Attempt to remove the <AudienceRestriction> from the list of conditions.
-            XmlElement conditions = 
-                (XmlElement) token.GetElementsByTagName("Conditions", "urn:oasis:names:tc:SAML:2.0:assertion")[0];
-            XmlElement audienceRestriction = 
-                (XmlElement) conditions.GetElementsByTagName("AudienceRestriction", "urn:oasis:names:tc:SAML:2.0:assertion")[0];
+            XmlElement conditions =
+                (XmlElement)token.GetElementsByTagName("Conditions", "urn:oasis:names:tc:SAML:2.0:assertion")[0];
+            XmlElement audienceRestriction =
+                (XmlElement)conditions.GetElementsByTagName("AudienceRestriction", "urn:oasis:names:tc:SAML:2.0:assertion")[0];
 
             conditions.RemoveChild(audienceRestriction);
-            
+
             bool verified = VerifySignature(token);
             Assert.IsFalse(verified);
         }
@@ -140,13 +141,14 @@ namespace dk.nita.test.Saml20
         {
             // Load an unsigned assertion. 
             Saml20Assertion assertion = new Saml20Assertion(AssertionUtil.GetTestAssertion_01().DocumentElement, null, false);
-            
+
             // Check that the assertion is not considered valid in any way.
             try
             {
                 assertion.CheckValid(AssertionUtil.GetTrustedSigners(assertion.Issuer));
                 Assert.Fail("Unsigned assertion was passed off as valid.");
-            } catch
+            }
+            catch
             {
                 //Added to make resharper happy
                 Assert.That(true);
@@ -157,7 +159,7 @@ namespace dk.nita.test.Saml20
             assertion.Sign(cert);
 
             // Check that the signature is now valid         
-            assertion.CheckValid(new AsymmetricAlgorithm[] {cert.PublicKey.Key});
+            assertion.CheckValid(new AsymmetricAlgorithm[] { cert.PublicKey.Key });
 
             WriteToFile(@"\signedassertion.xml", assertion.GetXml());
         }
@@ -176,6 +178,20 @@ namespace dk.nita.test.Saml20
 
         }
 
+        [Test]
+        [ExpectedException(typeof(InvalidOperationException), ExpectedMessage = "This version of .NET does not support CryptoConfig.AddAlgorithm - you should use .NET 4.0 or greater. Enabling sha256 not possible.")]
+        public void TestSHA256Signature()
+        {
+            var xmlDocument = new XmlDocument();
+            xmlDocument.PreserveWhitespace = true;
+            xmlDocument.Load(@"Saml20\Assertions\SHA256Signedtest.xml");
+            var result = "";
+            if (XmlSignatureUtils.CheckSignature(xmlDocument))
+                result = "Works, must be using .NET 4.0 or greater.";
+            else
+                result = "Doesn't work, must be using .NET 3.5 or something... (default for this project)";
+        }
+
         /// <summary>
         /// Signs the document given as an argument.
         /// </summary>
@@ -184,10 +200,10 @@ namespace dk.nita.test.Saml20
             SignedXml signedXml = new SignedXml(doc);
             signedXml.SignedInfo.CanonicalizationMethod = SignedXml.XmlDsigExcC14NTransformUrl;
             // TODO Dynamically dig out the correct ID attribute from the XmlDocument.
-            Reference reference = new Reference("#_b8977dc86cda41493fba68b32ae9291d"); 
+            Reference reference = new Reference("#_b8977dc86cda41493fba68b32ae9291d");
             // Assert.That(reference.Uri == string.Empty);
 
-            XmlDsigEnvelopedSignatureTransform envelope = new XmlDsigEnvelopedSignatureTransform();                        
+            XmlDsigEnvelopedSignatureTransform envelope = new XmlDsigEnvelopedSignatureTransform();
             reference.AddTransform(envelope);
 
             // NOTE: C14n may require the following list of namespace prefixes. Seems to work without it, though.
@@ -200,7 +216,7 @@ namespace dk.nita.test.Saml20
             //XmlDsigExcC14NTransform C14NTransformer = new XmlDsigExcC14NTransform(string.Join(" ", prefixes.ToArray()).Trim());
             XmlDsigExcC14NTransform C14NTransformer = new XmlDsigExcC14NTransform();
 
-            reference.AddTransform(C14NTransformer);            
+            reference.AddTransform(C14NTransformer);
 
             signedXml.AddReference(reference);
 
@@ -221,7 +237,7 @@ namespace dk.nita.test.Saml20
                 X509Certificate2 cert = new X509Certificate2(@"Saml20\Certificates\sts_dev_certificate.pfx", "test1234");
                 Assert.That(cert.HasPrivateKey);
                 signedXml.SigningKey = cert.PrivateKey;
-                signedXml.KeyInfo.AddClause(new KeyInfoX509Data(cert,X509IncludeOption.EndCertOnly));
+                signedXml.KeyInfo.AddClause(new KeyInfoX509Data(cert, X509IncludeOption.EndCertOnly));
             }
 
             // Information on the these and other "key info clause" types can be found at:
@@ -233,7 +249,7 @@ namespace dk.nita.test.Saml20
             XmlNodeList nodes = doc.DocumentElement.GetElementsByTagName("Issuer", Saml20Constants.ASSERTION);
             Assert.That(nodes.Count == 1);
             XmlNode node = nodes[0];
-            doc.DocumentElement.InsertAfter(doc.ImportNode(signedXml.GetXml(), true), node); 
+            doc.DocumentElement.InsertAfter(doc.ImportNode(signedXml.GetXml(), true), node);
         }
 
         /// <summary>
@@ -247,10 +263,10 @@ namespace dk.nita.test.Saml20
             document.PreserveWhitespace = true;
             document.Load(fs);
             fs.Close();
-            
+
             XmlNodeList nodes = document.DocumentElement.GetElementsByTagName("Issuer", Saml20Constants.ASSERTION);
             Saml20Assertion assertion = new Saml20Assertion(document.DocumentElement, AssertionUtil.GetTrustedSigners(nodes[0].Value), false);
-            
+
             return assertion;
         }
 
@@ -292,7 +308,7 @@ namespace dk.nita.test.Saml20
             return signedXml.CheckSignature(key);
             */
 
-            return signedXml.CheckSignature();            
+            return signedXml.CheckSignature();
         }
     }
 }

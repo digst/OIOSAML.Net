@@ -26,6 +26,14 @@ namespace dk.nita.saml20.Actions
         void LogoutAction(AbstractEndpointHandler handler, HttpContext context, bool IdPInitiated);
 
         /// <summary>
+        /// Action performed during SOAP logout. It is still necessary to check on each HTTP request whether or not the user has been logged out because it is not possible to log out the user from the system at the time this method is called.
+        /// </summary>
+        /// <param name="handler">The handler.</param>
+        /// <param name="context">The context.</param>
+        /// <param name="userId">The user id which the IdP requested to log out.</param>
+        void SoapLogoutAction(AbstractEndpointHandler handler, HttpContext context, string userId);
+
+        /// <summary>
         /// Gets or sets the name of the action.
         /// </summary>
         /// <value>The name.</value>

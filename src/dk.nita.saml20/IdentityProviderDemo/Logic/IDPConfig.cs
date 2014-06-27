@@ -83,7 +83,7 @@ namespace IdentityProviderDemo.Logic
             string filename = GetFilename(entityId);
             string path = Path.Combine(SPMetadataDir, filename);
 
-            FileStream fs = File.OpenWrite(path);
+            FileStream fs = File.Create(path);
 
             string metadataString = entity.OuterXml;
 
@@ -274,7 +274,7 @@ namespace IdentityProviderDemo.Logic
                 conf.certLocation = _storeLocation.ToString();
                 conf.certStore = _storeName.ToString();
             }
-            FileStream fs = File.OpenWrite(path);
+            FileStream fs = File.Create(path);
 
             BinaryFormatter bf = new BinaryFormatter();
 

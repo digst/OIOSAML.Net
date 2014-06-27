@@ -4,6 +4,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Security.Cryptography.Xml;
 using System.Xml;
+using dk.nita.saml20.Schema.Core;
 using dk.nita.saml20.Schema.Metadata;
 using dk.nita.saml20.Schema.Protocol;
 using dk.nita.saml20.Utils;
@@ -144,13 +145,26 @@ namespace dk.nita.saml20.Bindings
         /// <returns></returns>
         public Status GetStatus()
         {
-            XmlElement status = (XmlElement) SamlMessage.GetElementsByTagName(Status.ELEMENT_NAME, Saml20Constants.PROTOCOL)[0];
+            XmlElement status = (XmlElement)SamlMessage.GetElementsByTagName(Status.ELEMENT_NAME, Saml20Constants.PROTOCOL)[0];
             Status result = null;
             if (status != null)
             {
                 result = Serialization.Deserialize<Status>(new XmlNodeReader(status));
             }
             return result;
+        }
+
+        /// <summary>
+        /// Gets the status of the current message.
+        /// </summary>
+        /// <returns></returns>
+        public NameID GetNameID()
+        {
+            if (LogoutRequest != null && LogoutRequest.Item != null)
+            {
+                return LogoutRequest.Item as NameID;
+            }
+            return null;
         }
 
         /// <summary>
@@ -168,13 +182,49 @@ namespace dk.nita.saml20.Bindings
                 doc.PreserveWhitespace = true;
                 doc.LoadXml(_soapEnvelope);
 
-                XmlElement _soapBody = (XmlElement) doc.GetElementsByTagName(SOAPConstants.SOAPBody, SOAPConstants.SOAPNamespace)[0];
+                XmlElement _soapBody = (XmlElement)doc.GetElementsByTagName(SOAPConstants.SOAPBody, SOAPConstants.SOAPNamespace)[0];
                 if (_soapBody != null)
                     _samlMessage = (XmlElement)_soapBody.FirstChild;
                 else
                     // Artifact resolve special case
                     _samlMessage = doc.DocumentElement;
             }
+        }
+
+        /// <summary>
+        /// Checks the signature of the message, using a specific set of keys
+        /// </summary>
+        /// <param name="keys">The set of keys to check the signature against</param>
+        /// <returns></returns>
+        public bool CheckSignature(IEnumerable<KeyDescriptor> keys)
+        {
+            foreach (KeyDescriptor keyDescriptor in keys)
+            {
+                KeyInfo ki = (KeyInfo)keyDescriptor.KeyInfo;
+
+                foreach (KeyInfoClause clause in ki)
+                {
+                    AsymmetricAlgorithm key = XmlSignatureUtils.ExtractKey(clause);
+
+                    if (key != null && XmlSignatureUtils.CheckSignature(_samlMessage, key))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Determines whether the message is signed.
+        /// </summary>
+        /// <returns>
+        /// 	<c>true</c> if the message is signed; otherwise, <c>false</c>.
+        /// </returns>
+        public bool IsSigned()
+        {
+            return XmlSignatureUtils.IsSigned(_samlMessage);
         }
     }
 }

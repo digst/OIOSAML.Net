@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Web;
 using System.Web.Security;
-using System.Web.SessionState;
 using dk.nita.saml20.Utils;
+using dk.nita.saml20.identity;
 
 namespace WebsiteDemo
 {
@@ -31,7 +30,13 @@ namespace WebsiteDemo
 
         protected void Application_AuthenticateRequest(object sender, EventArgs e)
         {
-
+            // The OIOSAML.net session could have timed out or the user could have been logget out throug SOAP logout.
+            // Sign user out if user was logged in.
+            if (!Saml20Identity.IsInitialized() && HttpContext.Current.User != null && HttpContext.Current.User.Identity.IsAuthenticated)
+            {
+                FormsAuthentication.SignOut();
+                Response.Redirect(Request.RawUrl); // SignOut first have effect on next request.
+            }
         }
 
         protected void Application_Error(object sender, EventArgs e)

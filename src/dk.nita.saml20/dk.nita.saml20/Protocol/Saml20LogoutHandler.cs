@@ -6,6 +6,10 @@ using System.Web;
 using System.Web.Security;
 using System.Xml;
 using dk.nita.saml20.Bindings;
+using dk.nita.saml20.Identity;
+using dk.nita.saml20.Session;
+using dk.nita.saml20.identity;
+using dk.nita.saml20.session;
 using dk.nita.saml20.config;
 using dk.nita.saml20.Logging;
 using dk.nita.saml20.Properties;
@@ -13,7 +17,7 @@ using dk.nita.saml20.Schema.Metadata;
 using dk.nita.saml20.Schema.Protocol;
 using dk.nita.saml20.Utils;
 using Saml2.Properties;
-using Trace=dk.nita.saml20.Utils.Trace;
+using Trace = dk.nita.saml20.Utils.Trace;
 using dk.nita.saml20.Actions;
 
 namespace dk.nita.saml20.protocol
@@ -41,7 +45,7 @@ namespace dk.nita.saml20.protocol
             }
         }
 
-        #region IHttpHandler related 
+        #region IHttpHandler related
 
         /// <summary>
         /// Handles a request.
@@ -50,7 +54,7 @@ namespace dk.nita.saml20.protocol
         protected override void Handle(HttpContext context)
         {
             Trace.TraceMethodCalled(GetType(), "Handle()");
-            
+
             try
             {
                 //Some IdP's are known to fail to set an actual value in the SOAPAction header
@@ -71,17 +75,17 @@ namespace dk.nita.saml20.protocol
                 {
                     HandleResponse(context);
                 }
-                else if(!string.IsNullOrEmpty(context.Request.Params["SAMLRequest"]))
+                else if (!string.IsNullOrEmpty(context.Request.Params["SAMLRequest"]))
                 {
                     HandleRequest(context);
                 }
                 else
                 {
                     IDPEndPoint idpEndpoint = null;
-                    //context.Session[IDPLoginSessionKey] may be null if IIS has been restarted
-                    if (context.Session[IDPSessionIdKey] != null)
+                    Saml20AssertionLite saml20AssertionLite = Saml20PrincipalCache.GetSaml20AssertionLite();
+                    if (saml20AssertionLite != null)
                     {
-                        idpEndpoint = RetrieveIDPConfiguration(context.Session[IDPLoginSessionKey].ToString());
+                        idpEndpoint = RetrieveIDPConfiguration(saml20AssertionLite.Issuer);
                     }
 
                     if (idpEndpoint == null)
@@ -93,16 +97,17 @@ namespace dk.nita.saml20.protocol
 
                     TransferClient(idpEndpoint, context);
                 }
-            }catch(Exception e)
+            }
+            catch (Exception e)
             {
                 //ThreadAbortException is thrown by response.Redirect so don't worry about it
-                if(e is ThreadAbortException)
+                if (e is ThreadAbortException)
                     throw;
-                    
+
                 HandleError(context, e.Message);
             }
         }
-        
+
         #endregion
 
         #region SP Initiated logout
@@ -126,7 +131,7 @@ namespace dk.nita.saml20.protocol
             IDPEndPoint idp = RetrieveIDPConfiguration(parser.Issuer);
             AuditLogging.IdpId = idp.Id;
 
-            
+
             if (parser.IsArtifactResolve())
             {
                 Trace.TraceData(TraceEventType.Information, Tracing.ArtifactResolveIn);
@@ -154,7 +159,7 @@ namespace dk.nita.saml20.protocol
 
                 if (parser.ArtifactResponse.Any.LocalName == LogoutRequest.ELEMENT_NAME)
                 {
-                    if(Trace.ShouldTrace(TraceEventType.Information))
+                    if (Trace.ShouldTrace(TraceEventType.Information))
                         Trace.TraceData(TraceEventType.Information, string.Format(Tracing.LogoutRequest, parser.ArtifactResponse.Any.OuterXml));
 
                     //Send logoutresponse via artifact
@@ -163,12 +168,14 @@ namespace dk.nita.saml20.protocol
                     LogoutRequest req = Serialization.DeserializeFromXmlString<LogoutRequest>(parser.ArtifactResponse.Any.OuterXml);
                     response.StatusCode = Saml20Constants.StatusCodes.Success;
                     response.InResponseTo = req.ID;
-                    IDPEndPoint endpoint = RetrieveIDPConfiguration(context.Session[IDPLoginSessionKey].ToString());
+                    Saml20AssertionLite saml20AssertionLite = Saml20PrincipalCache.GetSaml20AssertionLite();
+                    IDPEndPoint endpoint = RetrieveIDPConfiguration(saml20AssertionLite.Issuer);
                     IDPEndPointElement destination =
                         DetermineEndpointConfiguration(SAMLBinding.REDIRECT, endpoint.SLOEndpoint, endpoint.metadata.SLOEndpoints());
 
                     builder.RedirectFromLogout(destination, response);
-                }else if(parser.ArtifactResponse.Any.LocalName == LogoutResponse.ELEMENT_NAME)
+                }
+                else if (parser.ArtifactResponse.Any.LocalName == LogoutResponse.ELEMENT_NAME)
                 {
                     DoLogout(context);
                 }
@@ -180,26 +187,57 @@ namespace dk.nita.saml20.protocol
                                               parser.ArtifactResponse.Any.LocalName));
                 }
             }
-            else if(parser.IsLogoutReqest())
+            else if (parser.IsLogoutReqest())
             {
                 if (Trace.ShouldTrace(TraceEventType.Information))
                     Trace.TraceData(TraceEventType.Information, string.Format(Tracing.LogoutRequest, parser.SamlMessage.OuterXml));
 
-                LogoutRequest req = parser.LogoutRequest;
-                
-                //Build the response object
                 Saml20LogoutResponse response = new Saml20LogoutResponse();
+
+                if (!parser.IsSigned())
+                {
+                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Signature not present in SOAP logout request, msg: " + parser.SamlMessage.OuterXml);
+                    response.StatusCode = Saml20Constants.StatusCodes.RequestDenied;
+                }
+
+                if (idp.metadata == null)
+                {
+                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Cannot find metadata for IdP: " + parser.Issuer);
+                    // Not able to process the request as we do not know the IdP.
+                    response.StatusCode = Saml20Constants.StatusCodes.NoAvailableIDP;
+                }
+                else
+                {
+                    Saml20MetadataDocument metadata = idp.metadata;
+
+                    if (!parser.CheckSignature(metadata.GetKeys(KeyTypes.signing)))
+                    {
+                        AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Request has been denied. Invalid signature SOAP logout, msg: " + parser.SamlMessage.OuterXml);
+                        response.StatusCode = Saml20Constants.StatusCodes.RequestDenied;
+                    }
+                }
+
+                if (parser.GetNameID() != null && !string.IsNullOrEmpty(parser.GetNameID().Value))
+                    DoSoapLogout(context, parser.GetNameID().Value);
+                else
+                {
+                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Request has been denied. No user ID was supplied in SOAP logout request, msg: " + parser.SamlMessage.OuterXml);
+                    response.StatusCode = Saml20Constants.StatusCodes.NoAuthnContext;
+                }
+
+                LogoutRequest req = parser.LogoutRequest;
+
+                //Build the response object
                 response.Issuer = config.ServiceProvider.ID;
-                //response.Destination = destination.Url;
                 response.StatusCode = Saml20Constants.StatusCodes.Success;
                 response.InResponseTo = req.ID;
                 XmlDocument doc = response.GetXml();
                 XmlSignatureUtils.SignDocument(doc, response.ID);
                 if (doc.FirstChild is XmlDeclaration)
                     doc.RemoveChild(doc.FirstChild);
-                
+
                 builder.SendResponseMessage(doc.OuterXml);
-                
+
             }
             else
             {
@@ -220,33 +258,32 @@ namespace dk.nita.saml20.protocol
         private void TransferClient(IDPEndPoint endpoint, HttpContext context)
         {
             Trace.TraceMethodCalled(GetType(), "TransferClient()");
-            
+
             Saml20LogoutRequest request = Saml20LogoutRequest.GetDefault();
-            
+
             AuditLogging.AssertionId = request.ID;
             AuditLogging.IdpId = endpoint.Id;
-            
+
             // Determine which endpoint to use from the configuration file or the endpoint metadata.
             IDPEndPointElement destination =
                 DetermineEndpointConfiguration(SAMLBinding.REDIRECT, endpoint.SLOEndpoint, endpoint.metadata.SLOEndpoints());
-            
+
             request.Destination = destination.Url;
 
-            string nameIdFormat = context.Session[IDPNameIdFormat].ToString();
-            request.SubjectToLogOut.Format = nameIdFormat;
-            
+            request.SubjectToLogOut.Format = Saml20PrincipalCache.GetSaml20AssertionLite().Subject.Format;
+
             if (destination.Binding == SAMLBinding.POST)
             {
                 HttpPostBindingBuilder builder = new HttpPostBindingBuilder(destination);
                 request.Destination = destination.Url;
                 request.Reason = Saml20Constants.Reasons.User;
-                request.SubjectToLogOut.Value = context.Session[IDPNameId].ToString();
-                 request.SessionIndex = context.Session[IDPSessionIdKey].ToString();
+                request.SubjectToLogOut.Value = Saml20PrincipalCache.GetSaml20AssertionLite().Subject.Value;
+                request.SessionIndex = Saml20PrincipalCache.GetSaml20AssertionLite().SessionIndex;
                 XmlDocument requestDocument = request.GetXml();
                 XmlSignatureUtils.SignDocument(requestDocument, request.ID);
                 builder.Request = requestDocument.OuterXml;
 
-                if(Trace.ShouldTrace(TraceEventType.Information))
+                if (Trace.ShouldTrace(TraceEventType.Information))
                     Trace.TraceData(TraceEventType.Information, string.Format(Tracing.SendLogoutRequest, "POST", endpoint.Id, requestDocument.OuterXml));
 
                 AuditLogging.logEntry(Direction.OUT, Operation.LOGOUTREQUEST, "Binding: POST");
@@ -255,16 +292,16 @@ namespace dk.nita.saml20.protocol
                 return;
             }
 
-            if(destination.Binding == SAMLBinding.REDIRECT)
+            if (destination.Binding == SAMLBinding.REDIRECT)
             {
                 HttpRedirectBindingBuilder builder = new HttpRedirectBindingBuilder();
                 builder.signingKey = FederationConfig.GetConfig().SigningCertificate.GetCertificate().PrivateKey;
                 request.Destination = destination.Url;
                 request.Reason = Saml20Constants.Reasons.User;
-                request.SubjectToLogOut.Value = context.Session[IDPNameId].ToString();
-                request.SessionIndex = context.Session[IDPSessionIdKey].ToString();
+                request.SubjectToLogOut.Value = Saml20PrincipalCache.GetSaml20AssertionLite().Subject.Value;
+                request.SessionIndex = Saml20PrincipalCache.GetSaml20AssertionLite().SessionIndex;
                 builder.Request = request.GetXml().OuterXml;
-                
+
                 string redirectUrl = destination.Url + "?" + builder.ToQuery();
 
                 if (Trace.ShouldTrace(TraceEventType.Information))
@@ -275,15 +312,15 @@ namespace dk.nita.saml20.protocol
                 return;
             }
 
-            if(destination.Binding == SAMLBinding.ARTIFACT)
+            if (destination.Binding == SAMLBinding.ARTIFACT)
             {
                 if (Trace.ShouldTrace(TraceEventType.Information))
                     Trace.TraceData(TraceEventType.Information, string.Format(Tracing.SendLogoutRequest, "ARTIFACT", endpoint.Id, string.Empty));
 
                 request.Destination = destination.Url;
                 request.Reason = Saml20Constants.Reasons.User;
-                request.SubjectToLogOut.Value = context.Session[IDPNameId].ToString();
-                request.SessionIndex = context.Session[IDPSessionIdKey].ToString();
+                request.SubjectToLogOut.Value = Saml20PrincipalCache.GetSaml20AssertionLite().Subject.Value;
+                request.SessionIndex = Saml20PrincipalCache.GetSaml20AssertionLite().SessionIndex;
 
                 HttpArtifactBindingBuilder builder = new HttpArtifactBindingBuilder(context);
                 AuditLogging.logEntry(Direction.OUT, Operation.LOGOUTREQUEST, "Method: Artifact");
@@ -292,7 +329,7 @@ namespace dk.nita.saml20.protocol
 
             HandleError(context, Resources.BindingError);
         }
-        
+
         #endregion
 
         #region SAMLResponse related
@@ -304,7 +341,7 @@ namespace dk.nita.saml20.protocol
 
             string message = string.Empty;
 
-            if(context.Request.RequestType == "GET")
+            if (context.Request.RequestType == "GET")
             {
                 HttpRedirectBindingParser parser = new HttpRedirectBindingParser(context.Request.Url);
                 LogoutResponse response = Serialization.DeserializeFromXmlString<LogoutResponse>(parser.Message);
@@ -313,10 +350,10 @@ namespace dk.nita.saml20.protocol
                                       string.Format("Binding: redirect, Signature algorithm: {0}  Signature:  {1}, Message: {2}", parser.SignatureAlgorithm, parser.Signature, parser.Message));
 
                 IDPEndPoint idp = RetrieveIDPConfiguration(response.Issuer.Value);
-                
+
                 AuditLogging.IdpId = idp.Id;
                 AuditLogging.AssertionId = response.ID;
-                
+
                 if (idp.metadata == null)
                 {
                     AuditLogging.logEntry(Direction.IN, Operation.LOGOUTRESPONSE,
@@ -334,7 +371,8 @@ namespace dk.nita.saml20.protocol
                 }
 
                 message = parser.Message;
-            }else if(context.Request.RequestType == "POST")
+            }
+            else if (context.Request.RequestType == "POST")
             {
                 HttpPostBindingParser parser = new HttpPostBindingParser(context);
                 AuditLogging.logEntry(Direction.IN, Operation.LOGOUTRESPONSE,
@@ -369,7 +407,8 @@ namespace dk.nita.saml20.protocol
                 }
 
                 message = parser.Message;
-            }else
+            }
+            else
             {
                 AuditLogging.logEntry(Direction.IN, Operation.LOGOUTRESPONSE,
                                       string.Format("Unsupported request type format, type: {0}", context.Request.RequestType));
@@ -420,8 +459,8 @@ namespace dk.nita.saml20.protocol
             var response = new Saml20LogoutResponse();
             response.Issuer = config.ServiceProvider.ID;
             response.StatusCode = Saml20Constants.StatusCodes.Success; // Default success. Is overwritten if something fails.
-            
-            if(context.Request.RequestType == "GET") // HTTP Redirect binding
+
+            if (context.Request.RequestType == "GET") // HTTP Redirect binding
             {
                 HttpRedirectBindingParser parser = new HttpRedirectBindingParser(context.Request.Url);
                 AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST,
@@ -486,7 +525,8 @@ namespace dk.nita.saml20.protocol
                 }
 
                 message = parser.Message;
-            }else
+            }
+            else
             {
                 //Error: We don't support HEAD, PUT, CONNECT, TRACE, DELETE and OPTIONS
                 // Not able to return a response as we do not understand the request.
@@ -494,16 +534,17 @@ namespace dk.nita.saml20.protocol
             }
 
             AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, message);
-            
+
             // Check that idp in session and request matches.
             string idpRequest = logoutRequest.Issuer.Value;
-            if (!context.Session.IsNewSession)
+            bool newSession = SessionFactory.SessionContext.Current.New; // This call to Current must be the first in this request. Otherwise the value will always be false.
+            if (!newSession)
             {
-                object idpSession = context.Session[IDPLoginSessionKey];
-            
-                if (idpSession != null && idpSession.ToString() != idpRequest)
+                object idpId = Saml20PrincipalCache.GetSaml20AssertionLite().Issuer;
+
+                if (idpId != null && idpId.ToString() != idpRequest)
                 {
-                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, Resources.IdPMismatchBetweenRequestAndSessionFormat(idpSession, idpRequest), message);
+                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, Resources.IdPMismatchBetweenRequestAndSessionFormat(idpId, idpRequest), message);
                     response.StatusCode = Saml20Constants.StatusCodes.RequestDenied;
                 }
             }
@@ -514,7 +555,7 @@ namespace dk.nita.saml20.protocol
             }
 
             //  Only logout if request is valid and we are working on an existing Session.
-            if (Saml20Constants.StatusCodes.Success == response.StatusCode && !context.Session.IsNewSession)
+            if (Saml20Constants.StatusCodes.Success == response.StatusCode && !newSession)
             {
                 // Execute all actions that the service provider has configured
                 DoLogout(context, true);
@@ -526,7 +567,7 @@ namespace dk.nita.saml20.protocol
             response.InResponseTo = logoutRequest.ID;
 
             //Respond using redirect binding
-            if(destination.Binding == SAMLBinding.REDIRECT)
+            if (destination.Binding == SAMLBinding.REDIRECT)
             {
                 HttpRedirectBindingBuilder builder = new HttpRedirectBindingBuilder();
                 builder.RelayState = context.Request.Params["RelayState"];
@@ -541,7 +582,7 @@ namespace dk.nita.saml20.protocol
             if (destination.Binding == SAMLBinding.POST)
             {
                 HttpPostBindingBuilder builder = new HttpPostBindingBuilder(destination);
-                builder.Action = SAMLAction.SAMLResponse;                                
+                builder.Action = SAMLAction.SAMLResponse;
                 XmlDocument responseDocument = response.GetXml();
                 XmlSignatureUtils.SignDocument(responseDocument, response.ID);
                 builder.Response = responseDocument.OuterXml;
@@ -562,16 +603,50 @@ namespace dk.nita.saml20.protocol
 
         private void DoLogout(HttpContext context, bool IdPInitiated)
         {
-            foreach (IAction action in Actions.Actions.GetActions())
-            {
-                Trace.TraceMethodCalled(action.GetType(), "LogoutAction()");
-                
-                action.LogoutAction(this, context, IdPInitiated);
 
-                Trace.TraceMethodDone(action.GetType(), "LogoutAction()");
+            try
+            {
+                foreach (IAction action in Actions.Actions.GetActions())
+                {
+                    Trace.TraceMethodCalled(action.GetType(), "LogoutAction()");
+
+                    action.LogoutAction(this, context, IdPInitiated);
+
+                    Trace.TraceMethodDone(action.GetType(), "LogoutAction()");
+                }
+            }
+            finally
+            {
+                // Always end with abandoning the session.
+                Trace.TraceData(TraceEventType.Information, "Clearing session with id: " + SessionFactory.SessionContext.Current.Id);
+                SessionFactory.SessionContext.AbandonAllSessions(Saml20Identity.Current.Name);
+                //SessionFactory.SessionContext.AbandonCurrentSession();
+                Trace.TraceData(TraceEventType.Verbose, "Session cleared.");
             }
         }
-                
+
+        private void DoSoapLogout(HttpContext context, string userId)
+        {
+            try
+            {
+                foreach (IAction action in Actions.Actions.GetActions())
+                {
+                    Trace.TraceMethodCalled(action.GetType(), "SoapLogoutAction()");
+
+                    action.SoapLogoutAction(this, context, userId);
+
+                    Trace.TraceMethodDone(action.GetType(), "SoapLogoutAction()");
+                }
+            }
+            finally
+            {
+                // Always end with abandoning the session.
+                Trace.TraceData(TraceEventType.Information, "Clearing all sessions related to user with id: " + userId);
+                SessionFactory.SessionContext.AbandonAllSessions(userId);
+                Trace.TraceData(TraceEventType.Verbose, "Sessions cleared.");
+            }
+        }
+
         #endregion
     }
 }

@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>$id$</id>
+    <version>$version$</version>
+    <title>$title$</title>
+    <authors>$author$</authors>
+    <owners>$author$</owners>
+    <licenseUrl>http://www.mozilla.org/MPL/1.1/</licenseUrl>
+    <projectUrl>http://digitaliser.dk/group/42063</projectUrl>
+    <iconUrl>https://svn.softwareborsen.dk/oiosaml.net/logo/oiosaml_logo.png</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>$description$</description>
+    <releaseNotes>The first initial release on nuget. See https://svn.softwareborsen.dk/oiosaml.net/trunk/src/dk.nita.saml20/dk.nita.saml20/Documentation for release notes.</releaseNotes>
+    <copyright>Copyright 2013</copyright>
+    <tags>SAML OIOSAML SAML2 NEMLOGIN NEMLOG-IN</tags>
+  </metadata>
+  <files>
+    <file src="readme.txt" target="content" />
+    <file src="web.config.transform" target="content" />
+  </files>
+</package>

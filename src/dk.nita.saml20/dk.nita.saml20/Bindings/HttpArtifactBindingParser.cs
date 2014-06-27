@@ -18,7 +18,7 @@ namespace dk.nita.saml20.Bindings
         /// Initializes a new instance of the <see cref="HttpArtifactBindingParser"/> class.
         /// </summary>
         /// <param name="inputStream">The input stream.</param>
-        public HttpArtifactBindingParser(Stream inputStream): base(inputStream) {}
+        public HttpArtifactBindingParser(Stream inputStream) : base(inputStream) { }
 
         /// <summary>
         /// Determines whether the current message is an artifact resolve
@@ -84,6 +84,8 @@ namespace dk.nita.saml20.Bindings
                     return ArtifactResolve.Issuer.Value;
                 if (IsArtifactResponse())
                     return ArtifactResponse.Issuer.Value;
+                if (IsLogoutReqest())
+                    return LogoutRequest.Issuer.Value;
                 return string.Empty;
             }
         }
@@ -93,7 +95,7 @@ namespace dk.nita.saml20.Bindings
         /// </summary>
         private void LoadArtifactResolve()
         {
-            if(_artifactResolve == null)
+            if (_artifactResolve == null)
             {
                 _artifactResolve = Serialization.Deserialize<ArtifactResolve>(new XmlNodeReader(SamlMessage));
             }
@@ -104,7 +106,7 @@ namespace dk.nita.saml20.Bindings
         /// </summary>
         private void LoadArtifactResponse()
         {
-            if(_artifactResponse == null)
+            if (_artifactResponse == null)
             {
                 _artifactResponse = Serialization.Deserialize<ArtifactResponse>(new XmlNodeReader(SamlMessage));
             }

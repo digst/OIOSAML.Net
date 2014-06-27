@@ -34,7 +34,15 @@ namespace dk.nita.saml20.protocol.pages
                     // Link text. If a name has been specified in web.config, use it. Otherwise, use id from metadata.
                     link.Text = string.IsNullOrEmpty(endPoint.Name) ? endPoint.metadata.EntityId : endPoint.Name;
 
-                    link.NavigateUrl = endPoint.GetIDPLoginUrl();
+                    string forceAuthnAsString = HttpContext.Current.Request.Params[Saml20SignonHandler.IDPForceAuthn];
+                    bool forceAuthn;
+                    bool.TryParse(forceAuthnAsString, out forceAuthn);
+
+                    string isPassiveAsString = HttpContext.Current.Request.Params[Saml20SignonHandler.IDPIsPassive];
+                    bool isPassive;
+                    bool.TryParse(isPassiveAsString, out isPassive);
+
+                    link.NavigateUrl = endPoint.GetIDPLoginUrl(forceAuthn, isPassive);
                     BodyPanel.Controls.Add(link);
                     BodyPanel.Controls.Add(new LiteralControl("<br/>"));
                 } else

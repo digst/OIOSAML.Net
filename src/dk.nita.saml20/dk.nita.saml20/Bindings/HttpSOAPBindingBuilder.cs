@@ -100,13 +100,13 @@ namespace dk.nita.saml20.Bindings
         {
             Binding binding = CreateSslBinding();
             Message request = Message.CreateMessage(binding.MessageVersion, HttpArtifactBindingConstants.SOAPAction, new SimpleBodyWriter(message));
-            
+
             request.Headers.To = new Uri(endpoint);
 
             HttpRequestMessageProperty property = new HttpRequestMessageProperty();
             property.Method = "POST";
             property.Headers.Add(HttpRequestHeader.ContentType, "text/xml; charset=utf-8");
-            
+
             //We are using Basic http auth over ssl
             if (basicAuth != null && basicAuth.Enabled)
             {
@@ -114,27 +114,28 @@ namespace dk.nita.saml20.Bindings
                                           Convert.ToBase64String(Encoding.UTF8.GetBytes(basicAuth.Username + ":" + basicAuth.Password));
                 property.Headers.Add(HttpRequestHeader.Authorization, basicAuthzHeader);
             }
-            
-            request.Properties.Add( HttpRequestMessageProperty.Name, property );
+
+            request.Properties.Add(HttpRequestMessageProperty.Name, property);
             if (_context.Request.Params["relayState"] != null)
-                request.Properties.Add("relayState", _context.Request.Params["relayState"]);          
-  
+                request.Properties.Add("relayState", _context.Request.Params["relayState"]);
+
             EndpointAddress epa = new EndpointAddress(endpoint);
 
             ChannelFactory<IRequestChannel> factory = new ChannelFactory<IRequestChannel>(binding, epa);
             IRequestChannel reqChannel = factory.CreateChannel();
-            
+
             reqChannel.Open();
             Message response = reqChannel.Request(request);
             Console.WriteLine(response);
             reqChannel.Close();
             XmlDocument xDoc = new XmlDocument();
             xDoc.XmlResolver = null;
+            xDoc.PreserveWhitespace = true;
             xDoc.Load(response.GetReaderAtBodyContents());
             string outerXml = xDoc.DocumentElement.OuterXml;
             MemoryStream memStream = new MemoryStream(Encoding.UTF8.GetBytes(outerXml));
             return memStream;
-        
+
         }
     }
 
@@ -144,7 +145,7 @@ namespace dk.nita.saml20.Bindings
     internal class SimpleBodyWriter : BodyWriter
     {
         private string _message;
-        
+
         public SimpleBodyWriter(string message) : base(false)
         {
             _message = message;

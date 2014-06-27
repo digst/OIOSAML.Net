@@ -8,6 +8,8 @@ using System.Web;
 using System.Xml;
 using dk.nita.saml20;
 using dk.nita.saml20.Bindings;
+using dk.nita.saml20.Identity;
+using dk.nita.saml20.session;
 using dk.nita.saml20.config;
 using dk.nita.saml20.identity;
 using dk.nita.saml20.Properties;
@@ -16,7 +18,7 @@ using dk.nita.saml20.Schema.Core;
 using dk.nita.saml20.Schema.Protocol;
 using dk.nita.saml20.Utils;
 using Saml2.Properties;
-using Trace=dk.nita.saml20.Utils.Trace;
+using Trace = dk.nita.saml20.Utils.Trace;
 
 namespace dk.nita.saml20
 {
@@ -80,7 +82,7 @@ namespace dk.nita.saml20
             if (found.Count > 0)
                 throw new InvalidOperationException(
                     string.Format("An attribute with name \"{0}\" and name format \"{1}\" has already been added", attrName, Enum.GetName(typeof(Saml20NameFormat), nameFormat)));
-            
+
             SamlAttribute attr = new SamlAttribute();
             attr.Name = attrName;
             attr.NameFormat = GetNameFormat(nameFormat);
@@ -116,7 +118,7 @@ namespace dk.nita.saml20
         public void PerformQuery(HttpContext context)
         {
             SAML20FederationConfig config = SAML20FederationConfig.GetConfig();
-            string endpointId = context.Session[Saml20AbstractEndpointHandler.IDPLoginSessionKey].ToString();
+            string endpointId = Saml20PrincipalCache.GetSaml20AssertionLite().Issuer;
 
             if (string.IsNullOrEmpty(endpointId))
             {
@@ -139,7 +141,7 @@ namespace dk.nita.saml20
         /// <param name="endPoint">The IdP to perform the query against.</param>
         public void PerformQuery(HttpContext context, IDPEndPoint endPoint)
         {
-            string nameIdFormat = context.Session[Saml20AbstractEndpointHandler.IDPNameIdFormat].ToString();
+            string nameIdFormat = Saml20PrincipalCache.GetSaml20AssertionLite().Subject.Format;
             if(string.IsNullOrEmpty(nameIdFormat))
                 nameIdFormat = Saml20Constants.NameIdentifierFormats.Persistent;
             PerformQuery(context, endPoint, nameIdFormat);
@@ -156,7 +158,7 @@ namespace dk.nita.saml20
             Trace.TraceMethodCalled(GetType(), "PerformQuery()");
 
             HttpSOAPBindingBuilder builder = new HttpSOAPBindingBuilder(context);
-            
+
             NameID name = new NameID();
             name.Value = Saml20Identity.Current.Name;
             name.Format = nameIdFormat;
@@ -168,7 +170,7 @@ namespace dk.nita.saml20
             query.LoadXml(Serialization.SerializeToXmlString(_attrQuery));
 
             XmlSignatureUtils.SignDocument(query, ID);
-            if(query.FirstChild is XmlDeclaration)
+            if (query.FirstChild is XmlDeclaration)
                 query.RemoveChild(query.FirstChild);
 
             Stream s;
@@ -178,10 +180,11 @@ namespace dk.nita.saml20
 
             try
             {
-                 s = builder.GetResponse(endPoint.metadata.GetAttributeQueryEndpointLocation(), query.OuterXml,
-                                               endPoint.AttributeQuery);
+                s = builder.GetResponse(endPoint.metadata.GetAttributeQueryEndpointLocation(), query.OuterXml,
+                                              endPoint.AttributeQuery);
 
-            }catch(Exception e)
+            }
+            catch (Exception e)
             {
                 Trace.TraceData(TraceEventType.Error, e.ToString());
                 throw;
@@ -206,7 +209,7 @@ namespace dk.nita.saml20
             {
                 Saml20EncryptedAssertion ass =
                     new Saml20EncryptedAssertion(
-                        (RSA) FederationConfig.GetConfig().SigningCertificate.GetCertificate().PrivateKey);
+                        (RSA)FederationConfig.GetConfig().SigningCertificate.GetCertificate().PrivateKey);
                 ass.LoadXml(xmlAssertion);
                 ass.Decrypt();
                 xmlAssertion = ass.Assertion.DocumentElement;
@@ -216,21 +219,22 @@ namespace dk.nita.saml20
                     new Saml20Assertion(xmlAssertion, null,
                                         AssertionProfile.Core, endPoint.QuirksMode);
 
-            if(Trace.ShouldTrace(TraceEventType.Information))
+            if (Trace.ShouldTrace(TraceEventType.Information))
             {
                 Trace.TraceData(TraceEventType.Information, string.Format(Tracing.AttrQueryAssertion, xmlAssertion == null ? string.Empty : xmlAssertion.OuterXml));
             }
 
-            if(!assertion.CheckSignature(Saml20SignonHandler.GetTrustedSigners(endPoint.metadata.Keys, endPoint))){
+            if (!assertion.CheckSignature(Saml20SignonHandler.GetTrustedSigners(endPoint.metadata.Keys, endPoint)))
+            {
                 Trace.TraceData(TraceEventType.Error, Resources.SignatureInvalid);
                 throw new Saml20Exception(Resources.SignatureInvalid);
             }
-            
+
             foreach (SamlAttribute attr in assertion.Attributes)
             {
                 Saml20Identity.Current.AddAttributeFromQuery(attr.Name, attr);
             }
-           
+
         }
 
         /// <summary>
@@ -247,7 +251,7 @@ namespace dk.nita.saml20
                 throw new Saml20FormatException(Resources.ServiceProviderNotSet);
 
             result.Issuer = config.ServiceProvider.ID;
-            
+
             return result;
         }
 

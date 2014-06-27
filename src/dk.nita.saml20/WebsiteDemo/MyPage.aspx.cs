@@ -1,6 +1,7 @@
 using System;
 using System.Web;
 using System.Web.UI;
+using dk.nita.saml20.session;
 using dk.nita.saml20.config;
 using dk.nita.saml20.identity;
 using dk.nita.saml20.Logging;
@@ -32,14 +33,17 @@ namespace WebsiteDemo
 
         protected void Btn_Relogin_Click(object sender, EventArgs e)
         {
-            Session[Saml20AbstractEndpointHandler.IDPForceAuthn] = true;
+            Response.Redirect("/demo/login.ashx?" + Saml20SignonHandler.IDPForceAuthn + "=true&ReturnUrl=" + HttpContext.Current.Request.Url.AbsolutePath);
+        }
 
-            Response.Redirect("/demo/login.ashx");
+        protected void Btn_Passive_Click(object sender, EventArgs e)
+        {
+            Response.Redirect("/demo/login.ashx?" + Saml20SignonHandler.IDPIsPassive + "=true&ReturnUrl=" + HttpContext.Current.Request.Url.AbsolutePath);
         }
 
         protected void Btn_ReloginNoForceAuthn_Click(object sender, EventArgs e)
         {
-            Response.Redirect("/demo/login.ashx");
+            Response.Redirect("/demo/login.ashx?ReturnUrl=" + HttpContext.Current.Request.Url.AbsolutePath);
         }
 
         protected void Btn_Logoff_Click(object sender, EventArgs e)
