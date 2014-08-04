@@ -7,6 +7,7 @@ using dk.nita.saml20.identity;
 using dk.nita.saml20.Schema.Metadata;
 using dk.nita.saml20.config;
 using dk.nita.saml20.Utils;
+using dk.nita.saml20.session;
 
 namespace dk.nita.saml20.Logging
 {
@@ -65,7 +66,7 @@ namespace dk.nita.saml20.Logging
                 currentAuthLevel = Saml20Identity.Current["dk:gov:saml:attribute:AssuranceLevel"][0].AttributeValue[0];
             }
 
-            logEntry(Direction.UNDEFINED, Operation.LOGIN_PERSISTENT_PSEUDONYME, string.Format("Authenticated nameid: {0} as local user id: {1}, auth.level: {2}, session timeout in minutes: {3}", nameid, localuserid, currentAuthLevel, HttpContext.Current.Session.Timeout));
+            logEntry(Direction.UNDEFINED, Operation.LOGIN_PERSISTENT_PSEUDONYME, string.Format("Authenticated nameid: {0} as local user id: {1}, auth.level: {2}, session timeout in minutes: {3}", nameid, localuserid, currentAuthLevel, FederationConfig.GetConfig().SessionTimeout));
         }
 
         ///<summary>
@@ -108,7 +109,7 @@ namespace dk.nita.saml20.Logging
         public static void logEntry(Direction dir, Operation op, string msg, string data)
         {
             var userHostAddress = HttpContext.Current != null ? HttpContext.Current.Request.UserHostAddress : "<no ip>";
-            var sessionId = HttpContext.Current != null ? HttpContext.Current.Session.SessionID : "<no session id>";
+            var sessionId = SessionFactory.SessionContext.Current != null ? SessionFactory.SessionContext.Current.Id.ToString() : "<no session id>";
 
             AuditLogger.LogEntry(dir, op, msg, data, userHostAddress, IdpId, AssertionId, sessionId);
         }

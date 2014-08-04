@@ -537,8 +537,8 @@ namespace dk.nita.saml20.protocol
                     && attribute.AttributeValue.Length > 0)
                     assuranceLevel =  attribute.AttributeValue[0];
             }
-            
-            AuditLogging.logEntry(Direction.IN, Operation.LOGIN, string.Format("Subject: {0} NameIDFormat: {1}  Level of authentication: {2}  Session timeout in minutes: {3}", assertion.Subject.Value, assertion.Subject.Format, assuranceLevel, HttpContext.Current.Session.Timeout));
+
+            AuditLogging.logEntry(Direction.IN, Operation.LOGIN, string.Format("Subject: {0} NameIDFormat: {1}  Level of authentication: {2}  Session timeout in minutes: {3}", assertion.Subject.Value, assertion.Subject.Format, assuranceLevel, FederationConfig.GetConfig().SessionTimeout));
 
 
             foreach(IAction action in Actions.Actions.GetActions())
