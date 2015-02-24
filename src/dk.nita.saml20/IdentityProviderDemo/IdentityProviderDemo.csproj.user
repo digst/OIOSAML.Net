@@ -9,31 +9,20 @@
         <WebProjectProperties>
           <StartPageUrl>
           </StartPageUrl>
-          <StartAction>CurrentPage</StartAction>
+          <StartAction>URL</StartAction>
           <AspNetDebugging>True</AspNetDebugging>
           <SilverlightDebugging>False</SilverlightDebugging>
           <NativeDebugging>False</NativeDebugging>
           <SQLDebugging>False</SQLDebugging>
           <ExternalProgram>
           </ExternalProgram>
-          <StartExternalURL>
-          </StartExternalURL>
+          <StartExternalURL>https://idp.oiosaml-net.dk/</StartExternalURL>
           <StartCmdLineArguments>
           </StartCmdLineArguments>
           <StartWorkingDirectory>
           </StartWorkingDirectory>
           <EnableENC>False</EnableENC>
           <AlwaysStartWebServerOnDebug>True</AlwaysStartWebServerOnDebug>
-          <UseIIS>False</UseIIS>
-          <AutoAssignPort>True</AutoAssignPort>
-          <DevelopmentServerPort>1564</DevelopmentServerPort>
-          <DevelopmentServerVPath>/</DevelopmentServerVPath>
-          <IISUrl>
-          </IISUrl>
-          <NTLMAuthentication>False</NTLMAuthentication>
-          <UseCustomServer>False</UseCustomServer>
-          <CustomServerUrl>
-          </CustomServerUrl>
         </WebProjectProperties>
       </FlavorProperties>
     </VisualStudio>
