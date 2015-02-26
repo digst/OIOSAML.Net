@@ -33,6 +33,9 @@ namespace dk.nita.saml20.config
         // default to 30 minutes
         private int _sessionTimeout = 30;
 
+        // As default the component does not allow open redirect attacks.
+        private bool _preventOpenRedirectAttack = true;
+
         /// <summary>
         /// Gets or sets the SessionTimeout configuration
         /// </summary>
@@ -41,6 +44,17 @@ namespace dk.nita.saml20.config
         {
             get { return _sessionTimeout; }
             set { _sessionTimeout = value; }
+        }
+
+        /// <summary>
+        /// Specifies whether or not to prevent open redirect attacks by checking if return URL is local.
+        /// Default value is true.
+        /// </summary>
+        [XmlElement(ElementName = "PreventOpenRedirectAttack")]
+        public bool PreventOpenRedirectAttack
+        {
+            get { return _preventOpenRedirectAttack; }
+            set { _preventOpenRedirectAttack = value; }
         }
         
         /// <summary>

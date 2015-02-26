@@ -185,9 +185,10 @@ namespace dk.nita.saml20.protocol
 
             // See if the "ReturnUrl" - parameter is set.
             string returnUrl = context.Request.QueryString["ReturnUrl"];
-            if (!string.IsNullOrEmpty(returnUrl))
-                SessionFactory.SessionContext.Current[SessionConstants.RedirectUrl] = returnUrl;            
-
+            // If PreventOpenRedirectAttack has been enabled ... the return URL is only set if the URL is local.
+            if (!string.IsNullOrEmpty(returnUrl) && (!FederationConfig.GetConfig().PreventOpenRedirectAttack || IsLocalUrl(returnUrl))) 
+                SessionFactory.SessionContext.Current[SessionConstants.RedirectUrl] = returnUrl;
+            
             IDPEndPoint idpEndpoint = RetrieveIDP(context);
 
             if (idpEndpoint == null)
@@ -202,6 +203,25 @@ namespace dk.nita.saml20.protocol
             TransferClient(idpEndpoint, authnRequest, context);            
         }
 
+        /// <summary>
+        /// This method is used for preventing open redirect attacks.
+        /// </summary>
+        /// <param name="url">URL that is checked for being local or not.</param>
+        /// <returns>Returns true if URL is local. Empty or null strings are not considered as local URL's</returns>
+        private bool IsLocalUrl(string url)
+        {
+            if (string.IsNullOrEmpty(url))
+            {
+                return false;
+            }
+            else
+            {
+                return ((url[0] == '/' && (url.Length == 1 ||
+                        (url[1] != '/' && url[1] != '\\'))) ||   // "/" or "/foo" but not "//" or "/\"
+                        (url.Length > 1 &&
+                         url[0] == '~' && url[1] == '/'));   // "~/" or "~/foo"
+            }
+        }
 
         private Status GetStatusElement(XmlDocument doc)
         {
