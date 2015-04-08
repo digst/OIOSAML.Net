@@ -143,6 +143,9 @@ AppID={1}</value>
   <data name="AssertionExpired" xml:space="preserve">
     <value>Assertion is no longer valid.</value>
   </data>
+  <data name="AssuranceLevelTooLow" xml:space="preserve">
+    <value>Saml assertion does not have the required assurance level. Assurance level was: {0} and configured minimum assurance level was: {1}.</value>
+  </data>
   <data name="AssertionIDAttributeMissing" xml:space="preserve">
     <value>A SAML token must have an AssertionID.</value>
   </data>

@@ -11,6 +11,7 @@ using System.Web.Caching;
 using System.Xml;
 using dk.nita.saml20.Actions;
 using dk.nita.saml20.Bindings;
+using dk.nita.saml20.Profiles.DKSaml20.Attributes;
 using dk.nita.saml20.Session;
 using dk.nita.saml20.session;
 using dk.nita.saml20.config;
@@ -476,6 +477,33 @@ namespace dk.nita.saml20.protocol
                 return;
             }
 
+            // Only check if assertion has the required assurancelevel if it is present.
+            string assuranceLevel = GetAssuranceLevel(assertion);
+            string minimumAssuranceLevel = SAML20FederationConfig.GetConfig().MinimumAssuranceLevel;
+            if (assuranceLevel != null)
+            {
+                // Assurance level is ok if the string matches the configured minimum assurance level. This is in order to support the value "Test". However, normally the value will be an integer
+                if (assuranceLevel != minimumAssuranceLevel)
+                {
+                    // If strings are different it is still ok if the assertion has stronger assurance level than the minimum required.
+                    int assuranceLevelAsInt;
+                    int minimumAssuranceLevelAsInt;
+                    if (!int.TryParse(assuranceLevel, out assuranceLevelAsInt) ||
+                        !int.TryParse(minimumAssuranceLevel, out minimumAssuranceLevelAsInt) ||
+                        assuranceLevelAsInt < minimumAssuranceLevelAsInt)
+                    {
+                        string errorMessage = string.Format(Resources.AssuranceLevelTooLow, assuranceLevel,
+                                                            minimumAssuranceLevel);
+                        AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST,
+                                              errorMessage + " Assertion: " + elem.OuterXml);
+
+                        HandleError(context,
+                                    string.Format(Resources.AssuranceLevelTooLow, assuranceLevel, minimumAssuranceLevel));
+                        return;
+                    }
+                }
+            }
+
             CheckConditions(context, assertion);
             AuditLogging.AssertionId = assertion.Id;
             AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST,
@@ -549,15 +577,8 @@ namespace dk.nita.saml20.protocol
                 Trace.TraceData(TraceEventType.Information, string.Format(Tracing.Login, assertion.Subject.Value, assertion.SessionIndex, assertion.Subject.Format));
             }
 
-            string assuranceLevel = "(unknown)";
-            foreach(var attribute in assertion.Attributes)
-            {
-                if (attribute.Name == "dk:gov:saml:attribute:AssuranceLevel"
-                    && attribute.AttributeValue != null 
-                    && attribute.AttributeValue.Length > 0)
-                    assuranceLevel =  attribute.AttributeValue[0];
-            }
-
+            string assuranceLevel = GetAssuranceLevel(assertion) ?? "(Unknown)";
+            
             AuditLogging.logEntry(Direction.IN, Operation.LOGIN, string.Format("Subject: {0} NameIDFormat: {1}  Level of authentication: {2}  Session timeout in minutes: {3}", assertion.Subject.Value, assertion.Subject.Format, assuranceLevel, FederationConfig.GetConfig().SessionTimeout));
 
 
@@ -569,6 +590,23 @@ namespace dk.nita.saml20.protocol
                 
                 Trace.TraceMethodDone(action.GetType(), "LoginAction()");
             }
+        }
+
+        /// <summary>
+        /// Retrieves the assurance level from the assertion.
+        /// </summary>
+        /// <returns>Returns the assurance level or null if it has not been defined.</returns>
+        private string GetAssuranceLevel(Saml20Assertion assertion)
+        {
+            foreach (var attribute in assertion.Attributes)
+            {
+                if (attribute.Name == DKSaml20AssuranceLevelAttribute.NAME
+                    && attribute.AttributeValue != null
+                    && attribute.AttributeValue.Length > 0)
+                    return attribute.AttributeValue[0];
+            }
+
+            return null;
         }
 
         private void TransferClient(IDPEndPoint idpEndpoint, Saml20AuthnRequest request, HttpContext context)

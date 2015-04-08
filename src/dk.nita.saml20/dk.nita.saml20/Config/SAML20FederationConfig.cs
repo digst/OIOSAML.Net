@@ -95,6 +95,19 @@ namespace dk.nita.saml20.config
             set { _showError = value; }
         }
 
+        // default to 3. Cooresponds to certificate level in the OIOSAML specification.
+        private string _minimumAssuranceLevel = "3";
+
+        /// <summary>
+        /// Gets or sets the minimum assurance level configuration
+        /// </summary>
+        [XmlElement(ElementName = "MinimumAssuranceLevel")]
+        public string MinimumAssuranceLevel
+        {
+            get { return _minimumAssuranceLevel; }
+            set { _minimumAssuranceLevel = value; }
+        }
+
         private IDPEndpoints _idpEndpoints;
 
         /// <summary>
