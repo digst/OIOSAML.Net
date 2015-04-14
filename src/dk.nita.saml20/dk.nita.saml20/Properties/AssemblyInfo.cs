@@ -23,9 +23,9 @@ using System.Web.UI;
 // The following GUID is for the ID of the typelib if this project is exposed to COM
 [assembly: Guid("f4f0d144-1636-403e-8b49-b2611a005b80")]
 
-[assembly: AssemblyVersion("1.7.11.0")]
-[assembly: AssemblyFileVersion("1.7.11.0")]
-[assembly: AssemblyInformationalVersion("1.7.11")]
+[assembly: AssemblyVersion("1.7.12.0")]
+[assembly: AssemblyFileVersion("1.7.12.0")]
+[assembly: AssemblyInformationalVersion("1.7.12")]
 
 [assembly: InternalsVisibleTo("Safewhere.IntegrationTest")]
 [assembly: InternalsVisibleTo("Safewhere.UnitTest")]
