@@ -537,8 +537,11 @@ namespace dk.nita.saml20.protocol
 
             // Check that idp in session and request matches.
             string idpRequest = logoutRequest.Issuer.Value;
-            bool newSession = SessionFactory.SessionContext.Current.New; // This call to Current must be the first in this request. Otherwise the value will always be false.
-            if (!newSession)
+            
+            // SessionFactory.SessionContext.Current.New is never the first call to Current due to the logic in Application_AuthenticateRequest() ... Saml20Identity.IsInitialized()
+            // Hence we need to check on Saml20Identity.IsInitialized() instead of using SessionFactory.SessionContext.Current.New.
+            bool isOioSamlSessionActive = Saml20Identity.IsInitialized();
+            if (isOioSamlSessionActive)
             {
                 object idpId = Saml20PrincipalCache.GetSaml20AssertionLite().Issuer;
 
@@ -555,7 +558,7 @@ namespace dk.nita.saml20.protocol
             }
 
             //  Only logout if request is valid and we are working on an existing Session.
-            if (Saml20Constants.StatusCodes.Success == response.StatusCode && !newSession)
+            if (Saml20Constants.StatusCodes.Success == response.StatusCode && isOioSamlSessionActive)
             {
                 // Execute all actions that the service provider has configured
                 DoLogout(context, true);
