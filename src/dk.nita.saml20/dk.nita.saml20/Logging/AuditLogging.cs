@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Web;
 using System.Xml;
 using dk.nita.saml20.identity;
-using dk.nita.saml20.Schema.Metadata;
 using dk.nita.saml20.config;
 using dk.nita.saml20.Utils;
 using dk.nita.saml20.session;
@@ -23,9 +20,9 @@ namespace dk.nita.saml20.Logging
                 try
                 {
                     var t = Type.GetType(type);
-                    if (t != null) 
-                    { 
-                        AuditLogger = (IAuditLogger)Activator.CreateInstance(t); 
+                    if (t != null)
+                    {
+                        AuditLogger = (IAuditLogger)Activator.CreateInstance(t);
                     }
                     else
                     {
@@ -44,14 +41,22 @@ namespace dk.nita.saml20.Logging
             }
         }
 
-        private static IAuditLogger AuditLogger;
-        
+        private static readonly IAuditLogger AuditLogger;
+
         ///<summary>
         ///</summary>
-        [ThreadStatic] public static string AssertionId;
+        public static string AssertionId
+        {
+            get { return HttpContext.Current.Items["AuditLogging:AssertionId"] as string; }
+            set { HttpContext.Current.Items["AuditLogging:AssertionId"] = value; }
+        }
         ///<summary>
         ///</summary>
-        [ThreadStatic] public static string IdpId;
+        public static string IdpId
+        {
+            get { return HttpContext.Current.Items["AuditLogging:IdpId"] as string; }
+            set { HttpContext.Current.Items["AuditLogging:IdpId"] = value; }
+        }
 
         ///<summary>
         /// Call from SP when using persistent psuedonyme profile
