@@ -17,8 +17,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "dk.nita.test.saml20.ext.brs
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebsiteDemoVirk", "WebsiteDemoVirk\WebsiteDemoVirk.csproj", "{F9F847E2-A0B7-44F5-8244-FA317647074D}"
 EndProject
-Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "installer", "installer\installer.vdproj", "{33C0D47C-3B85-4893-95B5-A271AB68307E}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "dk.nita.saml20.ext.audit.log4net", "dk.nita.saml20.ext.audit.log4net\dk.nita.saml20.ext.audit.log4net.csproj", "{E0529CB0-9183-4768-B654-DB0F867F0E5F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "dk.nita.saml20.ext.appfabricsessioncache", "dk.nita.saml20.ext.AppFabricSessionCache\dk.nita.saml20.ext.appfabricsessioncache.csproj", "{2A462F41-50A8-47CD-8585-1D28DF6610E4}"
@@ -117,15 +115,6 @@ Global
 		{F9F847E2-A0B7-44F5-8244-FA317647074D}.Release|Any CPU.Build.0 = Release|Any CPU
 		{F9F847E2-A0B7-44F5-8244-FA317647074D}.Release|x64.ActiveCfg = Release|x64
 		{F9F847E2-A0B7-44F5-8244-FA317647074D}.Release|x64.Build.0 = Release|x64
-		{33C0D47C-3B85-4893-95B5-A271AB68307E}.Debug|Any CPU.ActiveCfg = Debug
-		{33C0D47C-3B85-4893-95B5-A271AB68307E}.Debug|x64.ActiveCfg = Debug
-		{33C0D47C-3B85-4893-95B5-A271AB68307E}.Debug|x64.Build.0 = Debug
-		{33C0D47C-3B85-4893-95B5-A271AB68307E}.MSI|Any CPU.ActiveCfg = Release
-		{33C0D47C-3B85-4893-95B5-A271AB68307E}.MSI|x64.ActiveCfg = Release64
-		{33C0D47C-3B85-4893-95B5-A271AB68307E}.MSI|x64.Build.0 = Release64
-		{33C0D47C-3B85-4893-95B5-A271AB68307E}.Release|Any CPU.ActiveCfg = Release
-		{33C0D47C-3B85-4893-95B5-A271AB68307E}.Release|x64.ActiveCfg = Release
-		{33C0D47C-3B85-4893-95B5-A271AB68307E}.Release|x64.Build.0 = Release
 		{E0529CB0-9183-4768-B654-DB0F867F0E5F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E0529CB0-9183-4768-B654-DB0F867F0E5F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E0529CB0-9183-4768-B654-DB0F867F0E5F}.Debug|x64.ActiveCfg = Debug|Any CPU

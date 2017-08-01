@@ -122,7 +122,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Logging\AuditLoggingTest.cs" />
     <Compile Include="Saml20\ArtifactTest.cs" />
     <Compile Include="Saml20\AssertionUtil.cs" />
     <Compile Include="Saml20\DKSAML20ProfileValidationTest.cs" />
