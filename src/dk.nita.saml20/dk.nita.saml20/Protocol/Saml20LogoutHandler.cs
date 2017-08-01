@@ -412,7 +412,7 @@ namespace dk.nita.saml20.protocol
             {
                 AuditLogging.logEntry(Direction.IN, Operation.LOGOUTRESPONSE,
                                       string.Format("Unsupported request type format, type: {0}", context.Request.RequestType));
-                HandleError(context, Resources.UnsupportedRequestTypeFormat(context.Request.RequestType));
+                HandleError(context, string.Format(Resources.UnsupportedRequestType, context.Request.RequestType));
             }
 
             XmlDocument doc = new XmlDocument();
@@ -530,7 +530,7 @@ namespace dk.nita.saml20.protocol
             {
                 //Error: We don't support HEAD, PUT, CONNECT, TRACE, DELETE and OPTIONS
                 // Not able to return a response as we do not understand the request.
-                HandleError(context, Resources.UnsupportedRequestTypeFormat(context.Request.RequestType));
+                HandleError(context, string.Format(Resources.UnsupportedRequestType, context.Request.RequestType));
             }
 
             AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, message);
@@ -547,7 +547,7 @@ namespace dk.nita.saml20.protocol
 
                 if (idpId != null && idpId.ToString() != idpRequest)
                 {
-                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, Resources.IdPMismatchBetweenRequestAndSessionFormat(idpId, idpRequest), message);
+                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, string.Format(Resources.IdPMismatchBetweenRequestAndSession, idpId, idpRequest), message);
                     response.StatusCode = Saml20Constants.StatusCodes.RequestDenied;
                 }
             }

@@ -41,7 +41,7 @@ namespace dk.nita.saml20.config
                 if (Uri.IsWellFormedUriString(uri, UriKind.Absolute))
                     continue;
 
-                throw new FormatException(Resources.InvalidWellformedAbsoluteUriStringFormat(uri));
+                throw new FormatException(string.Format(Resources.InvalidWellformedAbsoluteUriString, uri));
             }
         }
     }

@@ -490,7 +490,7 @@ namespace dk.nita.saml20.config
                 return;
 
             if (!Directory.Exists(MetadataLocation))
-                throw new DirectoryNotFoundException(Resources.MetadataLocationNotFoundFormat(MetadataLocation));
+                throw new DirectoryNotFoundException(string.Format(Resources.MetadataLocationNotFound, MetadataLocation));
 
             string[] files = Directory.GetFiles(MetadataLocation);
             foreach (string file in files)
@@ -658,7 +658,7 @@ namespace dk.nita.saml20.config
             set
             {
                 if (!Uri.IsWellFormedUriString(value, UriKind.RelativeOrAbsolute))
-                    throw new ConfigurationErrorsException(Resources.InvalidWellformedAbsoluteUriStringFormat(value));
+                    throw new ConfigurationErrorsException(string.Format(Resources.InvalidWellformedAbsoluteUriString, value));
 
                 _id = value;
             }

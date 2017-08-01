@@ -23,9 +23,9 @@ namespace dk.nita.saml20.config
                 store.Open(OpenFlags.ReadOnly);
                 X509Certificate2Collection found = store.Certificates.Find( x509FindType, findValue, validOnly);
                 if (found.Count == 0)
-                    throw new ConfigurationErrorsException(Resources.CertificateNotFoundFormat(findValue) );
+                    throw new ConfigurationErrorsException(string.Format(Resources.CertificateNotFound, findValue));
                 if (found.Count > 1)
-                    throw new ConfigurationErrorsException(Resources.CertificateMoreThanOneFoundFormat(findValue) );
+                    throw new ConfigurationErrorsException(string.Format(Resources.CertificateMoreThanOneFound, findValue));
                 return found[0];
             }
             finally
