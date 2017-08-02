@@ -74,7 +74,7 @@ namespace IdentityProviderDemo.Logic
         {
             get
             {
-                return Path.Combine(ConfigurationManager.AppSettings["IDPDataDirectory"], _spMetadataDir);
+                return Path.Combine(ConfigHelper.GetIdpDataDirectory(), _spMetadataDir);
             }
         }
 
@@ -225,7 +225,7 @@ namespace IdentityProviderDemo.Logic
             if(!_configLoaded)
             {
                 _configLoaded = true;
-                string path = Path.Combine(ConfigurationManager.AppSettings["IDPDataDirectory"], _configFileName);
+                string path = Path.Combine(ConfigHelper.GetIdpDataDirectory(), _configFileName);
                 if (!File.Exists(path))
                     return;
 
@@ -264,7 +264,7 @@ namespace IdentityProviderDemo.Logic
 
         private static void SaveConfig()
         {
-            string path = Path.Combine(ConfigurationManager.AppSettings["IDPDataDirectory"], _configFileName);
+            string path = Path.Combine(ConfigHelper.GetIdpDataDirectory(), _configFileName);
 
             FileConfig conf = new FileConfig();
             conf.BaseUrl = ServerBaseUrl;

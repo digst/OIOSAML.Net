@@ -1,0 +1,4 @@
+Certificates are issued using the following powershell
+New-SelfSignedCertificate -DnsName localhost -Subject "oiosaml test SSL" -NotAfter "2030-01-01" -Provider "Microsoft Enhanced Cryptographic Provider v1.0"
+New-SelfSignedCertificate -Subject "oiosaml test demoidp" -NotAfter "2030-01-01" -Provider "Microsoft Enhanced Cryptographic Provider v1.0"
+New-SelfSignedCertificate -Subject "oiosaml test serviceprovider" -NotAfter "2030-01-01" -Provider "Microsoft Enhanced Cryptographic Provider v1.0"

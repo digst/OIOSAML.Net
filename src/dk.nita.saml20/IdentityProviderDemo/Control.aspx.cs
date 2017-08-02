@@ -34,7 +34,7 @@ namespace IdentityProviderDemo
 
         private bool VerifyDataFolder()
         {
-            string dataFolder = ConfigurationManager.AppSettings["IDPDataDirectory"];
+            string dataFolder = ConfigHelper.GetIdpDataDirectory();
 
             //Check for a valid value
             if(string.IsNullOrEmpty(dataFolder))
@@ -50,33 +50,18 @@ namespace IdentityProviderDemo
                     return false;
                 }else
                 {
-                    //Directory exists. Lets make sure it is writeable.
-
-                    DirectoryInfo di = new DirectoryInfo(dataFolder);
-
-                    DirectorySecurity ds = di.GetAccessControl();
-
-                    AuthorizationRuleCollection arc = ds.GetAccessRules(true, true, typeof(NTAccount));
-
-                    bool canModify = false;
-
-                    foreach (FileSystemAccessRule fsar in arc)
+                    try
                     {
-                        if (fsar.IdentityReference.Value == WindowsIdentity.GetCurrent().Name)
+                        using (var fs = File.Create(Path.Combine(dataFolder, Path.GetRandomFileName()), 1, FileOptions.DeleteOnClose))
                         {
-                            if ((fsar.FileSystemRights & FileSystemRights.Modify) == FileSystemRights.Modify)
-                            {
-                                canModify = true;
-                            }
+                            return true;
                         }
                     }
-                    
-                    if (!canModify)
+                    catch (Exception ex)
                     {
-                        SetupPanel.Controls.Add(new LiteralControl("Windows identity running this website (" + WindowsIdentity.GetCurrent().Name + ") does not have \"Modify\" rights on the directory \"" + dataFolder + "\". Please navigate to the folder and choose \"properties\", go to the \"Security\" tab, and make sure that the user \"" + WindowsIdentity.GetCurrent().Name + "\" is in the list and has the \"modify\" permission checked."));
+                        SetupPanel.Controls.Add(new LiteralControl("Windows identity running this website (" + WindowsIdentity.GetCurrent().Name + ") does not have access rights on the directory \"" + dataFolder + "\". Please navigate to the folder and choose \"properties\", go to the \"Security\" tab, and make sure that the user \"" + WindowsIdentity.GetCurrent().Name + "\" is in the list and has the \"modify\" permission checked."));
+                        return false;
                     }
-
-                    return canModify;
                 }
             }
         }
