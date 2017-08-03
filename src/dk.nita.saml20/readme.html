@@ -26,7 +26,12 @@
 <ul>
 	<li>Run the script 'setup_prerequisites.ps1' from an elevated powershell. This installs all required certificates and performs sslcert bindings to be able to host local websites using https</li>
 	<li>Open the solution 'dk.nita.saml20.sln' in Visual Studio 2017 and build it (if you get errors on external dependencies, ensure nuget packages are being restored)</li>
-	<li>Set the projects 'IdentityProviderDemo' and 'WebsiteDemo' as startup projects by right-clicking solution, 'properties', selecting 'Multiple start projects'
+	<li>Set the projects 'IdentityProviderDemo' and 'WebsiteDemo' as startup projects by right-clicking solution, select 'properties', selecting 'Multiple start projects'</li>
+	<li>For the web projects, you must manually set the 'Start URL' that IIS express uses. You do this by:
+		<ul>
+			<li>right click project 'IdentityProviderDemo', select 'properties', select the tab 'Web', alter the 'Start Action' to the radio button 'Start URL', specifying 'https://oiosaml-demoidp.dk:20001'</li>
+			<li>right click project 'WebsiteDemo', select 'properties', select the tab 'Web', alter the 'Start Action' to the radio button 'Start URL', specifying 'https://oiosaml-net.dk:20002'</li>
+		</ul>
 	<li>Run the solution which should start IIS express for the two websites</li>
 </ul>
 <p>This should start two browser windows, one for the demo idp ('IdentityProviderDemo'), and one for the service provider ('WebsiteDemo'). <br>
