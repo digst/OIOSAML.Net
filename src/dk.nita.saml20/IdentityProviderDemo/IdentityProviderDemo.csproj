@@ -240,7 +240,7 @@
         <WebProjectProperties>
           <UseIIS>True</UseIIS>
           <AutoAssignPort>False</AutoAssignPort>
-          <DevelopmentServerPort>1564</DevelopmentServerPort>
+          <DevelopmentServerPort>20003</DevelopmentServerPort>
           <DevelopmentServerVPath>/</DevelopmentServerVPath>
           <IISUrl>https://localhost:20001</IISUrl>
           <NTLMAuthentication>False</NTLMAuthentication>
