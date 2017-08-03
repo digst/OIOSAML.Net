@@ -1,18 +1,21 @@
 <!DOCTYPE HTML>
 <html>
 <head>
-	<title>Creating a new OIOSAML .Net release</title>
+	<title>Developer notes</title>
 </head>
 
 <body>
 
+<h1>Certificate generation</h1>
+<p>Certificates are issued using the following powershell</p>
+<ul>
+	<li>New-SelfSignedCertificate -DnsName "oiosaml-net.dk" -NotAfter "2030-01-01" -Provider "Microsoft Enhanced Cryptographic Provider v1.0"</li>
+	<li>New-SelfSignedCertificate -DnsName "oiosaml-demoidp.dk" -NotAfter "2030-01-01" -Provider "Microsoft Enhanced Cryptographic Provider v1.0"</li>
+	<li>New-SelfSignedCertificate -Subject "oiosaml test demoidp" -NotAfter "2030-01-01" -Provider "Microsoft Enhanced Cryptographic Provider v1.0"</li>
+	<li>New-SelfSignedCertificate -Subject "oiosaml test serviceprovider" -NotAfter "2030-01-01" -Provider "Microsoft Enhanced Cryptographic Provider v1.0"</li>
+</ul>
+
 <h1>Creating a new OIOSAML .Net release</h1>
-
-<section>
-This describes how to create a new release for OIOSAML .Net
-</section>
-
-<section>
 <h2>Building the packages</h2>
 <ul>
 	<li>Remember to increment the version number of the assemblies</li>
@@ -20,15 +23,11 @@ This describes how to create a new release for OIOSAML .Net
 	<li>Build the project in release mode</li>
 	<li>Build the installer project</li>
 </ul>
-</section>
 
-<section>
 <h2>Build the zip package</h2>
+TODO: source code, pdf docs, 
 
 
-</section>
-
-<section>
 <h2>Uploading the install package to digitaliser.dk</h2>
 
 <ul>
@@ -38,9 +37,7 @@ This describes how to create a new release for OIOSAML .Net
 	<li>Delete the old files and upload the new files of the release (zip file + documentation)</li>
 	<li>Publish the new version when ready</li>
 </ul>
-</section>
 
-<section>
 <h2>Change the frontpage of the group</h2>
 
 <ul>
@@ -48,9 +45,6 @@ This describes how to create a new release for OIOSAML .Net
 	<li>TODO:</li>
 </ul>
 
-</section>
-
-<section>
 <h2>Create and publish nuget packages</h2>
 <p>This will create new version of the packages and publish them to nuget</p>
 
@@ -61,8 +55,6 @@ This describes how to create a new release for OIOSAML .Net
 	<li>Pack the dk.nita.saml20 project: <code>nuget pack dk.nita.saml20.ext.audit.log4net -Symbols -Properties Configuration=Release</code></li>
 	<li>Push the package: <code>nuget push <i>pakkenavn</i></code></li>
 </ul>
-
-</section>
 
 </body>
 </html>

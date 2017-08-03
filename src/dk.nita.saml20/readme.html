@@ -1,0 +1,35 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<title>Getting started with OIOSAML.NET</title>
+</head>
+
+<body>
+
+<h1>Getting started with OIOSAML.NET</h1>
+
+<p>This is the codebase that the OIOSAML.NET components are built from.</p>
+
+<h2>Resource links</h2>
+<ul>
+	<li><a href="https://digitaliser.dk/group/42063" target="_blank">Project maintenance</a></li>
+	<li><a href="https://www.nuget.org/profiles/Digitaliseringsstyrelsen" target="_blank">Nuget packages (prefixed dk.nita.saml20)</a></li>
+	<li><a href="https://svn.softwareborsen.dk/oiosaml.net/" target="_blank">Code repository</a></li>
+</ul>
+
+<h2>Getting started</h2>
+<p>
+	The source code contains everything you need to get a demonstration environment up and running, federating with your own local Identity Provider, as well as directly against NemLog-In. 
+</p>
+<p><i>The full documentation on the project is available in the document 'Net SAML2 Service Provider Framework.pdf'</i></p>
+<p>	For a quick setup, you must do the following:</p>
+<ul>
+	<li>Run the script 'setup_prerequisites.ps1' from an elevated powershell. This installs all required certificates and performs sslcert bindings to be able to host local websites using https</li>
+	<li>Open the solution 'dk.nita.saml20.sln' in Visual Studio 2017 and build it (if you get errors on external dependencies, ensure nuget packages are being restored)</li>
+	<li>Set the projects 'IdentityProviderDemo' and 'WebsiteDemo' as startup projects by right-clicking solution, 'properties', selecting 'Multiple start projects'
+	<li>Run the solution which should start IIS express for the two websites</li>
+</ul>
+<p>This should start two browser windows, one for the demo idp ('IdentityProviderDemo'), and one for the service provider ('WebsiteDemo'). <br>
+On the service provider you should now be able to log in using either the demo idp or NemLog-in, by selecting the identity provider in the list of identity providers<br>
+If you choose NemLog-in, you must use an certificate employee certificate from the <a href="https://test-nemlog-in.dk/testportal/" target="_blank">NemLog-In testportal</a><br>
+If you choose the local demo idp, you log in with a username/password with one of the users listed in the web.config file for the demo idp under the 'demoIdp' section</p>

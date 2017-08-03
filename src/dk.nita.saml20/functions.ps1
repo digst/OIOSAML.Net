@@ -1,3 +1,33 @@
+function add-HostEntry
+{
+    param([string] $ip, [string] $dns)
+
+    $entry = "$ip $dns"
+
+    $hostpath = "$env:windir\System32\drivers\etc\hosts"
+
+    write-host "path $hostpath"
+    foreach($e in gc $hostpath)
+    {
+        if($e -eq $entry)
+        {
+            write-host "Host entry $entry was already registered, hosts file won't be changed"
+            return
+        }
+    }
+
+    $lastline = gc $hostpath -raw | select -last 1
+
+    if(-not (gc $hostpath -raw).EndsWith("`n"))
+    {
+        add-content $hostpath "" -Encoding Ascii
+    }
+
+    write-host "Adding entry $entry to hosts file"
+
+    add-content $hostpath $entry -Encoding Ascii
+}
+
 function Set-CertificatePermission
 {
     param
