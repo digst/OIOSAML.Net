@@ -84,6 +84,11 @@ namespace dk.nita.saml20.Bindings
             get { return _signingKey; }
         }
 
+        /// <summary>
+        /// When using RSA keys, use SHA1 instead of SHA256
+        /// </summary>
+        public bool UseRsaSha1 { get; set; }
+
         #endregion
 
         /// <summary>
@@ -112,9 +117,21 @@ namespace dk.nita.saml20.Bindings
             result.Append(string.Format("&{0}=", HttpRedirectBindingConstants.SigAlg));
 
             if (_signingKey is RSA)
-                result.Append(UpperCaseUrlEncode(HttpUtility.UrlEncode(SignedXml.XmlDsigRSASHA1Url)));
+            {
+                if (UseRsaSha1)
+                {
+                    result.Append(UpperCaseUrlEncode(HttpUtility.UrlEncode(SignedXml.XmlDsigRSASHA1Url)));
+                }
+                else
+                {
+                    result.Append(UpperCaseUrlEncode(HttpUtility.UrlEncode(Saml20Constants.XmlDsigRSASHA256Url)));
+                }
+
+            }
             else
+            {
                 result.Append(UpperCaseUrlEncode(HttpUtility.UrlEncode(SignedXml.XmlDsigDSAUrl)));
+            }
 
             // Calculate the signature of the URL as described in [SAMLBind] section 3.4.4.1.            
             byte[] signature = SignData(Encoding.UTF8.GetBytes(result.ToString()));            
@@ -147,8 +164,16 @@ namespace dk.nita.saml20.Bindings
         {
             if (_signingKey is RSACryptoServiceProvider)
             {
-                RSACryptoServiceProvider rsa = (RSACryptoServiceProvider)_signingKey;
-                return rsa.SignData(data, new SHA1CryptoServiceProvider());
+                if (UseRsaSha1)
+                {
+                    RSACryptoServiceProvider rsa = (RSACryptoServiceProvider) _signingKey;
+                    return rsa.SignData(data, new SHA1CryptoServiceProvider());
+                }
+                else
+                {
+                    var rsa = (RSACryptoServiceProvider)_signingKey;
+                    return rsa.SignData(data, new SHA256CryptoServiceProvider());
+                }
             } 
             else
             {

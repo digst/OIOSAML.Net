@@ -70,8 +70,6 @@ namespace dk.nita.saml20.Utils
     /// </summary>
     public class XmlSignatureUtils
     {
-        private static bool addSHA256AlgorithmHasBeenCalled = false;
-
         /// <summary>
         /// Verifies the signature of the XmlDocument instance using the key enclosed with the signature.
         /// </summary>
@@ -83,14 +81,10 @@ namespace dk.nita.saml20.Utils
             CheckDocument(doc);
             SignedXml signedXml = RetrieveSignature(doc);
 
-            if (signedXml.SignatureMethod.Contains("rsa-sha256"))
-            {
-                List<X509Certificate2> lCert = GetCertificates(doc);
-                if (CheckSignature(signedXml, lCert))
-                    return true;
-            }
-
-            return signedXml.CheckSignature();
+            var lCert = GetCertificates(doc);
+            if (CheckSignature(signedXml, lCert))
+                return true;
+            return false;
         }
 
         private static List<X509Certificate2> GetCertificates(XmlDocument doc)
@@ -342,34 +336,11 @@ namespace dk.nita.saml20.Utils
                 throw new InvalidOperationException("Document does not contain a signature to verify.");
 
             signedXml.LoadXml((XmlElement)nodeList[0]);
-            EnableSignatureMethod(signedXml);
 
             // verify that the inlined signature has a valid reference uri
             VerifyRererenceURI(signedXml, el.GetAttribute("ID"));
 
             return signedXml;
-        }
-
-        /// <summary>
-        /// To support SHA256 for XML signatures, an additional algorithm must be enabled.
-        /// This is not supported in .Net versions older than 4.0. In older versions,
-        /// an exception will be raised if an SHA256 signature method is attempted to be used.
-        /// </summary>
-        /// <param name="signedXml">SignedXml object</param>
-        internal static void EnableSignatureMethod(SignedXml signedXml)
-        {
-            if (!addSHA256AlgorithmHasBeenCalled)
-            {
-                if (signedXml.SignatureMethod.Contains("rsa-sha256"))
-                {
-                    MethodInfo methodInfoAddAlgorithm = typeof(CryptoConfig).GetMethod("AddAlgorithm", BindingFlags.Public | BindingFlags.Static);
-                    if (methodInfoAddAlgorithm == null)
-                        throw new InvalidOperationException("This version of .NET does not support CryptoConfig.AddAlgorithm - you should use .NET 4.0 or greater. Enabling sha256 not possible.");
-
-                    methodInfoAddAlgorithm.Invoke(null, new object[] { typeof(RSAPKCS1SHA256SignatureDescription), new string[] { signedXml.SignatureMethod } });
-                    addSHA256AlgorithmHasBeenCalled = true;
-                }
-            }
         }
 
         /// <summary>
@@ -451,35 +422,5 @@ namespace dk.nita.saml20.Utils
             SignDocument(doc, id, cert);
         }
 
-    }
-
-    /// <summary>
-    /// Used to validate SHA256 signatures
-    /// </summary>
-    public class RSAPKCS1SHA256SignatureDescription : SignatureDescription
-    {
-        /// <summary>
-        /// Constructor
-        /// </summary>
-        public RSAPKCS1SHA256SignatureDescription()
-        {
-            base.KeyAlgorithm = "System.Security.Cryptography.RSACryptoServiceProvider";
-            base.DigestAlgorithm = "System.Security.Cryptography.SHA256Managed";
-            base.FormatterAlgorithm = "System.Security.Cryptography.RSAPKCS1SignatureFormatter";
-            base.DeformatterAlgorithm = "System.Security.Cryptography.RSAPKCS1SignatureDeformatter";
-        }
-
-        /// <summary>
-        /// Creates signature deformatter
-        /// </summary>
-        /// <param name="key"></param>
-        /// <returns></returns>
-        public override AsymmetricSignatureDeformatter CreateDeformatter(AsymmetricAlgorithm key)
-        {
-            AsymmetricSignatureDeformatter asymmetricSignatureDeformatter = (AsymmetricSignatureDeformatter)CryptoConfig.CreateFromName(base.DeformatterAlgorithm);
-            asymmetricSignatureDeformatter.SetKey(key);
-            asymmetricSignatureDeformatter.SetHashAlgorithm("SHA256");
-            return asymmetricSignatureDeformatter;
-        }
     }
 }

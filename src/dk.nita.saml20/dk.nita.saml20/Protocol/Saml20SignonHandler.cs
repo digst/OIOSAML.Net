@@ -660,6 +660,7 @@ namespace dk.nita.saml20.protocol
                 HttpRedirectBindingBuilder builder = new HttpRedirectBindingBuilder();
                 builder.signingKey = _certificate.PrivateKey;
                 builder.Request = request.GetXml().OuterXml;
+                builder.UseRsaSha1 = idpEndpoint.UseRsaSha1OnRequests;
                 string s = request.Destination + "?" + builder.ToQuery();
 
                 AuditLogging.logEntry(Direction.OUT, Operation.AUTHNREQUEST_REDIRECT, "Redirecting user to IdP for authentication", builder.Request);

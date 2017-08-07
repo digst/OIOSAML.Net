@@ -957,6 +957,12 @@ namespace dk.nita.saml20.config
         public bool Default;
 
         /// <summary>
+        /// When using RSA keys SHA256 is the default for signing SAML requests. This allows for backwards compatibility if the Identity Provider only support RSA SHA1
+        /// </summary>
+        [XmlAttribute(AttributeName = "UseRsaSha1OnRequests")]
+        public bool UseRsaSha1OnRequests;
+
+        /// <summary>
         /// Certificate validation
         /// </summary>
         [XmlElement(ElementName = "CertificateValidation")] 

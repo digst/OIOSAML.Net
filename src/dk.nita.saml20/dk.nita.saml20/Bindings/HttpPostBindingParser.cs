@@ -101,15 +101,6 @@ namespace dk.nita.saml20.Bindings
         }
 
         /// <summary>
-        /// Checks the signature of the message.
-        /// </summary>
-        /// <returns></returns>
-        public bool CheckSignature()
-        {
-            return XmlSignatureUtils.CheckSignature(_document);
-        }
-
-        /// <summary>
         /// Checks the signature of the message, using a specific set of keys
         /// </summary>
         /// <param name="keys">The set of keys to check the signature against</param>

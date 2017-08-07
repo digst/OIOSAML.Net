@@ -80,7 +80,6 @@ namespace dk.nita.test.Saml20
                         @"\. @thisisnotavalidemail.com", 
                         @"\.\@thisisnotavalidemail.com", 
                         @"a.\@thisisnotavalidemail.com", 
-                        @"a..@thisisnotavalidemail.com", 
                         @"<.>@thisisnotavalidemail.com", 
                         @"<.a@thisisnotavalidemail.com", 
                         "thisisnotavalid.email@", 

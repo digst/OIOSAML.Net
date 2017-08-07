@@ -179,17 +179,11 @@ namespace dk.nita.test.Saml20
         }
 
         [Test]
-        [ExpectedException(typeof(InvalidOperationException), ExpectedMessage = "This version of .NET does not support CryptoConfig.AddAlgorithm - you should use .NET 4.0 or greater. Enabling sha256 not possible.")]
         public void TestSHA256Signature()
         {
-            var xmlDocument = new XmlDocument();
-            xmlDocument.PreserveWhitespace = true;
+            var xmlDocument = new XmlDocument {PreserveWhitespace = true};
             xmlDocument.Load(@"Saml20\Assertions\SHA256Signedtest.xml");
-            var result = "";
-            if (XmlSignatureUtils.CheckSignature(xmlDocument))
-                result = "Works, must be using .NET 4.0 or greater.";
-            else
-                result = "Doesn't work, must be using .NET 3.5 or something... (default for this project)";
+            Assert.IsTrue(XmlSignatureUtils.CheckSignature(xmlDocument));
         }
 
         /// <summary>

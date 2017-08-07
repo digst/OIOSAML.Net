@@ -154,8 +154,18 @@ namespace dk.nita.saml20.Bindings
 
             if (key is RSACryptoServiceProvider)
             {
-                RSACryptoServiceProvider rsa = (RSACryptoServiceProvider)key;
-                return rsa.VerifyHash(hash, "SHA1", DecodeSignature());                
+                if (Saml20Constants.XmlDsigRSASHA256Url.Equals(_signatureAlgorithm, StringComparison.Ordinal))
+                {
+                    var rsa = (RSACryptoServiceProvider)key;
+                    hash = new SHA256Managed().ComputeHash(Encoding.UTF8.GetBytes(_signedquery));
+                    return rsa.VerifyHash(hash, "SHA256", DecodeSignature());
+                }
+                else
+                {
+                    RSACryptoServiceProvider rsa = (RSACryptoServiceProvider)key;
+                    return rsa.VerifyHash(hash, "SHA1", DecodeSignature());
+                }
+                
             } else
             {
                 DSA dsa = (DSA)key;
