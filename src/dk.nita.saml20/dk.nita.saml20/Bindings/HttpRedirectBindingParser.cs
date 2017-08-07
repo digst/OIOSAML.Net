@@ -7,6 +7,7 @@ using System.Security.Cryptography.Xml;
 using System.Text;
 using System.Web;
 using System.Xml;
+using dk.nita.saml20.Bindings.SignatureProviders;
 using dk.nita.saml20.Schema.Metadata;
 using dk.nita.saml20.Schema.Protocol;
 using dk.nita.saml20.Utils;
@@ -144,33 +145,11 @@ namespace dk.nita.saml20.Bindings
             if (key == null)
                 throw new ArgumentNullException("key");
 
-            if (!(key is DSA || key is RSACryptoServiceProvider))
-                throw new ArgumentException("The key must be an instance of either DSA or RSACryptoServiceProvider.");
-
             if (!IsSigned)
                 throw new InvalidOperationException("Query is not signed, so there is no signature to verify.");
 
-            byte[] hash = new SHA1Managed().ComputeHash(Encoding.UTF8.GetBytes(_signedquery));
-
-            if (key is RSACryptoServiceProvider)
-            {
-                if (Saml20Constants.XmlDsigRSASHA256Url.Equals(_signatureAlgorithm, StringComparison.Ordinal))
-                {
-                    var rsa = (RSACryptoServiceProvider)key;
-                    hash = new SHA256Managed().ComputeHash(Encoding.UTF8.GetBytes(_signedquery));
-                    return rsa.VerifyHash(hash, "SHA256", DecodeSignature());
-                }
-                else
-                {
-                    RSACryptoServiceProvider rsa = (RSACryptoServiceProvider)key;
-                    return rsa.VerifyHash(hash, "SHA1", DecodeSignature());
-                }
-                
-            } else
-            {
-                DSA dsa = (DSA)key;
-                return dsa.VerifySignature(hash, DecodeSignature());
-            }                
+            var signatureProvider = SignatureProviderFactory.CreateFromAlgorithmUri(key.GetType(), _signatureAlgorithm);
+            return signatureProvider.VerifyHash(key, Encoding.UTF8.GetBytes(_signedquery), DecodeSignature());
         }
 
         /// <summary>

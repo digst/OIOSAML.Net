@@ -19,6 +19,7 @@ using dk.nita.saml20.Utils;
 using Saml2.Properties;
 using Trace = dk.nita.saml20.Utils.Trace;
 using dk.nita.saml20.Actions;
+using dk.nita.saml20.Bindings.SignatureProviders;
 
 namespace dk.nita.saml20.protocol
 {
@@ -301,7 +302,7 @@ namespace dk.nita.saml20.protocol
                 request.SubjectToLogOut.Value = Saml20PrincipalCache.GetSaml20AssertionLite().Subject.Value;
                 request.SessionIndex = Saml20PrincipalCache.GetSaml20AssertionLite().SessionIndex;
                 builder.Request = request.GetXml().OuterXml;
-                builder.UseRsaSha1 = endpoint.UseRsaSha1OnRequests;
+                builder.ShaHashingAlgorithm = SignatureProviderFactory.ValidateShaHashingAlgorithm(endpoint.ShaHashingAlgorithm);
 
                 string redirectUrl = destination.Url + "?" + builder.ToQuery();
 
@@ -578,7 +579,7 @@ namespace dk.nita.saml20.protocol
                 builder.RelayState = context.Request.Params["RelayState"];
                 builder.Response = response.GetXml().OuterXml;
                 builder.signingKey = FederationConfig.GetConfig().SigningCertificate.GetCertificate().PrivateKey;
-                builder.UseRsaSha1 = endpoint.UseRsaSha1OnRequests;
+                builder.ShaHashingAlgorithm = SignatureProviderFactory.ValidateShaHashingAlgorithm(endpoint.ShaHashingAlgorithm);
                 string s = destination.Url + "?" + builder.ToQuery();
                 context.Response.Redirect(s, true);
                 return;

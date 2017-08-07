@@ -147,6 +147,13 @@
     <Compile Include="Actions\IAction.cs" />
     <Compile Include="Actions\RedirectAction.cs" />
     <Compile Include="Actions\SamlPrincipalAction.cs" />
+    <Compile Include="Bindings\SignatureProviders\DsaSha1SignatureProvider.cs" />
+    <Compile Include="Bindings\SignatureProviders\ISignatureProvider.cs" />
+    <Compile Include="Bindings\SignatureProviders\RsaSha1SignatureProvider.cs" />
+    <Compile Include="Bindings\SignatureProviders\RsaSha256SignatureProvider.cs" />
+    <Compile Include="Bindings\SignatureProviders\RsaSha512SignatureProvider.cs" />
+    <Compile Include="Bindings\SignatureProviders\SignatureProviderFactory.cs" />
+    <Compile Include="Config\ShaHashingAlgorithm.cs" />
     <Compile Include="Identity\Saml20PrincipalCache.cs" />
     <Compile Include="ISaml20IdpTokenAccessor.cs" />
     <Compile Include="Config\ConfigurationConstants.cs" />

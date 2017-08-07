@@ -5,6 +5,8 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.Xml;
 using System.Text;
 using System.Web;
+using dk.nita.saml20.Bindings.SignatureProviders;
+using dk.nita.saml20.config;
 using CONSTS = dk.nita.saml20.Bindings.HttpRedirectBindingConstants;
 
 namespace dk.nita.saml20.Bindings
@@ -87,7 +89,7 @@ namespace dk.nita.saml20.Bindings
         /// <summary>
         /// When using RSA keys, use SHA1 instead of SHA256
         /// </summary>
-        public bool UseRsaSha1 { get; set; }
+        public ShaHashingAlgorithm ShaHashingAlgorithm { get; set; }
 
         #endregion
 
@@ -116,26 +118,14 @@ namespace dk.nita.saml20.Bindings
 
             result.Append(string.Format("&{0}=", HttpRedirectBindingConstants.SigAlg));
 
-            if (_signingKey is RSA)
-            {
-                if (UseRsaSha1)
-                {
-                    result.Append(UpperCaseUrlEncode(HttpUtility.UrlEncode(SignedXml.XmlDsigRSASHA1Url)));
-                }
-                else
-                {
-                    result.Append(UpperCaseUrlEncode(HttpUtility.UrlEncode(Saml20Constants.XmlDsigRSASHA256Url)));
-                }
+            var signingProvider = SignatureProviderFactory.CreateFromAlgorithmName(_signingKey.GetType(), ShaHashingAlgorithm);
 
-            }
-            else
-            {
-                result.Append(UpperCaseUrlEncode(HttpUtility.UrlEncode(SignedXml.XmlDsigDSAUrl)));
-            }
+            result.Append(UpperCaseUrlEncode(HttpUtility.UrlEncode(signingProvider.SignatureUri)));
 
             // Calculate the signature of the URL as described in [SAMLBind] section 3.4.4.1.            
-            byte[] signature = SignData(Encoding.UTF8.GetBytes(result.ToString()));            
-            
+            byte[] signature = signingProvider.SignData(_signingKey, Encoding.UTF8.GetBytes(result.ToString()));
+            //byte[] signature = SignData(Encoding.UTF8.GetBytes(result.ToString()));            
+
             result.AppendFormat("&{0}=", HttpRedirectBindingConstants.Signature);
             result.Append(HttpUtility.UrlEncode(Convert.ToBase64String(signature)));
         }
@@ -158,31 +148,6 @@ namespace dk.nita.saml20.Bindings
         }
 
         /// <summary>
-        /// Create the signature for the data.
-        /// </summary>
-        private byte[] SignData(byte[] data)
-        {
-            if (_signingKey is RSACryptoServiceProvider)
-            {
-                if (UseRsaSha1)
-                {
-                    RSACryptoServiceProvider rsa = (RSACryptoServiceProvider) _signingKey;
-                    return rsa.SignData(data, new SHA1CryptoServiceProvider());
-                }
-                else
-                {
-                    var rsa = (RSACryptoServiceProvider)_signingKey;
-                    return rsa.SignData(data, new SHA256CryptoServiceProvider());
-                }
-            } 
-            else
-            {
-                DSACryptoServiceProvider dsa = (DSACryptoServiceProvider)_signingKey;
-                return dsa.SignData(data);
-            }
-        }
-
-        /// <summary>
         /// If the RelayState property has been set, this method adds it to the query string.
         /// </summary>
         /// <param name="result"></param>
@@ -190,7 +155,7 @@ namespace dk.nita.saml20.Bindings
         {
             if (_relayState == null)
                 return;
-
+            
             result.Append("&RelayState=");
             // Encode the relay state if we're building a request. Otherwise, append unmodified.
             if (_request != null)

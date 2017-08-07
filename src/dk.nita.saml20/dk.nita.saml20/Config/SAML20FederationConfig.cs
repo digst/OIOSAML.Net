@@ -4,11 +4,9 @@ using System.Configuration;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
-using System.Web;
 using System.Xml;
 using System.Xml.Serialization;
 using dk.nita.saml20.identity;
-using dk.nita.saml20.protocol;
 using dk.nita.saml20.Schema.Metadata;
 using dk.nita.saml20.Utils;
 using Saml2.Properties;
@@ -959,8 +957,8 @@ namespace dk.nita.saml20.config
         /// <summary>
         /// When using RSA keys SHA256 is the default for signing SAML requests. This allows for backwards compatibility if the Identity Provider only support RSA SHA1
         /// </summary>
-        [XmlAttribute(AttributeName = "UseRsaSha1OnRequests")]
-        public bool UseRsaSha1OnRequests;
+        [XmlAttribute(AttributeName = "ShaHashingAlgorithm")]
+        public string ShaHashingAlgorithm { get; set; }
 
         /// <summary>
         /// Certificate validation
@@ -1012,6 +1010,8 @@ namespace dk.nita.saml20.config
         {
             return IDPSelectionUtil.GetIDPLoginUrl(Id, forceAuthn, isPassive);
         }
+
+        
     }
 
     /// <summary>

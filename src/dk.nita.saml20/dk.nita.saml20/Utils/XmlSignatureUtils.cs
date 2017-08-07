@@ -129,7 +129,6 @@ namespace dk.nita.saml20.Utils
         /// <exception cref="InvalidOperationException">if the XmlDocument instance does not contain a signed XML element.</exception>
         public static bool CheckSignature(XmlElement el, AsymmetricAlgorithm alg)
         {
-            //CheckDocument(el);
             SignedXml signedXml = RetrieveSignature(el);
             return signedXml.CheckSignature(alg);
         }
