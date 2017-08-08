@@ -188,8 +188,8 @@ namespace dk.nita.saml20.protocol
             // See if the "ReturnUrl" - parameter is set.
             string returnUrl = context.Request.QueryString["ReturnUrl"];
             // If PreventOpenRedirectAttack has been enabled ... the return URL is only set if the URL is local.
-            if (!string.IsNullOrEmpty(returnUrl) && (!FederationConfig.GetConfig().PreventOpenRedirectAttack || IsLocalUrl(returnUrl))) 
-                SessionFactory.SessionContext.Current[SessionConstants.RedirectUrl] = returnUrl;
+            if (!string.IsNullOrEmpty(returnUrl) && (!FederationConfig.GetConfig().PreventOpenRedirectAttack || IsLocalUrl(returnUrl)))
+                SessionStore.CurrentSession[SessionConstants.RedirectUrl] = returnUrl;
             
             IDPEndPoint idpEndpoint = RetrieveIDP(context);
 
@@ -336,7 +336,7 @@ namespace dk.nita.saml20.protocol
 
         private static void CheckReplayAttack(HttpContext context, string inResponseTo)
         {
-            var expectedInResponseToSessionState = SessionFactory.SessionContext.Current[SessionConstants.ExpectedInResponseTo];
+            var expectedInResponseToSessionState = SessionStore.CurrentSession[SessionConstants.ExpectedInResponseTo];
             if (expectedInResponseToSessionState == null)
                 throw new Saml20Exception("Your session has been disconnected, please logon again");
 
@@ -570,8 +570,8 @@ namespace dk.nita.saml20.protocol
 
         private void DoLogin(HttpContext context, Saml20Assertion assertion)
         {
-            SessionFactory.SessionContext.AssociateUserIdWithCurrentSession(assertion.Subject.Value);
-            SessionFactory.SessionContext.Current[SessionConstants.Saml20AssertionLite] = Saml20AssertionLite.ToLite(assertion);
+            SessionStore.AssociateUserIdWithCurrentSession(assertion.Subject.Value);
+            SessionStore.CurrentSession[SessionConstants.Saml20AssertionLite] = Saml20AssertionLite.ToLite(assertion);
             
             if(Trace.ShouldTrace(TraceEventType.Information))
             {
@@ -652,7 +652,7 @@ namespace dk.nita.saml20.protocol
             }
 
             //Save request message id to session
-            SessionFactory.SessionContext.Current[SessionConstants.ExpectedInResponseTo] = request.ID;
+            SessionStore.CurrentSession[SessionConstants.ExpectedInResponseTo] = request.ID;
 
             if (destination.Binding == SAMLBinding.REDIRECT)
             {

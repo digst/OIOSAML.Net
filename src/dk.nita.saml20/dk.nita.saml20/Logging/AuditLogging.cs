@@ -5,6 +5,7 @@ using dk.nita.saml20.identity;
 using dk.nita.saml20.config;
 using dk.nita.saml20.Utils;
 using dk.nita.saml20.session;
+using dk.nita.saml20.Session;
 
 namespace dk.nita.saml20.Logging
 {
@@ -114,7 +115,7 @@ namespace dk.nita.saml20.Logging
         public static void logEntry(Direction dir, Operation op, string msg, string data)
         {
             var userHostAddress = HttpContext.Current != null ? HttpContext.Current.Request.UserHostAddress : "<no ip>";
-            var sessionId = SessionFactory.SessionContext.Current != null ? SessionFactory.SessionContext.Current.Id.ToString() : "<no session id>";
+            var sessionId = SessionStore.CurrentSession != null ? SessionStore.CurrentSession.SessionId.ToString() : "<no session id>";
 
             AuditLogger.LogEntry(dir, op, msg, data, userHostAddress, IdpId, AssertionId, sessionId);
         }

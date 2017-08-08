@@ -8,6 +8,7 @@ using dk.nita.saml20.session;
 using dk.nita.saml20.config;
 using System.Web.SessionState;
 using dk.nita.saml20.protocol.pages;
+using dk.nita.saml20.Session;
 using Trace=dk.nita.saml20.Utils.Trace;
 
 namespace dk.nita.saml20.protocol
@@ -126,13 +127,13 @@ namespace dk.nita.saml20.protocol
         /// <param name="context">The context.</param>
         public void DoRedirect(HttpContext context)
         {
-            ISession currentSession = SessionFactory.SessionContext.Current;
+            var currentSession = SessionStore.CurrentSession;
             if (currentSession != null)
             {
                 var redirectUrl = (string) currentSession[SessionConstants.RedirectUrl];
                 if (!string.IsNullOrEmpty(redirectUrl))
                 {
-                    currentSession.Remove(SessionConstants.RedirectUrl);
+                    currentSession[SessionConstants.RedirectUrl] = null;
                     context.Response.Redirect(redirectUrl);
                     return;
                 }

@@ -1,6 +1,7 @@
 using System;
 using System.Xml.Serialization;
 using dk.nita.saml20.session;
+using dk.nita.saml20.Session;
 
 namespace dk.nita.saml20.config
 {
@@ -80,7 +81,7 @@ namespace dk.nita.saml20.config
         public string AuditLoggingType;
 
         /// <summary>
-        /// The type of the session provider. Provide the fully qualified name of the type implementing the <see cref="ISessions"/> interface.
+        /// The type of the session provider. Provide the fully qualified name of the type implementing the <see cref="ISessionStoreProvider"/> interface.
         /// </summary>
         [XmlAttribute("sessionType")]
         public string SessionType;

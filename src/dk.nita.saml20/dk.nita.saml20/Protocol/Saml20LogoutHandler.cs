@@ -625,8 +625,8 @@ namespace dk.nita.saml20.protocol
             finally
             {
                 // Always end with abandoning the session.
-                Trace.TraceData(TraceEventType.Information, "Clearing session with id: " + SessionFactory.SessionContext.Current.Id);
-                SessionFactory.SessionContext.AbandonAllSessions(Saml20Identity.Current.Name);
+                Trace.TraceData(TraceEventType.Information, "Clearing session with id: " + SessionStore.CurrentSession.SessionId);
+                SessionStore.AbandonAllSessions(Saml20Identity.Current.Name);
                 //SessionFactory.SessionContext.AbandonCurrentSession();
                 Trace.TraceData(TraceEventType.Verbose, "Session cleared.");
             }
@@ -649,7 +649,7 @@ namespace dk.nita.saml20.protocol
             {
                 // Always end with abandoning the session.
                 Trace.TraceData(TraceEventType.Information, "Clearing all sessions related to user with id: " + userId);
-                SessionFactory.SessionContext.AbandonAllSessions(userId);
+                SessionStore.AbandonAllSessions(userId);
                 Trace.TraceData(TraceEventType.Verbose, "Sessions cleared.");
             }
         }
