@@ -306,9 +306,11 @@
     </Compile>
     <Compile Include="Session\InProcSessionStoreProvider.cs" />
     <Compile Include="Session\ISessionStoreProvider.cs" />
+    <Compile Include="Session\IValueFactory.cs" />
     <Compile Include="Session\Saml20AssertionLite.cs" />
     <Compile Include="Session\SessionConstants.cs" />
     <Compile Include="Session\SessionStore.cs" />
+    <Compile Include="Session\SessionValueFactory.cs" />
     <Compile Include="Session\UserSession.cs" />
     <Compile Include="Specification\DefaultCertificateSpecification.cs" />
     <Compile Include="Specification\ICertificateSpecification.cs" />

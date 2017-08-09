@@ -9,9 +9,12 @@ namespace dk.nita.saml20.Session
     public interface ISessionStoreProvider
     {
         /// <summary>
-        /// Invoked during startup, setting the session timeout after which the session store MUST NOT allow access to session data
+        /// Initializes the session store provider with configurations from OIOSAML.NET.
+        /// This method is guaranteed to be invoked before any other methods on the interface.
         /// </summary>
-        void Initialize(TimeSpan sessionTimeout);
+        /// <param name="sessionTimeout">Timeout of the session, after which a user must not be able to access their session</param>
+        /// <param name="sessionValueFactory">If session state must be serialized, this factory guarantees safe serialization of value objects to and from strings</param>
+        void Initialize(TimeSpan sessionTimeout, ISessionValueFactory sessionValueFactory);
 
         /// <summary>
         /// Add or update the value in the user's session with the given key

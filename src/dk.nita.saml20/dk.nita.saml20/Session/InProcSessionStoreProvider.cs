@@ -12,13 +12,18 @@ namespace dk.nita.saml20.Session
     {
         class Session
         {
-            internal DateTime Timestamp { get; }
+            internal DateTime Timestamp { get; private set; }
             internal ConcurrentDictionary<string, object> Properties { get; }
 
             public Session()
             {
                 Timestamp = DateTime.UtcNow;
                 Properties = new ConcurrentDictionary<string, object>();
+            }
+
+            internal void UpdateTimestamp()
+            {
+                Timestamp = DateTime.UtcNow;
             }
         }
 
@@ -58,6 +63,7 @@ namespace dk.nita.saml20.Session
         void ISessionStoreProvider.SetSessionProperty(Guid sessionId, string key, object value)
         {
             var session = _sessions.GetOrAdd(sessionId, new Session());
+            session.UpdateTimestamp();
             session.Properties.AddOrUpdate(key, value, (k,e) => value);
         }
 
@@ -66,6 +72,8 @@ namespace dk.nita.saml20.Session
             Session session;
             if (_sessions.TryGetValue(sessionId, out session))
             {
+                session.UpdateTimestamp();
+
                 object val;
                 session.Properties.TryRemove(key, out val);
             }
@@ -76,6 +84,8 @@ namespace dk.nita.saml20.Session
             Session session;
             if (_sessions.TryGetValue(sessionId, out session))
             {
+                session.UpdateTimestamp();
+
                 object val;
                 if (session.Properties.TryGetValue(key, out val))
                 {
@@ -107,7 +117,7 @@ namespace dk.nita.saml20.Session
             }
         }
 
-        void ISessionStoreProvider.Initialize(TimeSpan sessionTimeout)
+        void ISessionStoreProvider.Initialize(TimeSpan sessionTimeout, ISessionValueFactory sessionValueFactory)
         {
             _sessionTimeout = sessionTimeout;
         }

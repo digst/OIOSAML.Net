@@ -37,7 +37,7 @@ namespace dk.nita.saml20.Session
             }
 
             var sessionTimeoutMinutes = FederationConfig.GetConfig().SessionTimeout;
-            Sessions.Initialize(TimeSpan.FromMinutes(sessionTimeoutMinutes));
+            Sessions.Initialize(TimeSpan.FromMinutes(sessionTimeoutMinutes), new SessionValueFactory());
         }
 
         private static readonly ISessionStoreProvider Sessions;
