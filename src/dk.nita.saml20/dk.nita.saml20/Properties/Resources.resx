@@ -112,10 +112,10 @@
     <value>2.0</value>
   </resheader>
   <resheader name="reader">
-    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <resheader name="writer">
-    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="AccessDenied" xml:space="preserve">
     <value>Access Denied</value>
@@ -167,12 +167,6 @@ AppID={1}</value>
   <data name="BindingError" xml:space="preserve">
     <value>An errror occurred. No known binding has been registered for this endpoint.</value>
   </data>
-  <data name="CertificateMoreThanOneFound" xml:space="preserve">
-    <value>Found more than one certificate matching {0}.</value>
-  </data>
-  <data name="CertificateNotFound" xml:space="preserve">
-    <value>Certificate {0} was not found.</value>
-  </data>
   <data name="ChooseDesc" xml:space="preserve">
     <value>Please choose the identity provider of your choice from the list below:</value>
   </data>
@@ -206,7 +200,7 @@ AppID={1}</value>
   <data name="DataEncryptionTokenSupport" xml:space="preserve">
     <value>The RequestSecurityToken message must be signed with a token which supports Data Encryption since the SamlTokenService uses that signing token to encrypt the key.</value>
   </data>
-  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="DefaultStyle" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Protocol\resources\defaultStyle.css;System.String, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;Windows-1252</value>
   </data>

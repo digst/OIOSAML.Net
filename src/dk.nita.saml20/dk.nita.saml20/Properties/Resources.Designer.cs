@@ -207,24 +207,6 @@ namespace Saml2.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Found more than one certificate matching {0}..
-        /// </summary>
-        internal static string CertificateMoreThanOneFound {
-            get {
-                return ResourceManager.GetString("CertificateMoreThanOneFound", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Certificate {0} was not found..
-        /// </summary>
-        internal static string CertificateNotFound {
-            get {
-                return ResourceManager.GetString("CertificateNotFound", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Please choose the identity provider of your choice from the list below:.
         /// </summary>
         internal static string ChooseDesc {

@@ -624,11 +624,17 @@ namespace dk.nita.saml20.protocol
             }
             finally
             {
-                // Always end with abandoning the session.
-                Trace.TraceData(TraceEventType.Information, "Clearing session with id: " + SessionStore.CurrentSession.SessionId);
-                SessionStore.AbandonAllSessions(Saml20Identity.Current.Name);
-                //SessionFactory.SessionContext.AbandonCurrentSession();
-                Trace.TraceData(TraceEventType.Verbose, "Session cleared.");
+                if (SessionStore.CurrentSession != null)
+                {
+                    // Always end with abandoning the session.
+                    Trace.TraceData(TraceEventType.Information, "Clearing session for userId: " + Saml20Identity.Current.Name);
+                    SessionStore.AbandonAllSessions(Saml20Identity.Current.Name);
+                    Trace.TraceData(TraceEventType.Verbose, "Session cleared.");
+                }
+                else
+                {
+                    Trace.TraceData(TraceEventType.Warning, "The user was logged out but the session had already expired. Distributed session could therefore not be abandonded½");
+                }
             }
         }
 

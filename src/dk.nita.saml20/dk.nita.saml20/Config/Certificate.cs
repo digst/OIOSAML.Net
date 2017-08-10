@@ -17,21 +17,39 @@ namespace dk.nita.saml20.config
         /// <returns></returns>
         public X509Certificate2 GetCertificate()
         {            
-            X509Store store = new X509Store( storeName, storeLocation);
+            var store = new X509Store( storeName, storeLocation);
             try
             {
                 store.Open(OpenFlags.ReadOnly);
-                X509Certificate2Collection found = store.Certificates.Find( x509FindType, findValue, validOnly);
+                var found = store.Certificates.Find(x509FindType, findValue, validOnly);
                 if (found.Count == 0)
-                    throw new ConfigurationErrorsException(string.Format(Resources.CertificateNotFound, findValue));
+                {
+                    var msg = $"A configured certificate could not be found in the certificate store. {SearchDescriptor()}";
+                    throw new ConfigurationErrorsException(msg);
+                }
                 if (found.Count > 1)
-                    throw new ConfigurationErrorsException(string.Format(Resources.CertificateMoreThanOneFound, findValue));
+                {
+                    var msg = $"Found more than one certificate in the certificate store. Make sure you don't have duplicate certificates installed. {SearchDescriptor()}";
+                    throw new ConfigurationErrorsException(msg);
+                }
                 return found[0];
             }
             finally
             {
                 store.Close();
             }
+        }
+
+        private string SearchDescriptor()
+        {
+            var msg = $"The certificate was searched for in {storeLocation}/{storeName}, {x509FindType}='{findValue}', validOnly={validOnly}.";
+
+            if (x509FindType == X509FindType.FindByThumbprint && findValue?.Length > 0 && findValue[0] == 0x200E)
+            {
+                msg = "\nThe configuration for the certificate searches by thumbprint but has an invalid character in the thumbprint string. Make sure you remove the first hidden character in the thumbprint value in the configuration. See https://support.microsoft.com/en-us/help/2023835/certificate-thumbprint-displayed-in-mmc-certificate-snap-in-has-extra-invisible-unicode-character. \n" + msg;
+            }
+
+            return msg;
         }
 
         /// <summary>

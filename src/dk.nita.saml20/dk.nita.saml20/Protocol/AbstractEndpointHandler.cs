@@ -60,7 +60,7 @@ namespace dk.nita.saml20.protocol
             {
                 ErrorPage page = new ErrorPage();
                 page.OverrideConfig = overrideConfigSetting;
-                page.ErrorText = (showError) ? errorMessage : DEFAULT_MESSAGE;
+                page.ErrorText = (showError) ? errorMessage?.Replace("\n", "<br />") : DEFAULT_MESSAGE;
                 page.ProcessRequest(context);
                 context.Response.End();
             }

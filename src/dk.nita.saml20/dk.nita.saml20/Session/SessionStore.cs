@@ -43,7 +43,7 @@ namespace dk.nita.saml20.Session
         private static readonly ISessionStoreProvider Sessions;
 
         /// <summary>
-        /// There current user session. User session is read from cookie. If it doesn't exists, it will be created with the response
+        /// There current user session. User session is read from cookie. If it doesn't exists, null is returned
         /// </summary>
         /// <returns></returns>
         internal static UserSession CurrentSession
@@ -51,19 +51,32 @@ namespace dk.nita.saml20.Session
             get
             {
                 //If not in context of a web requests, there can't be a current session
-                if (HttpContext.Current == null)
+                if (HttpContext.Current != null)
                 {
-                    return null;
+                    var sessionId = GetSessionIdFromCookie();
+
+                    if (sessionId.HasValue)
+                    {
+                        return new UserSession(Sessions, sessionId.Value);
+                    }
                 }
 
-                var sessionId = GetSessionIdFromCookie();
+                return null;
+            }
+        }
 
-                if (!sessionId.HasValue)
-                {
-                    sessionId = WriteSessionCookie();
-                }
+        public static void CreateSessionIfNotExists()
+        {
+            if (HttpContext.Current == null)
+            {
+                throw new InvalidOperationException("A session cannot be created when running outside the context of a asp.net request");
+            }
 
-                return new UserSession(Sessions, sessionId.Value);
+            var sessionId = GetSessionIdFromCookie();
+
+            if (!sessionId.HasValue)
+            {
+                WriteSessionCookie();
             }
         }
 
@@ -96,8 +109,13 @@ namespace dk.nita.saml20.Session
             return null;
         }
 
-        private static Guid WriteSessionCookie()
+        private static void WriteSessionCookie()
         {
+            if (!HttpContext.Current.Request.IsSecureConnection)
+            {
+                throw new Saml20Exception("The service provider must use https since session cookie is not allowed on a unsecure transport");
+            }
+
             var sessionId = Guid.NewGuid();
 
             HttpContext.Current.Request.Cookies.Remove(GetSessionCookieName()); // Remove cookie from request when creating a new session id. This is necessary because adding a cookie with the same name does not override cookies in the request.
@@ -107,8 +125,6 @@ namespace dk.nita.saml20.Session
                 HttpOnly = true
             };
             HttpContext.Current.Response.Cookies.Add(httpCookie); // When a cookie is added to the response it is automatically added to the request. Thus, SessionId is available immeditly when reading cookies from the request.
-
-            return sessionId;
         }
 
         private static string GetSessionCookieName()
@@ -121,6 +137,17 @@ namespace dk.nita.saml20.Session
             }
 
             return name;
+        }
+
+        /// <summary>
+        /// Validates the user has an active session, else throws an exception
+        /// </summary>
+        public static void ValidateSessionExists()
+        {
+            if (CurrentSession == null)
+            {
+                throw new Saml20Exception("The user doesn't have a session which is required at this point in the pipeline. Plausible reason is that the user's session has expired. \nIf the application is running in a web farm ensure distributed sessions is supported by the session store provider.");
+            }
         }
     }
 }

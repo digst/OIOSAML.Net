@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
@@ -81,7 +82,8 @@ namespace dk.nita.test.Saml20
             {}
 
             Assert.IsNull(assertion.SigningKey, "Signing key is already present on assertion. Modify test.");
-            Assert.That(assertion.CheckSignature(Saml20SignonHandler.GetTrustedSigners(endp.metadata.GetKeys(KeyTypes.signing), endp)));
+            IEnumerable<string> validationFailures;
+            Assert.That(assertion.CheckSignature(Saml20SignonHandler.GetTrustedSigners(endp.metadata.GetKeys(KeyTypes.signing), endp, out validationFailures)));
             Assert.IsNotNull(assertion.SigningKey, "Signing key was not set on assertion instance.");             
         }
 

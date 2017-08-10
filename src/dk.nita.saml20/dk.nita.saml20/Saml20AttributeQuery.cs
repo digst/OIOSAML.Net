@@ -224,7 +224,8 @@ namespace dk.nita.saml20
                 Trace.TraceData(TraceEventType.Information, string.Format(Tracing.AttrQueryAssertion, xmlAssertion == null ? string.Empty : xmlAssertion.OuterXml));
             }
 
-            if (!assertion.CheckSignature(Saml20SignonHandler.GetTrustedSigners(endPoint.metadata.Keys, endPoint)))
+            IEnumerable<string> validationFailures;
+            if (!assertion.CheckSignature(Saml20SignonHandler.GetTrustedSigners(endPoint.metadata.Keys, endPoint, out validationFailures)))
             {
                 Trace.TraceData(TraceEventType.Error, Resources.SignatureInvalid);
                 throw new Saml20Exception(Resources.SignatureInvalid);

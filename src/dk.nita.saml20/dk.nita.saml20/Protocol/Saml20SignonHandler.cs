@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Security.Cryptography.Xml;
@@ -65,8 +66,6 @@ namespace dk.nita.saml20.protocol
         protected override void Handle(HttpContext context)
         {
             Trace.TraceMethodCalled(GetType(), "Handle()");
-
-            
 
             //Some IdP's are known to fail to set an actual value in the SOAPAction header
             //so we just check for the existence of the header field.
@@ -153,7 +152,7 @@ namespace dk.nita.saml20.protocol
                         HandleEncryptedAssertion(context, assertion);
                     }else
                     {
-                        HandleAssertion(context, assertion);
+                        HandleAssertion(context, assertion, false);
                     }
 
                 }else
@@ -184,6 +183,8 @@ namespace dk.nita.saml20.protocol
         private void SendRequest(HttpContext context)
         {
             Trace.TraceMethodCalled(GetType(), "SendRequest()");
+
+            SessionStore.CreateSessionIfNotExists();
 
             // See if the "ReturnUrl" - parameter is set.
             string returnUrl = context.Request.QueryString["ReturnUrl"];
@@ -263,6 +264,8 @@ namespace dk.nita.saml20.protocol
         /// </summary>        
         private void HandleResponse(HttpContext context)
         {
+            SessionStore.ValidateSessionExists();
+
             Encoding defaultEncoding = Encoding.UTF8;
             XmlDocument doc = GetDecodedSamlResponse(context, defaultEncoding);
 
@@ -324,7 +327,7 @@ namespace dk.nita.saml20.protocol
                     }
                 }
 
-                HandleAssertion(context, assertion);
+                HandleAssertion(context, assertion, true);
                 return;
             }
             catch (Exception e)
@@ -374,7 +377,7 @@ namespace dk.nita.saml20.protocol
         {
             Trace.TraceMethodCalled(GetType(), "HandleEncryptedAssertion()");
             Saml20EncryptedAssertion decryptedAssertion = GetDecryptedAssertion(elem);
-            HandleAssertion(context, decryptedAssertion.Assertion.DocumentElement);
+            HandleAssertion(context, decryptedAssertion.Assertion.DocumentElement, false);
         }
 
         private static Saml20EncryptedAssertion GetDecryptedAssertion(XmlElement elem)
@@ -427,7 +430,7 @@ namespace dk.nita.saml20.protocol
         /// <summary>
         /// Deserializes an assertion, verifies its signature and logs in the user if the assertion is valid.
         /// </summary>
-        private void HandleAssertion(HttpContext context, XmlElement elem)
+        private void HandleAssertion(HttpContext context, XmlElement elem, bool isPassiveLogin)
         {
             Trace.TraceMethodCalled(GetType(), "HandleAssertion");
 
@@ -459,12 +462,21 @@ namespace dk.nita.saml20.protocol
 
             if (!endp.OmitAssertionSignatureCheck)
             {
-                if (!assertion.CheckSignature(GetTrustedSigners(endp.metadata.GetKeys(KeyTypes.signing), endp)))
+                IEnumerable<string> validationFailures;
+                if (!assertion.CheckSignature(GetTrustedSigners(endp.metadata.GetKeys(KeyTypes.signing), endp, out validationFailures)))
                 {
                     AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST,
                     "Invalid signature, assertion: " + elem);
 
-                    HandleError(context, Resources.SignatureInvalid);
+                    string errorMessage = Resources.SignatureInvalid;
+
+                    validationFailures = validationFailures.ToArray();
+                    if (validationFailures.Any())
+                    {
+                        errorMessage += $"\nVerification of IDP certificate used for signature failed from the following certificate checks:\n{string.Join("\n", validationFailures)}";
+                    }
+
+                    HandleError(context, errorMessage);
                     return;
                 }
             }
@@ -510,14 +522,15 @@ namespace dk.nita.saml20.protocol
             AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST,
                       "Assertion validated succesfully");
 
-            DoLogin(context, assertion);
+            DoLogin(context, assertion, isPassiveLogin);
         }
 
-        internal static IEnumerable<AsymmetricAlgorithm> GetTrustedSigners(ICollection<KeyDescriptor> keys, IDPEndPoint ep)
+        internal static IEnumerable<AsymmetricAlgorithm> GetTrustedSigners(ICollection<KeyDescriptor> keys, IDPEndPoint ep, out IEnumerable<string> validationFailureReasons)
         {
             if (keys == null)
                 throw new ArgumentNullException("keys");
 
+            var failures = new List<string>();
             List<AsymmetricAlgorithm> result = new List<AsymmetricAlgorithm>(keys.Count);
             foreach (KeyDescriptor keyDescriptor in keys)
             {
@@ -529,8 +542,12 @@ namespace dk.nita.saml20.protocol
                     {
                         X509Certificate2 cert = XmlSignatureUtils.GetCertificateFromKeyInfo((KeyInfoX509Data) clause);
 
-                        if (!IsSatisfiedByAllSpecifications(ep, cert))
+                        string failureReason;
+                        if (!IsSatisfiedByAllSpecifications(ep, cert, out failureReason))
+                        {
+                            failures.Add(failureReason);
                             continue;
+                        }
                     }
 
                     AsymmetricAlgorithm key = XmlSignatureUtils.ExtractKey(clause);
@@ -539,17 +556,24 @@ namespace dk.nita.saml20.protocol
                 
             }
 
+            validationFailureReasons = failures;
             return result;
         }
 
-        private static bool IsSatisfiedByAllSpecifications(IDPEndPoint ep, X509Certificate2 cert)
+        private static bool IsSatisfiedByAllSpecifications(IDPEndPoint ep, X509Certificate2 cert, out string failureReason)
         {
             foreach(ICertificateSpecification spec in SpecificationFactory.GetCertificateSpecifications(ep))
             {
-                if (!spec.IsSatisfiedBy(cert))
-                    return false;   
+                string r;
+                if (!spec.IsSatisfiedBy(cert, out r))
+                {
+                    failureReason = $"{spec.GetType().Name}: {r}";
+                    return false;
+
+                }
             }
 
+            failureReason = null;
             return true;
         }
 
@@ -568,10 +592,13 @@ namespace dk.nita.saml20.protocol
             }
         }
 
-        private void DoLogin(HttpContext context, Saml20Assertion assertion)
+        private void DoLogin(HttpContext context, Saml20Assertion assertion, bool isPassiveLogin)
         {
-            SessionStore.AssociateUserIdWithCurrentSession(assertion.Subject.Value);
-            SessionStore.CurrentSession[SessionConstants.Saml20AssertionLite] = Saml20AssertionLite.ToLite(assertion);
+            if (isPassiveLogin)
+            {
+                SessionStore.AssociateUserIdWithCurrentSession(assertion.Subject.Value);
+                SessionStore.CurrentSession[SessionConstants.Saml20AssertionLite] = Saml20AssertionLite.ToLite(assertion);
+            }
             
             if(Trace.ShouldTrace(TraceEventType.Information))
             {
