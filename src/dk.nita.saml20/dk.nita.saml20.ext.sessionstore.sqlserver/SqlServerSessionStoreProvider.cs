@@ -2,11 +2,7 @@
 using System.Configuration;
 using System.Data.SqlClient;
 using System.Diagnostics;
-using System.IO;
-using System.Text;
 using System.Threading;
-using System.Xml;
-using System.Xml.Serialization;
 using dk.nita.saml20.Session;
 using Trace = dk.nita.saml20.Utils.Trace;
 

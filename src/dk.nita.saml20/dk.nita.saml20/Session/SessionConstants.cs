@@ -6,11 +6,6 @@
     public class SessionConstants
     {
         /// <summary>
-        /// Name of cookie that stores the session id
-        /// </summary>
-        public const string SessionCookieName = "oiosamlSession";
-
-        /// <summary>
         /// 
         /// </summary>
         public const string Saml20AssertionLite = "SamlAssertionLite";

@@ -47,6 +47,18 @@ namespace dk.nita.saml20.config
             set { _sessionTimeout = value; }
         }
 
+        private string _sessionCookieName = "oiosamlSession";
+
+        /// <summary>
+        /// Name used for the session cookie
+        /// </summary>
+        [XmlElement(ElementName = "SessionCookieName")]
+        public string SessionCookieName
+        {
+            get => _sessionCookieName;
+            set => _sessionCookieName = value;
+        }
+
         /// <summary>
         /// Specifies whether or not to prevent open redirect attacks by checking if return URL is local.
         /// Default value is true.

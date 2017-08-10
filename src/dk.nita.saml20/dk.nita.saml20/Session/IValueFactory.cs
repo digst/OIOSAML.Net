@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace dk.nita.saml20.Session
 {
     /// <summary>
-    /// 
+    /// Add support for a safe way of serializing value objects if the <see cref="ISessionStoreProvider"/> needs to persist values
     /// </summary>
     public interface ISessionValueFactory
     {

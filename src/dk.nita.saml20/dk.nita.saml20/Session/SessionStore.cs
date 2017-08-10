@@ -89,7 +89,7 @@ namespace dk.nita.saml20.Session
 
         private static Guid? GetSessionIdFromCookie()
         {
-            HttpCookie httpCookie = HttpContext.Current.Request.Cookies[SessionConstants.SessionCookieName];
+            HttpCookie httpCookie = HttpContext.Current.Request.Cookies[GetSessionCookieName()];
             if (httpCookie != null)
                 return new Guid(httpCookie.Value);
 
@@ -100,8 +100,8 @@ namespace dk.nita.saml20.Session
         {
             var sessionId = Guid.NewGuid();
 
-            HttpContext.Current.Request.Cookies.Remove(SessionConstants.SessionCookieName); // Remove cookie from request when creating a new session id. This is necessary because adding a cookie with the same name does not override cookies in the request.
-            var httpCookie = new HttpCookie(SessionConstants.SessionCookieName, sessionId.ToString())
+            HttpContext.Current.Request.Cookies.Remove(GetSessionCookieName()); // Remove cookie from request when creating a new session id. This is necessary because adding a cookie with the same name does not override cookies in the request.
+            var httpCookie = new HttpCookie(GetSessionCookieName(), sessionId.ToString())
             {
                 Secure = true,
                 HttpOnly = true
@@ -109,6 +109,18 @@ namespace dk.nita.saml20.Session
             HttpContext.Current.Response.Cookies.Add(httpCookie); // When a cookie is added to the response it is automatically added to the request. Thus, SessionId is available immeditly when reading cookies from the request.
 
             return sessionId;
+        }
+
+        private static string GetSessionCookieName()
+        {
+            var name = FederationConfig.GetConfig().SessionCookieName;
+
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                throw new Saml20Exception($"The session cookie name '{name}' is not valid. Ensure a valid cookie name is set in the configuration element 'SessionCookieName'");
+            }
+
+            return name;
         }
     }
 }
