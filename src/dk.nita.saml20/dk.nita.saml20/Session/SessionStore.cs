@@ -18,7 +18,7 @@ namespace dk.nita.saml20.Session
                     var t = Type.GetType(type);
                     if (t != null)
                     {
-                        Sessions = (ISessionStoreProvider)Activator.CreateInstance(t);
+                        SessionStoreProvider = (ISessionStoreProvider)Activator.CreateInstance(t);
                     }
                     else
                     {
@@ -33,14 +33,14 @@ namespace dk.nita.saml20.Session
             }
             else
             {
-                Sessions = new InProcSessionStoreProvider();
+                SessionStoreProvider = new InProcSessionStoreProvider();
             }
 
             var sessionTimeoutMinutes = FederationConfig.GetConfig().SessionTimeout;
-            Sessions.Initialize(TimeSpan.FromMinutes(sessionTimeoutMinutes), new SessionValueFactory());
+            SessionStoreProvider.Initialize(TimeSpan.FromMinutes(sessionTimeoutMinutes), new SessionValueFactory());
         }
 
-        private static readonly ISessionStoreProvider Sessions;
+        private static readonly ISessionStoreProvider SessionStoreProvider;
 
         /// <summary>
         /// There current user session. User session is read from cookie. If it doesn't exists, null is returned
@@ -57,7 +57,7 @@ namespace dk.nita.saml20.Session
 
                     if (sessionId.HasValue)
                     {
-                        return new UserSession(Sessions, sessionId.Value);
+                        return new UserSession(SessionStoreProvider, sessionId.Value);
                     }
                 }
 
@@ -87,7 +87,7 @@ namespace dk.nita.saml20.Session
         internal static void AssociateUserIdWithCurrentSession(string userId)
         {
             if (userId == null) throw new ArgumentNullException(nameof(userId));
-            Sessions.AssociateUserIdWithSessionId(userId.ToLowerInvariant(), CurrentSession.SessionId);
+            SessionStoreProvider.AssociateUserIdWithSessionId(userId.ToLowerInvariant(), CurrentSession.SessionId);
         }
 
         /// <summary>
@@ -97,7 +97,7 @@ namespace dk.nita.saml20.Session
         public static void AbandonAllSessions(string userId)
         {
             if (userId == null) throw new ArgumentNullException(nameof(userId));
-            Sessions.AbandonSessionsAssociatedWithUserId(userId.ToLowerInvariant());
+            SessionStoreProvider.AbandonSessionsAssociatedWithUserId(userId.ToLowerInvariant());
         }
 
         private static Guid? GetSessionIdFromCookie()

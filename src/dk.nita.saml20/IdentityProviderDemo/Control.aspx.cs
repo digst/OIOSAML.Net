@@ -57,7 +57,7 @@ namespace IdentityProviderDemo
                             return true;
                         }
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
                         SetupPanel.Controls.Add(new LiteralControl("Windows identity running this website (" + WindowsIdentity.GetCurrent().Name + ") does not have access rights on the directory \"" + dataFolder + "\". Please navigate to the folder and choose \"properties\", go to the \"Security\" tab, and make sure that the user \"" + WindowsIdentity.GetCurrent().Name + "\" is in the list and has the \"modify\" permission checked."));
                         return false;

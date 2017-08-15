@@ -36,6 +36,7 @@ namespace dk.nita.saml20.Session
         /// </summary>
         public InProcSessionStoreProvider()
         {
+            // Starting job for cleaning up the cache.
             var timer = new Timer(Cleanup, null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
         }
 
@@ -52,6 +53,7 @@ namespace dk.nita.saml20.Session
 
             foreach (var ua in _userAssociations)
             {
+                // Also remove the user association if the associated session does not exists anymore.
                 if (!_sessions.ContainsKey(ua.Key))
                 {
                     string d;

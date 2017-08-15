@@ -18,6 +18,7 @@ namespace dk.nita.saml20.Session
 
         /// <summary>
         /// Add or update the value in the user's session with the given key
+        /// Must support sliding expiration. Thus, session expiration is reset on each call to this method.
         /// </summary>
         /// <param name="sessionId">The id of the user's session</param>
         /// <param name="key">The key of the property to be stored</param>
@@ -33,6 +34,7 @@ namespace dk.nita.saml20.Session
 
         /// <summary>
         /// Returns the property from the user's session with the given key. If value doesn't exist, must return null.
+        /// Must support sliding expiration. Thus, session expiration is reset on each call to this method.
         /// </summary>
         /// <param name="sessionId"></param>
         /// <param name="key"></param>
