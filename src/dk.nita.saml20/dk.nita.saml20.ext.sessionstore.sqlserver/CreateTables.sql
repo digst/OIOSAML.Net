@@ -1,6 +1,8 @@
 ﻿--Must be run manually against the target database.
 --if custom schema is used via the 'oiosaml:SqlServerSessionStoreProvider:Schema' setting, the schema in this script must be edited before applying
 
+USE OIOSAML; -- Change name to the name of the target database.
+
 CREATE TABLE [dbo].[SessionProperties](
 	[SessionId] [uniqueidentifier] NOT NULL,
 	[Key] [nvarchar](100) NOT NULL,
