@@ -11,7 +11,7 @@ namespace dk.nita.saml20.Bindings.SignatureProviders
             return rsa.SignData(data, new SHA256CryptoServiceProvider());
         }
 
-        public bool VerifyHash(AsymmetricAlgorithm key, byte[] data, byte[] signature)
+        public bool VerifySignature(AsymmetricAlgorithm key, byte[] data, byte[] signature)
         {
             var hash = new SHA256Managed().ComputeHash(data);
             return ((RSACryptoServiceProvider)key).VerifyHash(hash, "SHA256", signature);

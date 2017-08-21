@@ -958,7 +958,11 @@ namespace dk.nita.saml20.config
         /// When using RSA keys SHA256 is the default for signing SAML requests. This allows for backwards compatibility if the Identity Provider only support RSA SHA1
         /// </summary>
         [XmlAttribute(AttributeName = "ShaHashingAlgorithm")]
-        public string ShaHashingAlgorithm { get; set; }
+        public string ShaHashingAlgorithm
+        {
+            get { return _shaHashingAlgorithm; }
+            set { _shaHashingAlgorithm = value; }
+        }
 
         /// <summary>
         /// Certificate validation
@@ -1001,6 +1005,9 @@ namespace dk.nita.saml20.config
         /// </summary>
         [XmlElement(ElementName = "PersistentPseudonym")] 
         public PersistentPseudonymMapper PersistentPseudonym;
+
+        // Default value is SHA256
+        private string _shaHashingAlgorithm = config.ShaHashingAlgorithm.SHA256.ToString();
 
         /// <summary>
         /// Get a URL that redirects the user to the login-page for this IDPEndPoint

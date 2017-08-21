@@ -44,15 +44,25 @@ namespace dk.nita.saml20.Session
         /// <summary>
         /// In order to support back channel logout (SOAP logout) the user id must be associated with the session id.
         /// This method is called by the OIOSAML.net component after the user has been logged in.
+        /// Must support sliding expiration. Thus, session expiration is reset on each call to this method.
         /// </summary>
         /// <param name="userId">The user id. This value is always in lower case because string comparison must be case insensitive (see section 8.1.1 "Requirements for the Subject Element" in the OIOSAML 2.0.9 specification). The user id will be the Distinguished Name (DN) (e.g. "c=DK,o=IT- og Telestyrelsen // CVR:26769388,cn=Brian Nielsen,Serial=CVR:26769388-RID:1203670161406") when using Nemlog-in as IdP.</param>
         /// <param name="sessionId">Id of the user's session</param>
         void AssociateUserIdWithSessionId(string userId, Guid sessionId);
+        
         /// <summary>
         /// Abondon all sessions for the given userId. The same user could be logged into the SP in different browsers or different computers.
         /// If no sessions are found, the method is expected to return successful.
         /// </summary>
         /// <param name="userId">The user id. This value is always in lower case because string comparison must be case insensitive (see section 8.1.1 "Requirements for the Subject Element" in the OIOSAML 2.0.9 specification). The user id will be the Distinguished Name (DN) (e.g. "c=DK,o=IT- og Telestyrelsen // CVR:26769388,cn=Brian Nielsen,Serial=CVR:26769388-RID:1203670161406") when using Nemlog-in as IdP.</param>
         void AbandonSessionsAssociatedWithUserId(string userId);
+
+        /// <summary>
+        /// Checks if a given session exists in the session store. Used for supporting the back channel logout scenario where SP needs to check whether or not a user has been logged out.
+        /// Must support sliding expiration. Thus, session expiration is reset on each call to this method.
+        /// </summary>
+        /// <param name="sessionId">Id of the session.</param>
+        /// <returns></returns>
+        bool DoesSessionExists(Guid sessionId);
     }
 }

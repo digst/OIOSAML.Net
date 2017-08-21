@@ -1,5 +1,4 @@
-﻿using System;
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 
 namespace dk.nita.saml20.Bindings.SignatureProviders
 {
@@ -7,6 +6,6 @@ namespace dk.nita.saml20.Bindings.SignatureProviders
     {
         string SignatureUri { get; }
         byte[] SignData(AsymmetricAlgorithm key, byte[] data);
-        bool VerifyHash(AsymmetricAlgorithm key, byte[] data, byte[] signature);
+        bool VerifySignature(AsymmetricAlgorithm key, byte[] data, byte[] signature);
     }
 }

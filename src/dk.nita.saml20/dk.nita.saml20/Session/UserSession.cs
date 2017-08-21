@@ -15,7 +15,7 @@ namespace dk.nita.saml20.Session
         /// <summary>
         /// Session id from cookie
         /// </summary>
-        public Guid SessionId { get; }
+        internal Guid SessionId { get; }
 
         /// <summary>
         /// Inserts og gets a value from the session. Values must be serializable because service provider can choose to implement a distriuted session provider.
@@ -47,6 +47,14 @@ namespace dk.nita.saml20.Session
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Check whether or not the user session exists in the session store provider.
+        /// </summary>
+        internal bool ExistInStore()
+        {
+            return _sessionStoreProvider.DoesSessionExists(SessionId);
         }
 
     }

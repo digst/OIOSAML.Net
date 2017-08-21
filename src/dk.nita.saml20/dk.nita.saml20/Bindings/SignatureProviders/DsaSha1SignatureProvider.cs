@@ -11,7 +11,7 @@ namespace dk.nita.saml20.Bindings.SignatureProviders
             return ((DSACryptoServiceProvider) key).SignData(data);
         }
 
-        public bool VerifyHash(AsymmetricAlgorithm key, byte[] data, byte[] signature)
+        public bool VerifySignature(AsymmetricAlgorithm key, byte[] data, byte[] signature)
         {
             var hash = new SHA1Managed().ComputeHash(data);
             return ((DSACryptoServiceProvider)key).VerifySignature(hash, signature);

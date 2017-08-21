@@ -14,11 +14,6 @@ namespace dk.nita.saml20.Bindings.SignatureProviders
         /// <exception cref="InvalidOperationException"></exception>
         public static ShaHashingAlgorithm ValidateShaHashingAlgorithm(string shaHashingAlgorithm)
         {
-            if (string.IsNullOrEmpty(shaHashingAlgorithm))
-            {
-                return ShaHashingAlgorithm.SHA256;
-            }
-
             ShaHashingAlgorithm val;
             if (Enum.TryParse(shaHashingAlgorithm, out val) && Enum.IsDefined(typeof(ShaHashingAlgorithm), val))
             {

@@ -8,6 +8,9 @@ using Trace = dk.nita.saml20.Utils.Trace;
 
 namespace dk.nita.saml20.ext.sessionstore.sqlserver
 {
+    /// <summary>
+    /// <see cref="ISessionStoreProvider"/> based on Sql Server.
+    /// </summary>
     public class SqlServerSessionStoreProvider : ISessionStoreProvider
     {
         private readonly string _connectionString;
@@ -35,14 +38,14 @@ namespace dk.nita.saml20.ext.sessionstore.sqlserver
             }
         }
 
-        private void Cleanup(object state)
+        void Cleanup(object state)
         {
             try
             {
                 ExecuteSqlCommand(cmd =>
                 {
                     cmd.CommandText =
-                        $@"delete from {_schema}.SessionProperties where ExpiresAt < @time
+                        $@"delete from {_schema}.SessionProperties where ExpiresAtUtc < @time
 delete from {
                                 _schema
                             }.UserAssociations where SessionId not in (select distinct SessionId from {
@@ -63,13 +66,13 @@ delete from {
             }
         }
 
-        public void Initialize(TimeSpan sessionTimeout, ISessionValueFactory sessionValueFactory)
+        void ISessionStoreProvider.Initialize(TimeSpan sessionTimeout, ISessionValueFactory sessionValueFactory)
         {
             _sessionTimeout = sessionTimeout;
             _sessionValueFactory = sessionValueFactory;
         }
 
-        public void SetSessionProperty(Guid sessionId, string key, object value)
+        void ISessionStoreProvider.SetSessionProperty(Guid sessionId, string key, object value)
         {
             if (value == null) throw new ArgumentNullException(nameof(value));
 
@@ -82,28 +85,28 @@ $@"update {_schema}.SessionProperties set
 Value = @value
 where SessionId = @sessionId and [Key] = @key
 if @@ROWCOUNT = 0
-insert into {_schema}.SessionProperties (SessionId, [Key], ValueType, Value, ExpiresAt)
-values (@sessionId, @key, @valueType, @value, @expiresAt);
+insert into {_schema}.SessionProperties (SessionId, [Key], ValueType, Value, ExpiresAtUtc)
+values (@sessionId, @key, @valueType, @value, @expiresAtUtc);
 
 update {_schema}.SessionProperties 
-set ExpiresAt = @expiresAt
+set ExpiresAtUtc = @expiresAtUtc
 where sessionId = @sessionId";
                 cmd.Parameters.AddWithValue("@sessionId", sessionId);
                 cmd.Parameters.AddWithValue("@key", key);
                 cmd.Parameters.AddWithValue("@valueType", value.GetType().AssemblyQualifiedName);
                 cmd.Parameters.AddWithValue("@value", serializedValue);
-                cmd.Parameters.AddWithValue("@expiresAt", GetExpiresAt());
+                cmd.Parameters.AddWithValue("@expiresAtUtc", GetExpiresAtUtc());
 
                 cmd.ExecuteNonQuery();
             });
         }
 
-        private DateTime GetExpiresAt()
+        private DateTime GetExpiresAtUtc()
         {
             return DateTime.UtcNow + _sessionTimeout;
         }
 
-        public void RemoveSessionProperty(Guid sessionId, string key)
+        void ISessionStoreProvider.RemoveSessionProperty(Guid sessionId, string key)
         {
             ExecuteSqlCommand(cmd =>
             {
@@ -112,29 +115,29 @@ $@"delete from {_schema}.SessionProperties
 where SessionId = @sessionId and [Key] = @key
 
 update {_schema}.SessionProperties 
-set ExpiresAt = @expiresAt
+set ExpiresAtUtc = @expiresAtUtc
 where sessionId = @sessionId";
                 cmd.Parameters.AddWithValue("@sessionId", sessionId);
                 cmd.Parameters.AddWithValue("@key", key);
-                cmd.Parameters.AddWithValue("@expiresAt", GetExpiresAt());
+                cmd.Parameters.AddWithValue("@expiresAtUtc", GetExpiresAtUtc());
                 cmd.ExecuteNonQuery();
             });
         }
 
-        public object GetSessionProperty(Guid sessionId, string key)
+        object ISessionStoreProvider.GetSessionProperty(Guid sessionId, string key)
         {
             return ExecuteSqlCommand(cmd =>
             {
                 cmd.CommandText =
 $@"update {_schema}.SessionProperties 
-set ExpiresAt = @expiresAt
+set ExpiresAtUtc = @expiresAtUtc
 where sessionId = @sessionId
 
 select ValueType, Value from {_schema}.SessionProperties
 where SessionId = @sessionId and [Key] = @key"; 
                 cmd.Parameters.AddWithValue("@sessionId", sessionId);
                 cmd.Parameters.AddWithValue("@key", key);
-                cmd.Parameters.AddWithValue("@expiresAt", GetExpiresAt());
+                cmd.Parameters.AddWithValue("@expiresAtUtc", GetExpiresAtUtc());
                 using (var reader = cmd.ExecuteReader())
                 {
                     if (reader.Read())
@@ -156,7 +159,7 @@ where SessionId = @sessionId and [Key] = @key";
             });
         }
 
-        public void AssociateUserIdWithSessionId(string userId, Guid sessionId)
+        void ISessionStoreProvider.AssociateUserIdWithSessionId(string userId, Guid sessionId)
         {
             ExecuteSqlCommand(cmd =>
             {
@@ -170,7 +173,7 @@ insert into {_schema}.UserAssociations (SessionId, UserId) values (@sessionId, @
             });
         }
 
-        public void AbandonSessionsAssociatedWithUserId(string userId)
+        void ISessionStoreProvider.AbandonSessionsAssociatedWithUserId(string userId)
         {
             ExecuteSqlCommand(cmd =>
             {
@@ -180,6 +183,24 @@ delete from {_schema}.UserAssociations where UserId = @userId";
                 cmd.Parameters.AddWithValue("@userId", userId);
 
                 cmd.ExecuteNonQuery();
+            });
+        }
+
+        bool ISessionStoreProvider.DoesSessionExists(Guid sessionId)
+        {
+            return ExecuteSqlCommand(cmd =>
+            {
+                cmd.CommandText =
+$@"select top 1 SessionId from {_schema}.SessionProperties
+where SessionId = @sessionId
+
+update {_schema}.SessionProperties 
+set ExpiresAtUtc = @expiresAtUtc
+where sessionId = @sessionId;";
+                cmd.Parameters.AddWithValue("@sessionid", sessionId);
+
+                var any = cmd.ExecuteScalar();
+                return any != null;
             });
         }
 

@@ -8,7 +8,7 @@ CREATE TABLE [dbo].[SessionProperties](
 	[Key] [nvarchar](100) NOT NULL,
 	[ValueType] [nvarchar](500) NULL,
 	[Value] [nvarchar](max) NULL,
-	[ExpiresAt] [datetime] NULL,
+	[ExpiresAtUtc] [datetime] NULL,
  CONSTRAINT [PK_SessionProperties] PRIMARY KEY CLUSTERED 
 (
 	[SessionId] ASC,

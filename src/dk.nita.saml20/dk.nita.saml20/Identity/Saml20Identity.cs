@@ -72,7 +72,7 @@ namespace dk.nita.saml20.identity
         /// </summary>
         public static bool IsInitialized()
         {
-            return Saml20PrincipalCache.GetPrincipal() != null && Saml20PrincipalCache.GetPrincipal().Identity is Saml20Identity;
+            return SessionStore.CurrentSession != null && SessionStore.CurrentSession.ExistInStore();
         }
 
         /// <summary>

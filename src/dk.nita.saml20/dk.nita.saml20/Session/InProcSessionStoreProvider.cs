@@ -119,6 +119,18 @@ namespace dk.nita.saml20.Session
             }
         }
 
+        bool ISessionStoreProvider.DoesSessionExists(Guid sessionId)
+        {
+            Session session;
+            if (_sessions.TryGetValue(sessionId, out session) && session.Properties.Any())
+            {
+                session.UpdateTimestamp();
+                return true;
+            }
+
+            return false;
+        }
+
         void ISessionStoreProvider.Initialize(TimeSpan sessionTimeout, ISessionValueFactory sessionValueFactory)
         {
             _sessionTimeout = sessionTimeout;

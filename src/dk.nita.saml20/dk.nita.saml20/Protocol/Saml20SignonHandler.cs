@@ -71,17 +71,23 @@ namespace dk.nita.saml20.protocol
             //so we just check for the existence of the header field.
             if (Array.Exists(context.Request.Headers.AllKeys, delegate(string s) { return s == SOAPConstants.SOAPAction; }))
             {
+                SessionStore.ValidateSessionExists();
+
                 HandleSOAP(context, context.Request.InputStream);
                 return;
             }
 
             if (!string.IsNullOrEmpty(context.Request.Params["SAMLart"]))
             {
+                SessionStore.ValidateSessionExists();
+
                 HandleArtifact(context);
             }
 
             if (!string.IsNullOrEmpty(context.Request.Params["SamlResponse"]))
             {
+                SessionStore.ValidateSessionExists();
+
                 HandleResponse(context);
             }
             else
@@ -97,6 +103,9 @@ namespace dk.nita.saml20.protocol
                     AuditLogging.logEntry(Direction.IN, Operation.ACCESS,
                                                  "User accessing resource: " + context.Request.RawUrl +
                                                  " without authentication.");
+
+                    SessionStore.CreateSessionIfNotExists();
+
                     SendRequest(context);
                 }
             }
@@ -152,7 +161,7 @@ namespace dk.nita.saml20.protocol
                         HandleEncryptedAssertion(context, assertion);
                     }else
                     {
-                        HandleAssertion(context, assertion, false);
+                        HandleAssertion(context, assertion);
                     }
 
                 }else
@@ -183,8 +192,6 @@ namespace dk.nita.saml20.protocol
         private void SendRequest(HttpContext context)
         {
             Trace.TraceMethodCalled(GetType(), "SendRequest()");
-
-            SessionStore.CreateSessionIfNotExists();
 
             // See if the "ReturnUrl" - parameter is set.
             string returnUrl = context.Request.QueryString["ReturnUrl"];
@@ -264,8 +271,6 @@ namespace dk.nita.saml20.protocol
         /// </summary>        
         private void HandleResponse(HttpContext context)
         {
-            SessionStore.ValidateSessionExists();
-
             Encoding defaultEncoding = Encoding.UTF8;
             XmlDocument doc = GetDecodedSamlResponse(context, defaultEncoding);
 
@@ -327,7 +332,7 @@ namespace dk.nita.saml20.protocol
                     }
                 }
 
-                HandleAssertion(context, assertion, true);
+                HandleAssertion(context, assertion);
                 return;
             }
             catch (Exception e)
@@ -340,8 +345,8 @@ namespace dk.nita.saml20.protocol
         private static void CheckReplayAttack(HttpContext context, string inResponseTo)
         {
             var expectedInResponseToSessionState = SessionStore.CurrentSession[SessionConstants.ExpectedInResponseTo];
-            if (expectedInResponseToSessionState == null)
-                throw new Saml20Exception("Your session has been disconnected, please logon again");
+
+            SessionStore.CurrentSession[SessionConstants.ExpectedInResponseTo] = null; // Ensure that no more responses can be received.
 
             string expectedInResponseTo = expectedInResponseToSessionState.ToString();
             if (string.IsNullOrEmpty(expectedInResponseTo) || string.IsNullOrEmpty(inResponseTo))
@@ -352,8 +357,7 @@ namespace dk.nita.saml20.protocol
                 AuditLogging.logEntry(Direction.IN, Operation.LOGIN, string.Format("Unexpected value {0} for InResponseTo, expected {1}, possible replay attack!", inResponseTo, expectedInResponseTo));
                 throw new Saml20Exception("Replay attack.");
             }
-
-         }
+        }
 
         private static XmlDocument GetDecodedSamlResponse(HttpContext context, Encoding encoding)
         {
@@ -377,7 +381,7 @@ namespace dk.nita.saml20.protocol
         {
             Trace.TraceMethodCalled(GetType(), "HandleEncryptedAssertion()");
             Saml20EncryptedAssertion decryptedAssertion = GetDecryptedAssertion(elem);
-            HandleAssertion(context, decryptedAssertion.Assertion.DocumentElement, false);
+            HandleAssertion(context, decryptedAssertion.Assertion.DocumentElement);
         }
 
         private static Saml20EncryptedAssertion GetDecryptedAssertion(XmlElement elem)
@@ -430,7 +434,7 @@ namespace dk.nita.saml20.protocol
         /// <summary>
         /// Deserializes an assertion, verifies its signature and logs in the user if the assertion is valid.
         /// </summary>
-        private void HandleAssertion(HttpContext context, XmlElement elem, bool isPassiveLogin)
+        private void HandleAssertion(HttpContext context, XmlElement elem)
         {
             Trace.TraceMethodCalled(GetType(), "HandleAssertion");
 
@@ -522,7 +526,7 @@ namespace dk.nita.saml20.protocol
             AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST,
                       "Assertion validated succesfully");
 
-            DoLogin(context, assertion, isPassiveLogin);
+            DoLogin(context, assertion);
         }
 
         internal static IEnumerable<AsymmetricAlgorithm> GetTrustedSigners(ICollection<KeyDescriptor> keys, IDPEndPoint ep, out IEnumerable<string> validationFailureReasons)
@@ -592,13 +596,12 @@ namespace dk.nita.saml20.protocol
             }
         }
 
-        private void DoLogin(HttpContext context, Saml20Assertion assertion, bool isPassiveLogin)
+        private void DoLogin(HttpContext context, Saml20Assertion assertion)
         {
-            if (isPassiveLogin)
-            {
-                SessionStore.AssociateUserIdWithCurrentSession(assertion.Subject.Value);
-                SessionStore.CurrentSession[SessionConstants.Saml20AssertionLite] = Saml20AssertionLite.ToLite(assertion);
-            }
+            SessionStore.AssociateUserIdWithCurrentSession(assertion.Subject.Value);
+
+            // The assertion is what keeps the session alive. If it is ever removed ... the session will appear as removed in the SessionStoreProvider because Saml20AssertionLite is the only thing kept in session store when login flow is completed..
+            SessionStore.CurrentSession[SessionConstants.Saml20AssertionLite] = Saml20AssertionLite.ToLite(assertion);
             
             if(Trace.ShouldTrace(TraceEventType.Information))
             {
