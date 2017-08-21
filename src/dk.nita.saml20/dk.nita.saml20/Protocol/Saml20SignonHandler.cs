@@ -71,7 +71,7 @@ namespace dk.nita.saml20.protocol
             //so we just check for the existence of the header field.
             if (Array.Exists(context.Request.Headers.AllKeys, delegate(string s) { return s == SOAPConstants.SOAPAction; }))
             {
-                SessionStore.ValidateSessionExists();
+                SessionStore.AssertSessionExists();
 
                 HandleSOAP(context, context.Request.InputStream);
                 return;
@@ -79,14 +79,14 @@ namespace dk.nita.saml20.protocol
 
             if (!string.IsNullOrEmpty(context.Request.Params["SAMLart"]))
             {
-                SessionStore.ValidateSessionExists();
+                SessionStore.AssertSessionExists();
 
                 HandleArtifact(context);
             }
 
             if (!string.IsNullOrEmpty(context.Request.Params["SamlResponse"]))
             {
-                SessionStore.ValidateSessionExists();
+                SessionStore.AssertSessionExists();
 
                 HandleResponse(context);
             }

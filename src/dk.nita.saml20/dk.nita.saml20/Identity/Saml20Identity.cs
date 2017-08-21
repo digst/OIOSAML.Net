@@ -68,11 +68,11 @@ namespace dk.nita.saml20.identity
         }
 
         /// <summary>
-        /// Check if the Saml 2 Assertion's attributes have been correctly initialized.
+        /// Checks if an OIOSAML session exists.
         /// </summary>
         public static bool IsInitialized()
         {
-            return SessionStore.CurrentSession != null && SessionStore.CurrentSession.ExistInStore();
+            return SessionStore.DoesSessionExists();
         }
 
         /// <summary>

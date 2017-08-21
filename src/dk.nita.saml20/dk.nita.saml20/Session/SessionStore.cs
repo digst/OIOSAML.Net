@@ -65,7 +65,7 @@ namespace dk.nita.saml20.Session
             }
         }
 
-        public static void CreateSessionIfNotExists()
+        internal static void CreateSessionIfNotExists()
         {
             if (HttpContext.Current == null)
             {
@@ -94,7 +94,7 @@ namespace dk.nita.saml20.Session
         /// Abandons all sessions associated with the given userId
         /// </summary>
         /// <param name="userId"></param>
-        public static void AbandonAllSessions(string userId)
+        internal static void AbandonAllSessions(string userId)
         {
             if (userId == null) throw new ArgumentNullException(nameof(userId));
             SessionStoreProvider.AbandonSessionsAssociatedWithUserId(userId.ToLowerInvariant());
@@ -140,14 +140,37 @@ namespace dk.nita.saml20.Session
         }
 
         /// <summary>
-        /// Validates the user has an active session, else throws an exception
+        /// Asserts that the user has a session.
         /// </summary>
-        public static void ValidateSessionExists()
+        /// <exception cref="Saml20Exception">Is thrown if no session exists.</exception>
+        internal static void AssertSessionExists()
         {
-            if (CurrentSession == null)
+            if (!DoesSessionExists())
             {
-                throw new Saml20Exception("The user doesn't have a session which is required at this point in the pipeline. Plausible reason is that the user's session has expired. \nIf the application is running in a web farm ensure distributed sessions is supported by the session store provider.");
+                if (CurrentSession == null)
+                {
+                    throw new Saml20Exception(
+                        "The user doesn't have a session in context of a cookie ... which is required at this point in the pipeline. Plausible reason is that OIOSAML.Net is not running under https. The session cookie is marked with 'secure only'.");
+                }
+                else if (!SessionStoreProvider.DoesSessionExists(CurrentSession.SessionId))
+                {
+                    throw new Saml20Exception(
+                        "The user doesn't have a session in session store which is required at this point in the pipeline. Plausible reason is that the user's session has expired. \nIf the application is running in a web farm ensure distributed sessions is supported by the session store provider.");
+                }
+                else
+                {
+                    throw new Saml20Exception("The user doesn't have a session for unknown reasons.");
+                }
             }
+        }
+
+        /// <summary>
+        /// Checks whether or not the user has a session
+        /// SamlAssertionLite is the only item in the session store after a succesful login flow. This is what implicit makes the session exist.
+        /// </summary>
+        internal static bool DoesSessionExists()
+        {
+            return CurrentSession != null && SessionStoreProvider.DoesSessionExists(CurrentSession.SessionId);
         }
     }
 }

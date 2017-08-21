@@ -48,14 +48,5 @@ namespace dk.nita.saml20.Session
                 }
             }
         }
-
-        /// <summary>
-        /// Check whether or not the user session exists in the session store provider.
-        /// </summary>
-        internal bool ExistInStore()
-        {
-            return _sessionStoreProvider.DoesSessionExists(SessionId);
-        }
-
     }
 }
