@@ -20,6 +20,9 @@ namespace dk.nita.saml20.ext.sessionstore.sqlserver
         private readonly TimeSpan _cleanupInterval = TimeSpan.FromMinutes(1);
         private ISessionValueFactory _sessionValueFactory;
 
+        /// <summary>
+        /// Default constructor that loads settings from configuration file
+        /// </summary>
         public SqlServerSessionStoreProvider()
         {
             _connectionString = ConfigurationManager.ConnectionStrings["oiosaml:SqlServerSessionStoreProvider"]?.ConnectionString ?? throw new InvalidOperationException("The connectionstring \'oiosaml:SqlServerSessionStoreProvider\' must be set when using the SqlServerSessionStoreProvider");
@@ -57,7 +60,7 @@ delete from {
             }
             catch (Exception ex)
             {
-                Trace.TraceData(TraceEventType.Error,
+                Trace.TraceData(TraceEventType.Warning,
                     $"{nameof(SqlServerSessionStoreProvider)}: Cleanup of sessionstore failed: {ex}");
             }
             finally
@@ -198,6 +201,7 @@ update {_schema}.SessionProperties
 set ExpiresAtUtc = @expiresAtUtc
 where sessionId = @sessionId;";
                 cmd.Parameters.AddWithValue("@sessionid", sessionId);
+                cmd.Parameters.AddWithValue("@expiresAtUtc", GetExpiresAtUtc());
 
                 var any = cmd.ExecuteScalar();
                 return any != null;
