@@ -44,6 +44,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\CommonAssemblyInfo.cs">
+      <Link>Properties\CommonAssemblyInfo.cs</Link>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SqlServerSessionStoreProvider.cs" />
   </ItemGroup>
@@ -55,6 +58,8 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="CreateTables.sql" />
+    <None Include="dk.nita.saml20.ext.sessionstore.sqlserver.nuspec" />
+    <None Include="readme.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
