@@ -9,5 +9,5 @@ Since session state is stored in Sql tables, a maintenance job is required to en
 This provider supports the following configurations:
 Connection string "oiosaml:SqlServerSessionStoreProvider" (required)
 App setting "oiosaml:SqlServerSessionStoreProvider:Schema" (optional, defaults to "dbo")
-App setting "oiosaml:SqlServerSessionStoreProvider:CleanupIntervalSeconds" (optional, defaults to 60)
+App setting "oiosaml:SqlServerSessionStoreProvider:CleanupIntervalSeconds" (optional, defaults to 30)
 App setting "oiosaml:SqlServerSessionStoreProvider:DisableCleanup" (optional, default to "false")

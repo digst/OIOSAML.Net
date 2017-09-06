@@ -11,7 +11,7 @@ using System.Web.UI;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Digitaliseringsstyrelsen")]
 [assembly: AssemblyProduct("dk.nita.saml20")]
-[assembly: AssemblyCopyright("")]
+[assembly: AssemblyCopyright("Copyright ©2017")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

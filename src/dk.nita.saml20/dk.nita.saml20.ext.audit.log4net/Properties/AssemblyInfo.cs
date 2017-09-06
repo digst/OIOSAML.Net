@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Digitaliseringsstyrelsen")]
 [assembly: AssemblyProduct("dk.nita.saml20.ext.audit.log4net")]
-[assembly: AssemblyCopyright("Copyright ©  2013")]
+[assembly: AssemblyCopyright("Copyright ©2017")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

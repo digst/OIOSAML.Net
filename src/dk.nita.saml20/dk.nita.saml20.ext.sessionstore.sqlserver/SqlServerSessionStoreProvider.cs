@@ -17,7 +17,7 @@ namespace dk.nita.saml20.ext.sessionstore.sqlserver
         private readonly string _schema;
         private TimeSpan _sessionTimeout;
         private readonly Timer _cleanupTimer;
-        private readonly TimeSpan _cleanupInterval = TimeSpan.FromMinutes(1);
+        private readonly TimeSpan _cleanupInterval = TimeSpan.FromSeconds(30);
         private ISessionValueFactory _sessionValueFactory;
 
         /// <summary>
