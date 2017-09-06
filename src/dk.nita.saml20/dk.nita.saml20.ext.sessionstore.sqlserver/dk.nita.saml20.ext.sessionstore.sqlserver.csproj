@@ -57,7 +57,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="CreateTables.sql" />
+    <Content Include="OioSaml_SessionStore_CreateTables.sql" />
     <None Include="dk.nita.saml20.ext.sessionstore.sqlserver.nuspec" />
     <None Include="readme.txt" />
   </ItemGroup>

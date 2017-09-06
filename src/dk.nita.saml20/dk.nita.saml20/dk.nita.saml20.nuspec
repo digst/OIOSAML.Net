@@ -11,7 +11,7 @@
     <iconUrl>https://svn.softwareborsen.dk/oiosaml.net/logo/oiosaml_logo.png</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>$description$</description>
-    <releaseNotes>See https://svn.softwareborsen.dk/oiosaml.net/trunk/src/dk.nita.saml20/dk.nita.saml20/Documentation for release notes.</releaseNotes>
+    <releaseNotes>See https://svn.softwareborsen.dk/oiosaml.net/trunk/Net%20SAML2%20Service%20Provider%20Framework.docx for release notes.</releaseNotes>
     <copyright>Copyright 2015</copyright>
     <tags>SAML OIOSAML SAML2 NEMLOGIN NEMLOG-IN</tags>
   </metadata>
