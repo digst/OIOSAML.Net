@@ -30,6 +30,7 @@ namespace dk.nita.saml20.Session
         readonly ConcurrentDictionary<Guid, Session> _sessions = new ConcurrentDictionary<Guid, Session>();
         readonly ConcurrentDictionary<Guid, string> _userAssociations = new ConcurrentDictionary<Guid, string>();
         private TimeSpan _sessionTimeout;
+        private Timer _cleanupTimer;
 
         /// <summary>
         /// 
@@ -37,28 +38,35 @@ namespace dk.nita.saml20.Session
         public InProcSessionStoreProvider()
         {
             // Starting job for cleaning up the cache.
-            var timer = new Timer(Cleanup, null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
+            _cleanupTimer = new Timer(Cleanup, null, TimeSpan.Zero, Timeout.InfiniteTimeSpan);
         }
 
         private void Cleanup(object state)
         {
-            foreach (var s in _sessions)
+            try
             {
-                if (s.Value.Timestamp + _sessionTimeout < DateTime.UtcNow)
+                foreach (var s in _sessions)
                 {
-                    Session d;
-                    _sessions.TryRemove(s.Key, out d);
+                    if (s.Value.Timestamp + _sessionTimeout < DateTime.UtcNow)
+                    {
+                        Session d;
+                        _sessions.TryRemove(s.Key, out d);
+                    }
+                }
+
+                foreach (var ua in _userAssociations)
+                {
+                    // Also remove the user association if the associated session does not exists anymore.
+                    if (!_sessions.ContainsKey(ua.Key))
+                    {
+                        string d;
+                        _userAssociations.TryRemove(ua.Key, out d);
+                    }
                 }
             }
-
-            foreach (var ua in _userAssociations)
+            finally
             {
-                // Also remove the user association if the associated session does not exists anymore.
-                if (!_sessions.ContainsKey(ua.Key))
-                {
-                    string d;
-                    _userAssociations.TryRemove(ua.Key, out d);
-                }
+                _cleanupTimer.Change(TimeSpan.FromSeconds(10), Timeout.InfiniteTimeSpan);
             }
         }
 
