@@ -63,10 +63,10 @@
 
 <h2>Build the packages</h2>
 <ul>
-	<li>Run the BuildPackages.ps1, setting version to a proper version number, e.g 1.0.0</li>
+	<li>Run the BuildPackages.ps1, setting version to a proper version number, e.g 1.0.0 and assemblyVersion to a proper version number, e.g 1.0.0.0. Use 1.0.0-alpha, 1.00-beta, etc. as version number to make a prerelease</li>
 	<li>Verify the packages looks good and are ready to publish</li>
-	<li>Ensure API key to digitaliseringsstyrelsen's nuget account is install on your machine</li>
-	<li>Run BuildPackages.ps1, setting version and the switch -pushPackages
+	<li>Ensure API key to digitaliseringsstyrelsen's nuget account is installed on your machine</li>
+	<li>Push packages to NuGet by running BuildPackages.ps1 with the switch -pushPackages
 </ul>
 
 <h2>Creating the new resource on digitaliser.dk</h2>
