@@ -1,1 +1,1 @@
-See http://digitaliser.dk/group/42063 for documentaion on how to use the OIOSAML.Net component.
+See http://digitaliser.dk/group/42063 or https://svn.softwareborsen.dk/oiosaml.net/trunk/Net%20SAML2%20Service%20Provider%20Framework.docx for documentaion on how to use the OIOSAML.Net component.

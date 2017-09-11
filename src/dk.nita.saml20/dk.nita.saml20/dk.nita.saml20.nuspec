@@ -12,7 +12,7 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>$description$</description>
     <releaseNotes>See https://svn.softwareborsen.dk/oiosaml.net/trunk/Net%20SAML2%20Service%20Provider%20Framework.docx for release notes.</releaseNotes>
-    <copyright>Copyright 2015</copyright>
+    <copyright>$copyright$</copyright>
     <tags>SAML OIOSAML SAML2 NEMLOGIN NEMLOG-IN</tags>
   </metadata>
   <files>
