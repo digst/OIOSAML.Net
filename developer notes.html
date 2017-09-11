@@ -66,7 +66,8 @@
 	<li>Run the BuildPackages.ps1, setting version to a proper version number, e.g 1.0.0 and assemblyVersion to a proper version number, e.g 1.0.0.0. Use 1.0.0-alpha, 1.00-beta, etc. as version number to make a prerelease</li>
 	<li>Verify the packages looks good and are ready to publish</li>
 	<li>Ensure API key to digitaliseringsstyrelsen's nuget account is installed on your machine</li>
-	<li>Push packages to NuGet by running BuildPackages.ps1 with the switch -pushPackages
+	<li>Push packages to NuGet by running BuildPackages.ps1 with the switch -pushPackages</li>
+	<li>Add a tag in Subversion corresponding to the release</li>
 </ul>
 
 <h2>Creating the new resource on digitaliser.dk</h2>
@@ -82,17 +83,8 @@
 
 <ul>
 	<li>Login on digitaliser.dk and go to the oiosaml group (http://digitaliser.dk/group/42063)</li>
-	<li>Choose Funktioner and click on "Fremhæv til gruppeforside"</li>
-	<li>Change the metadata of the ressource accordingly, choose:</li>
-		<ul>
-		<li>Banner (smal)</li>
-		<li>Fritext</li>
-		<li>Fritext: “The latest release of OIOSAML.Net.”</li>
-		<li>Check: “Vis link”</li>
-		<li>Set position 2</li>
-	</ul>
-	<li>Save the promotion</li>
 	<li>Find the old promotion on the grouppage and remove it.</li>
+	<li>Find the new promotion on the grouppage by using the ID from the URL of the page showing the new version.</li>
 </ul>
 
 </body>
