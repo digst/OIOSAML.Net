@@ -6,9 +6,9 @@
 
 <body>
 
-<h1>Getting started with OIOSAML.NET</h1>
+<h1>Getting started with OIOSAML.Net</h1>
 
-<p>This is the codebase that the OIOSAML.NET components are built from.</p>
+<p>This is the codebase that the OIOSAML.Net components are built from.</p>
 
 <h2>Resource links</h2>
 <ul>
@@ -22,7 +22,7 @@
 	<li><b>build</b>: Contains script to create and publish NuGet packages</li>
 	<li><b>certificates</b>: Certificates used for getting the demo sample up and running</li>
 	<li><b>setup</b>: Setup scripts used for getting demo sample up and running</li>
-	<li><b>src</b>: source code for the OIOSAML.NET framework</li>
+	<li><b>src</b>: source code for the OIOSAML.Net framework</li>
 	<li><b>developer notes.html</b>: Information relevant for developers of OIOSAML.Net</li>
 	<li><b>Net SAML2 Service Provider Framework.docx</b>: General documentation on how to use OIOSAML.Net</li>
 	<li><b>readme.html</b>: This file</li>
@@ -30,13 +30,13 @@
 
 <h2>Getting started</h2>
 <p>
-	The source code contains everything you need to get a demonstration environment up and running, federating with your own local Identity Provider, as well as directly against NemLog-In. 
+	The source code contains everything you need to get a demonstration environment up and running, federating with your own local Identity Provider, as well as directly against NemLog-in. 
 </p>
 <p><i>The full documentation on the project is available in the document 'Net SAML2 Service Provider Framework.pdf'</i></p>
 <p>	For a quick setup, you must do the following:</p>
 <ul>
-	<li>Run the script 'setup_prerequisites.ps1' from an elevated powershell. This installs all required certificates and performs sslcert bindings to be able to host local websites using https</li>
-	<li>Open the solution 'dk.nita.saml20.sln' in Visual Studio 2017 and build it (if you get errors on external dependencies, ensure nuget packages are being restored)</li>
+	<li>Run the script 'setup\setup_prerequisites.ps1' from an elevated powershell. This installs all required certificates and performs sslcert bindings to be able to host local websites using https</li>
+	<li>Open the solution 'dk.nita.saml20.sln' in Visual Studio 2017 (Elevated mode) and build it (if you get errors on external dependencies, ensure nuget packages are being restored)</li>
 	<li>Set the projects 'IdentityProviderDemo' and 'WebsiteDemo' as startup projects by right-clicking solution, select 'properties', selecting 'Multiple start projects'</li>
 	<li>For the web projects, you must manually set the 'Start URL' that IIS express uses. You do this by:
 		<ul>
