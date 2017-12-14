@@ -37,6 +37,7 @@ namespace dk.nita.saml20.config
 
         /// <summary>
         /// Gets an instance of the runtime class implements a configuration section.
+        /// Not thread safe. Should be used in a thread safe context.
         /// </summary>
         /// <typeparam name="ConfigType">The type of the config type.</typeparam>
         /// <returns></returns>
@@ -44,12 +45,9 @@ namespace dk.nita.saml20.config
         {
             string sectionName = GetConfigSectionName(typeof (ConfigType));
 
-            lock (typeof(ConfigurationReader))
-            {
-                _currentConfigType = typeof(ConfigType);
-                ConfigType result = ConfigurationManager.GetSection(sectionName) as ConfigType;
-                return result;
-            }            
+            _currentConfigType = typeof(ConfigType);
+            ConfigType result = ConfigurationManager.GetSection(sectionName) as ConfigType;
+            return result;
         }        
 
         /// <summary>
@@ -130,6 +128,7 @@ namespace dk.nita.saml20.config
     public abstract class ConfigurationInstance<T> where T : ConfigurationInstance<T>
     {
         private static T _config;
+        private static readonly object Mutex = new object();
 
         /// <summary>
         /// Gets the config.
@@ -137,16 +136,24 @@ namespace dk.nita.saml20.config
         /// <returns></returns>
         public static T GetConfig()
         {
-            if (_config == null)
+            //Optimization (no need to enter lock in most cases)
+            if (_config != null)
+                return _config;
+
+            //RaceCondition removed with this lock.
+            lock (Mutex)
             {
-                _config = ConfigurationReader.GetConfig<T>();
-
                 if (_config == null)
-                    throw new ConfigurationErrorsException(
-                        string.Format("Configuration section \"{0}\" not found", typeof (T).Name));
+                {
+                    _config = ConfigurationReader.GetConfig<T>();
 
-                // Do after initialization.
-                _config.Initialize();
+                    if (_config == null)
+                        throw new ConfigurationErrorsException(
+                            string.Format("Configuration section \"{0}\" not found", typeof(T).Name));
+
+                    // Do after initialization.
+                    _config.Initialize();
+                }
             }
 
             return _config;
