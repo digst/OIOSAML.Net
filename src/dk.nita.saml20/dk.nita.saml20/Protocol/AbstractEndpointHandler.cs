@@ -46,6 +46,8 @@ namespace dk.nita.saml20.protocol
         /// <param name="overrideConfigSetting">if set to <c>true</c> [override config setting].</param>
         public void HandleError(HttpContext context, string errorMessage, bool overrideConfigSetting)
         {
+            Trace.TraceData(TraceEventType.Error, "Error: " + errorMessage);
+
             Boolean showError = SAML20FederationConfig.GetConfig().ShowError;
             String DEFAULT_MESSAGE = "Unable to validate SAML message!";
 
