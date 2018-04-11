@@ -293,7 +293,7 @@ namespace dk.nita.saml20.protocol
 
                 if (status.StatusCode.Value != Saml20Constants.StatusCodes.Success)
                 {
-                    if (status.StatusCode.Value == Saml20Constants.StatusCodes.NoPassive)
+                    if (status.StatusCode.Value == Saml20Constants.StatusCodes.Responder && status.StatusCode.SubStatusCode != null && Saml20Constants.StatusCodes.NoPassive == status.StatusCode.SubStatusCode.Value)
                         HandleError(context, "IdP responded with statuscode NoPassive. A user cannot be signed in with the IsPassiveFlag set when the user does not have a session with the IdP.");
 
                     HandleError(context, status);
