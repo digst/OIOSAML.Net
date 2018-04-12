@@ -132,39 +132,6 @@ namespace dk.nita.test.Saml20
         }
 
         /// <summary>
-        /// Tests the signing code of the Assertion class, by first creating an unsigned assertion and then signing and 
-        /// verifying it.
-        /// 
-        /// </summary>
-        [Ignore]    // TODO: test data needs fixing
-        public void TestSigning_03()
-        {
-            // Load an unsigned assertion. 
-            Saml20Assertion assertion = new Saml20Assertion(AssertionUtil.GetTestAssertion_01().DocumentElement, null, false);
-
-            // Check that the assertion is not considered valid in any way.
-            try
-            {
-                assertion.CheckValid(AssertionUtil.GetTrustedSigners(assertion.Issuer));
-                Assert.Fail("Unsigned assertion was passed off as valid.");
-            }
-            catch
-            {
-                //Added to make resharper happy
-                Assert.That(true);
-            }
-
-            X509Certificate2 cert = new X509Certificate2(@"Saml20\Certificates\sts_dev_certificate.pfx", "test1234");
-            Assert.That(cert.HasPrivateKey, "Certificate no longer contains a private key. Modify test.");
-            assertion.Sign(cert);
-
-            // Check that the signature is now valid         
-            assertion.CheckValid(new AsymmetricAlgorithm[] { cert.PublicKey.Key });
-
-            WriteToFile(@"\signedassertion.xml", assertion.GetXml());
-        }
-
-        /// <summary>
         /// Test that the Assertion class verifies the signature of an assertion by default.
         /// </summary>
         [Test]

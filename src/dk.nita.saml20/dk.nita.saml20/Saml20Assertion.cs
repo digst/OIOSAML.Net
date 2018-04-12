@@ -442,47 +442,6 @@ namespace dk.nita.saml20
         }
 
         /// <summary>
-        /// Signs the assertion with the given certificate.
-        /// </summary>
-        /// <param name="cert">The certificate to sign the assertion with.</param>        
-        public void Sign(X509Certificate2 cert)
-        {
-            CheckCertificateCanSign(cert);            
-
-            // Clear the strongly typed version of the assertion in preparation for a new source.
-            _assertion = null;
-
-            // Merge the modified attributes to the assertion.
-            InsertAttributes();
-
-            // Remove existing signatures when resigning the assertion
-            XmlElement signatureParentNode = _samlAssertion; //FIX.DocumentElement;
-            XmlNode sigNode = null;
-            while( (sigNode = signatureParentNode.GetElementsByTagName(dk.nita.saml20.Schema.XmlDSig.Signature.ELEMENT_NAME,
-                                                     Saml20Constants.XMLDSIG)[0]) != null )
-            {
-                signatureParentNode.RemoveChild(sigNode);
-            }
-
-            XmlDocument assertionDocument = new XmlDocument();
-            assertionDocument.XmlResolver = null;
-            assertionDocument.Load(new StringReader(Serialization.SerializeToXmlString(_samlAssertion)));
-
-            // Retrieve the value of the "ID" attribute on the root assertion element.
-            XmlNodeList list = assertionDocument.GetElementsByTagName(Assertion.ELEMENT_NAME, Saml20Constants.ASSERTION);
-            XmlElement el = (XmlElement)list[0];            
-            XmlSignatureUtils.SignDocument(assertionDocument, el.GetAttribute("ID"), cert);
-
-            LoadXml(assertionDocument.DocumentElement, new List<AsymmetricAlgorithm>(new AsymmetricAlgorithm[] { cert.PublicKey.Key }));
-        }
-
-        private static void CheckCertificateCanSign(X509Certificate2 cert)
-        {
-            if (!cert.HasPrivateKey)
-                throw new Saml20Exception("The private key must be part of the certificate.");
-        }
-
-        /// <summary>
         /// Extracts the list of attributes from the &lt;AttributeStatement&gt; of the assertion, and 
         /// stores it in <code>_assertionAttributes</code>.
         /// </summary>
@@ -514,42 +473,6 @@ namespace dk.nita.saml20
                 if (item is EncryptedElement)
                     _encryptedAssertionAttributes.Add((EncryptedElement) item);
             }
-        }
-
-        /// <summary>
-        /// Merges the modified attributes into <code>AttributeStatement</code> of the assertion.
-        /// </summary>
-        private void InsertAttributes()
-        {
-            if (_assertionAttributes == null)
-                return;
-            
-            // Generate the new AttributeStatement
-            AttributeStatement attributeStatement = new AttributeStatement();
-            List<object> statements = new List<object>(_encryptedAssertionAttributes.Count + _assertionAttributes.Count);
-            statements.AddRange(_assertionAttributes.ToArray());
-            statements.AddRange(_encryptedAssertionAttributes.ToArray());
-            attributeStatement.Items = statements.ToArray();
-
-            XmlNodeList list =
-                _samlAssertion.GetElementsByTagName(AttributeStatement.ELEMENT_NAME, Saml20Constants.ASSERTION);            
-            
-            if (list.Count > 0) // Remove the old AttributeStatement.
-                _samlAssertion.RemoveChild(list[0]);//FIX _samlAssertion.DocumentElement.RemoveChild(list[0]);
-
-            // Only insert a new AttributeStatement if there are attributes.
-            if (statements.Count > 0)
-            {
-                // Convert the new AttributeStatement to the Document Object Model and make a silent prayer that one day we will
-                // be able to make this transition in a more elegant way.
-                XmlDocument attributeStatementDoc = Serialization.Serialize(attributeStatement);
-                XmlNode attr = _samlAssertion.OwnerDocument.ImportNode(attributeStatementDoc.DocumentElement, true);
-                // Insert the new statement.                            
-                _samlAssertion.AppendChild(attr);                
-            }
-
-            _encryptedAssertionAttributes = null;
-            _assertionAttributes = null;
         }
 
         /// <summary>

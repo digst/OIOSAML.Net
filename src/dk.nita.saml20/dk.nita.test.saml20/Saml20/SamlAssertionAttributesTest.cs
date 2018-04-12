@@ -19,33 +19,6 @@ namespace dk.nita.test.Saml20
         #region Tests
 
         /// <summary>
-        /// Adds an attribute to the assertion, signs it and verifies that the new attribute is part of the signed assertion.
-        /// </summary>
-        [Ignore]    // TODO: test data needs fixing
-        public void AddAttribute_01()
-        {
-            Saml20Assertion assertion = LoadAssertion(@"Saml20\Assertions\Saml2Assertion_01");
-            List<SamlAttribute> attributes = assertion.Attributes;
-            attributes.Add(DKSaml20PostalAddressAttribute.Create("DK-2200 København"));
-
-            X509Certificate2 cert = AssertionUtil.GetCertificate1();
-            assertion.Sign(cert);
-
-            assertion.CheckValid(new AsymmetricAlgorithm[] { cert.PublicKey.Key });
-
-            // Verify that the modified assertion can survive complete serialization and deserialization.
-            string assertionString = assertion.GetXml().OuterXml;
-
-            XmlDocument deserializedAssertionDoc = new XmlDocument();
-            deserializedAssertionDoc.PreserveWhitespace = true;
-            deserializedAssertionDoc.Load(new StringReader(assertionString));            
-
-            Saml20Assertion deserializedAssertion = new Saml20Assertion(deserializedAssertionDoc.DocumentElement, null, false);
-            Assert.IsNotNull(deserializedAssertion.GetSignatureKeys(), "Signing keys must be present");
-            deserializedAssertion.CheckValid(new AsymmetricAlgorithm[] { cert.PublicKey.Key });
-        }
-
-        /// <summary>
         /// Load one of the test assertions and verify its number of attributes.
         /// </summary>
         [Test]
