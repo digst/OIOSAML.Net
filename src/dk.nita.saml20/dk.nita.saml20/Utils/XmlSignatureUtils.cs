@@ -379,12 +379,33 @@ namespace dk.nita.saml20.Utils
         }
 
         /// <summary>
-        /// Signs an XmlDocument with an xml signature using the signing certificate given as argument to the method.
+        /// Signs a document with an xml signature using the signing certificate given as argument to the method.
         /// </summary>
         /// <param name="doc">The XmlDocument to be signed</param>
         /// <param name="id">The is of the topmost element in the xmldocument</param>
         /// <param name="cert">The certificate used to sign the document</param>
         public static void SignDocument(XmlDocument doc, string id, X509Certificate2 cert)
+        {
+            var signedXml = Sign(doc, id, cert);
+            // Append the computed signature. The signature must be placed as the sibling of the Issuer element.
+            XmlNodeList nodes = doc.DocumentElement.GetElementsByTagName("Issuer", Saml20Constants.ASSERTION);
+            // doc.DocumentElement.InsertAfter(doc.ImportNode(signedXml.GetXml(), true), nodes[0]);            
+            nodes[0].ParentNode.InsertAfter(doc.ImportNode(signedXml.GetXml(), true), nodes[0]);
+        }
+
+        /// <summary>
+        /// Signs metadata with an xml signature using the signing certificate given as argument to the method.
+        /// </summary>
+        /// <param name="doc">The XmlDocument to be signed</param>
+        /// <param name="id">The is of the topmost element in the xmldocument</param>
+        /// <param name="cert">The certificate used to sign the document</param>
+        public static void SignMetadata(XmlDocument doc, string id, X509Certificate2 cert)
+        {
+            var signedXml = Sign(doc, id, cert);
+            doc.DocumentElement.InsertBefore(doc.ImportNode(signedXml.GetXml(), true), doc.DocumentElement.FirstChild);
+        }
+
+        private static SignedXml Sign(XmlDocument doc, string id, X509Certificate2 cert)
         {
             SignedXml signedXml = new SignedXml(doc);
             signedXml.SignedInfo.CanonicalizationMethod = SignedXml.XmlDsigExcC14NTransformUrl;
@@ -403,10 +424,7 @@ namespace dk.nita.saml20.Utils
             signedXml.KeyInfo.AddClause(new KeyInfoX509Data(cert, X509IncludeOption.WholeChain));
 
             signedXml.ComputeSignature();
-            // Append the computed signature. The signature must be placed as the sibling of the Issuer element.
-            XmlNodeList nodes = doc.DocumentElement.GetElementsByTagName("Issuer", Saml20Constants.ASSERTION);
-            // doc.DocumentElement.InsertAfter(doc.ImportNode(signedXml.GetXml(), true), nodes[0]);            
-            nodes[0].ParentNode.InsertAfter(doc.ImportNode(signedXml.GetXml(), true), nodes[0]);
+            return signedXml;
         }
 
         /// <summary>

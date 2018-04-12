@@ -67,7 +67,9 @@ namespace IdentityProviderDemo
             doc.PreserveWhitespace = true;
             doc.LoadXml(Serialization.SerializeToXmlString(metadata));
 
-            signDocument(doc);
+            X509Certificate2 cert = IDPConfig.IDPCertificate;
+            var id = doc.DocumentElement.GetAttribute("ID");
+            XmlSignatureUtils.SignMetadata(doc, id, cert);
 
             context.Response.Write( doc.OuterXml );
         }
@@ -103,38 +105,6 @@ namespace IdentityProviderDemo
 
             return keys.ToArray();
         }
-
-        /// <summary>
-        /// Mostly nicked from the dk.nita.saml20.Saml20MetadataDocument class. 
-        /// </summary>
-        private static void signDocument(XmlDocument doc)
-        {
-            X509Certificate2 cert = IDPConfig.IDPCertificate;
-
-            // We already checked for this when the certificate was selected, but dual-checking almost never hurts.
-            if (!cert.HasPrivateKey) 
-                throw new InvalidOperationException("Private key access to the signing certificate is required.");
-
-            SignedXml signedXml = new SignedXml(doc);
-            signedXml.SignedInfo.CanonicalizationMethod = SignedXml.XmlDsigExcC14NTransformUrl;
-            signedXml.SigningKey = cert.PrivateKey;
-
-            // Retrieve the value of the "ID" attribute on the root assertion element.                        
-            Reference reference = new Reference("#" + doc.DocumentElement.GetAttribute("ID"));
-
-            reference.AddTransform(new XmlDsigEnvelopedSignatureTransform());
-            reference.AddTransform(new XmlDsigExcC14NTransform());
-
-            signedXml.AddReference(reference);
-
-            // Include the public key of the certificate in the assertion.
-            signedXml.KeyInfo = new KeyInfo();
-            signedXml.KeyInfo.AddClause(new KeyInfoX509Data(cert, X509IncludeOption.WholeChain));
-
-            signedXml.ComputeSignature();
-            // Append the computed signature. The signature must be placed as the sibling of the Issuer element.            
-            doc.DocumentElement.InsertBefore(doc.ImportNode(signedXml.GetXml(), true), doc.DocumentElement.FirstChild);
-        }    
 
         public bool IsReusable
         {

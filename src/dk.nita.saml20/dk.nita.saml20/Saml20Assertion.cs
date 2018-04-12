@@ -468,7 +468,10 @@ namespace dk.nita.saml20
             assertionDocument.XmlResolver = null;
             assertionDocument.Load(new StringReader(Serialization.SerializeToXmlString(_samlAssertion)));
 
-            AddSignature(assertionDocument, cert);
+            // Retrieve the value of the "ID" attribute on the root assertion element.
+            XmlNodeList list = assertionDocument.GetElementsByTagName(Assertion.ELEMENT_NAME, Saml20Constants.ASSERTION);
+            XmlElement el = (XmlElement)list[0];            
+            XmlSignatureUtils.SignDocument(assertionDocument, el.GetAttribute("ID"), cert);
 
             LoadXml(assertionDocument.DocumentElement, new List<AsymmetricAlgorithm>(new AsymmetricAlgorithm[] { cert.PublicKey.Key }));
         }
@@ -478,35 +481,6 @@ namespace dk.nita.saml20
             if (!cert.HasPrivateKey)
                 throw new Saml20Exception("The private key must be part of the certificate.");
         }
-
-        private static void AddSignature(XmlDocument assertionDocument, X509Certificate2 cert)
-        {
-            SignedXml signedXml = new SignedXml(assertionDocument);
-            signedXml.SignedInfo.CanonicalizationMethod = SignedXml.XmlDsigExcC14NTransformUrl;
-            signedXml.SigningKey = cert.PrivateKey;
-
-            // Retrieve the value of the "ID" attribute on the root assertion element.
-            XmlNodeList list = assertionDocument.GetElementsByTagName(Assertion.ELEMENT_NAME, Saml20Constants.ASSERTION);
-            XmlElement el = (XmlElement)list[0];            
-            Reference reference = new Reference("#" + el.GetAttribute("ID"));
-
-            reference.AddTransform(new XmlDsigEnvelopedSignatureTransform());            
-            reference.AddTransform(new XmlDsigExcC14NTransform());            
-
-            signedXml.AddReference(reference);
-
-            // Include the public key of the certificate in the assertion.
-            //signedXml.KeyInfo = new KeyInfo();
-            //signedXml.KeyInfo.AddClause(new KeyInfoX509Data(cert, X509IncludeOption.WholeChain));
-
-            signedXml.ComputeSignature();
-            // Append the computed signature. The signature must be placed as the sibling of the Issuer element.
-            XmlNodeList nodes = assertionDocument.DocumentElement.GetElementsByTagName("Issuer", Saml20Constants.ASSERTION);            
-            if (nodes.Count != 1)
-                throw new Saml20Exception("Assertion MUST contain one <Issuer> element.");            
-            assertionDocument.DocumentElement.InsertAfter(assertionDocument.ImportNode(signedXml.GetXml(), true), nodes[0]);
-        }
-
 
         /// <summary>
         /// Extracts the list of attributes from the &lt;AttributeStatement&gt; of the assertion, and 
