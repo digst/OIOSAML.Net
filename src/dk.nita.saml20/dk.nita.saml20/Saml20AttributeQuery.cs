@@ -8,6 +8,7 @@ using System.Web;
 using System.Xml;
 using dk.nita.saml20;
 using dk.nita.saml20.Bindings;
+using dk.nita.saml20.Bindings.SignatureProviders;
 using dk.nita.saml20.Identity;
 using dk.nita.saml20.session;
 using dk.nita.saml20.config;
@@ -169,7 +170,10 @@ namespace dk.nita.saml20
             query.XmlResolver = null;
             query.LoadXml(Serialization.SerializeToXmlString(_attrQuery));
 
-            XmlSignatureUtils.SignDocument(query, ID);
+            var signingCertificate = FederationConfig.GetConfig().SigningCertificate.GetCertificate();
+            var shaHashingAlgorithm = SignatureProviderFactory.ValidateShaHashingAlgorithm(endPoint.ShaHashingAlgorithm);
+            var signatureProvider = SignatureProviderFactory.CreateFromAlgorithmName(shaHashingAlgorithm);
+            signatureProvider.SignAssertion(query, ID, signingCertificate);
             if (query.FirstChild is XmlDeclaration)
                 query.RemoveChild(query.FirstChild);
 

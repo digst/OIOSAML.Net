@@ -12,6 +12,7 @@ using IdentityProviderDemo.Logic;
 using dk.nita.saml20.Schema.Protocol;
 using dk.nita.saml20.Schema.Core;
 using dk.nita.saml20.Bindings;
+using dk.nita.saml20.Bindings.SignatureProviders;
 using dk.nita.saml20.Utils;
 
 namespace IdentityProviderDemo
@@ -143,7 +144,8 @@ namespace IdentityProviderDemo
             assertionDoc.LoadXml(Serialization.SerializeToXmlString(response));
 
             // Sign the assertion inside the response message.
-            XmlSignatureUtils.SignDocument(assertionDoc, assertion.ID, IDPConfig.IDPCertificate);
+            var signatureProvider = SignatureProviderFactory.CreateFromAlgorithmName(ShaHashingAlgorithm.SHA256);
+            signatureProvider.SignAssertion(assertionDoc, assertion.ID, IDPConfig.IDPCertificate);
             
             HttpPostBindingBuilder builder = new HttpPostBindingBuilder(endpoint);
             builder.Action = SAMLAction.SAMLResponse;

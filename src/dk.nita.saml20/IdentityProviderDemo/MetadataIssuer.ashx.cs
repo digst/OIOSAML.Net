@@ -5,6 +5,8 @@ using System.Security.Cryptography.Xml;
 using System.Web;
 using System.Xml;
 using dk.nita.saml20;
+using dk.nita.saml20.Bindings.SignatureProviders;
+using dk.nita.saml20.config;
 using dk.nita.saml20.Schema.Core;
 using dk.nita.saml20.Schema.Metadata;
 using dk.nita.saml20.Utils;
@@ -67,9 +69,11 @@ namespace IdentityProviderDemo
             doc.PreserveWhitespace = true;
             doc.LoadXml(Serialization.SerializeToXmlString(metadata));
 
+            var signatureProvider = SignatureProviderFactory.CreateFromAlgorithmName(ShaHashingAlgorithm.SHA256);
+
             X509Certificate2 cert = IDPConfig.IDPCertificate;
             var id = doc.DocumentElement.GetAttribute("ID");
-            XmlSignatureUtils.SignMetadata(doc, id, cert);
+            signatureProvider.SignMetaData(doc, id, cert);
 
             context.Response.Write( doc.OuterXml );
         }

@@ -9,6 +9,7 @@ using dk.nita.saml20.Schema.Core;
 using dk.nita.saml20.Schema.Metadata;
 using dk.nita.saml20.Utils;
 using System.Configuration;
+using dk.nita.saml20.Bindings.SignatureProviders;
 
 namespace dk.nita.saml20
 {
@@ -532,8 +533,12 @@ namespace dk.nita.saml20
 
             if (Sign)
             {
-                X509Certificate2 cert = FederationConfig.GetConfig().SigningCertificate.GetCertificate();
-                XmlSignatureUtils.SignMetadata(doc, doc.DocumentElement.GetAttribute("ID"), cert);
+                var metaDataShaHashingAlgorithm = FederationConfig.GetConfig().MetaDataShaHashingAlgorithm;
+                var validatedMetaDataShaHashingAlgorithm = SignatureProviderFactory.ValidateShaHashingAlgorithm(metaDataShaHashingAlgorithm);
+                var signatureProvider = SignatureProviderFactory.CreateFromAlgorithmName(validatedMetaDataShaHashingAlgorithm);
+
+                var cert = FederationConfig.GetConfig().SigningCertificate.GetCertificate();
+                signatureProvider.SignMetaData(doc, doc.DocumentElement.GetAttribute("ID"), cert);
             }
 
             return doc.OuterXml;

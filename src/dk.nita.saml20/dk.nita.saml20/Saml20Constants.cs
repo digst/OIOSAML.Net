@@ -56,16 +56,6 @@ namespace dk.nita.saml20
         public const string DKSAML20_CLAIMTYPE_PREFIX = "dksaml20/";
 
         /// <summary>
-        /// Represents the Uniform Resource Identifier (URI) for the RSA SHA-256 signature method variation for XML digital signatures.
-        /// </summary>
-        public const string XmlDsigRSASHA256Url = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256";
-
-        /// <summary>
-        /// Represents the Uniform Resource Identifier (URI) for the RSA SHA-512 signature method variation for XML digital signatures.
-        /// </summary>
-        public const string XmlDsigRSASHA512Url = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha512";
-
-        /// <summary>
         /// Formats of nameidentifiers
         /// </summary>
         public static class NameIdentifierFormats

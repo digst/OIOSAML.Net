@@ -37,6 +37,19 @@ namespace dk.nita.saml20.config
         // As default the component does not allow open redirect attacks.
         private bool _preventOpenRedirectAttack = true;
 
+        // Default value is SHA256
+        private string _metaDataShaHashingAlgorithm = ShaHashingAlgorithm.SHA256.ToString();
+
+        /// <summary>
+        /// SHA256 is the default for signing meta data. This allows for backwards compatibility if the Identity Provider only supports RSA SHA1
+        /// </summary>
+        [XmlElement(ElementName = "MetaDataShaHashingAlgorithm")]
+        public string MetaDataShaHashingAlgorithm
+        {
+            get { return _metaDataShaHashingAlgorithm; }
+            set { _metaDataShaHashingAlgorithm = value; }
+        }
+
         /// <summary>
         /// Gets or sets the SessionTimeout configuration
         /// </summary>
