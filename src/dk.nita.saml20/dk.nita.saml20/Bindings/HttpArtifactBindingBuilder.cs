@@ -6,7 +6,6 @@ using System.Web.Caching;
 using System.Xml;
 using dk.nita.saml20.Bindings.SignatureProviders;
 using dk.nita.saml20.config;
-using dk.nita.saml20.Logging;
 using dk.nita.saml20.Properties;
 using dk.nita.saml20.Schema.Protocol;
 using dk.nita.saml20.Utils;
@@ -28,16 +27,18 @@ namespace dk.nita.saml20.Bindings
         /// <summary>
         /// Creates an artifact and redirects the user to the IdP
         /// </summary>
+        /// <param name="idpEndPoint">The IdP endpoint</param>
         /// <param name="destination">The destination of the request.</param>
         /// <param name="request">The authentication request.</param>
-        public void RedirectFromLogin(IDPEndPointElement destination, Saml20AuthnRequest request)
+        public void RedirectFromLogin(IDPEndPoint idpEndPoint, IDPEndPointElement destination, Saml20AuthnRequest request)
         {
             SAML20FederationConfig config = SAML20FederationConfig.GetConfig();
             Int16 index = (Int16)config.ServiceProvider.SignOnEndpoint.endPointIndex;
             XmlDocument doc = request.GetXml();
 
             var signingCertificate = FederationConfig.GetConfig().SigningCertificate.GetCertificate();
-            var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(ShaHashingAlgorithm);
+            var shaHashingAlgorithm = SignatureProviderFactory.ValidateShaHashingAlgorithm(idpEndPoint.ShaHashingAlgorithm);
+            var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(shaHashingAlgorithm);
             signatureProvider.SignAssertion(doc, request.Request.ID, signingCertificate);
             ArtifactRedirect(destination, index, doc);
         }
@@ -45,15 +46,17 @@ namespace dk.nita.saml20.Bindings
         /// <summary>
         /// Creates an artifact for the LogoutRequest and redirects the user to the IdP.
         /// </summary>
+        /// <param name="idpEndPoint">The IdP endpoint</param>
         /// <param name="destination">The destination of the request.</param>
         /// <param name="request">The logout request.</param>
-        public void RedirectFromLogout(IDPEndPointElement destination, Saml20LogoutRequest request)
+        public void RedirectFromLogout(IDPEndPoint idpEndPoint, IDPEndPointElement destination, Saml20LogoutRequest request)
         {
             SAML20FederationConfig config = SAML20FederationConfig.GetConfig();
             Int16 index = (Int16)config.ServiceProvider.LogoutEndpoint.endPointIndex;
             XmlDocument doc = request.GetXml();
             var signingCertificate = FederationConfig.GetConfig().SigningCertificate.GetCertificate();
-            var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(ShaHashingAlgorithm);
+            var shaHashingAlgorithm = SignatureProviderFactory.ValidateShaHashingAlgorithm(idpEndPoint.ShaHashingAlgorithm);
+            var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(shaHashingAlgorithm);
             signatureProvider.SignAssertion(doc, request.Request.ID, signingCertificate);
             ArtifactRedirect(destination, index, doc);
         }
@@ -61,16 +64,18 @@ namespace dk.nita.saml20.Bindings
         /// <summary>
         /// Creates an artifact for the LogoutRequest and redirects the user to the IdP.
         /// </summary>
+        /// <param name="idpEndPoint">The IdP endpoint</param>
         /// <param name="destination">The destination of the request.</param>
         /// <param name="request">The logout request.</param>
         /// <param name="relayState">The query string relay state value to add to the communication</param>
-        public void RedirectFromLogout(IDPEndPointElement destination, Saml20LogoutRequest request, string relayState)
+        public void RedirectFromLogout(IDPEndPoint idpEndPoint, IDPEndPointElement destination, Saml20LogoutRequest request, string relayState)
         {
             SAML20FederationConfig config = SAML20FederationConfig.GetConfig();
             Int16 index = (Int16)config.ServiceProvider.LogoutEndpoint.endPointIndex;
             XmlDocument doc = request.GetXml();
             var signingCertificate = FederationConfig.GetConfig().SigningCertificate.GetCertificate();
-            var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(ShaHashingAlgorithm);
+            var shaHashingAlgorithm = SignatureProviderFactory.ValidateShaHashingAlgorithm(idpEndPoint.ShaHashingAlgorithm);
+            var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(shaHashingAlgorithm);
             signatureProvider.SignAssertion(doc, request.Request.ID, signingCertificate);
             ArtifactRedirect(destination, index, doc, relayState);
         }
@@ -78,15 +83,17 @@ namespace dk.nita.saml20.Bindings
         /// <summary>
         /// Creates an artifact for the LogoutResponse and redirects the user to the IdP.
         /// </summary>
+        /// <param name="idpEndPoint">The IdP endpoint</param>
         /// <param name="destination">The destination of the response.</param>
         /// <param name="response">The logout response.</param>
-        public void RedirectFromLogout(IDPEndPointElement destination, Saml20LogoutResponse response)
+        public void RedirectFromLogout(IDPEndPoint idpEndPoint, IDPEndPointElement destination, Saml20LogoutResponse response)
         {
             SAML20FederationConfig config = SAML20FederationConfig.GetConfig();
             Int16 index = (Int16)config.ServiceProvider.LogoutEndpoint.endPointIndex;
             XmlDocument doc = response.GetXml();
             var signingCertificate = FederationConfig.GetConfig().SigningCertificate.GetCertificate();
-            var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(ShaHashingAlgorithm);
+            var shaHashingAlgorithm = SignatureProviderFactory.ValidateShaHashingAlgorithm(idpEndPoint.ShaHashingAlgorithm);
+            var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(shaHashingAlgorithm);
             signatureProvider.SignAssertion(doc, response.Response.ID, signingCertificate);
 
             ArtifactRedirect(destination, index, doc);
@@ -139,8 +146,9 @@ namespace dk.nita.saml20.Bindings
         /// <summary>
         /// Handles responses to an artifact resolve message.
         /// </summary>
+        /// <param name="idpEndPoint">The IdP endpoint</param>
         /// <param name="artifactResolve">The artifact resolve message.</param>
-        public void RespondToArtifactResolve(ArtifactResolve artifactResolve)
+        public void RespondToArtifactResolve(IDPEndPoint idpEndPoint, ArtifactResolve artifactResolve)
         {
             XmlDocument samlDoc = (XmlDocument)_context.Cache.Get(artifactResolve.Artifact);
             
@@ -155,7 +163,8 @@ namespace dk.nita.saml20.Bindings
                 responseDoc.RemoveChild(responseDoc.FirstChild);
 
             var signingCertificate = FederationConfig.GetConfig().SigningCertificate.GetCertificate();
-            var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(ShaHashingAlgorithm);
+            var shaHashingAlgorithm = SignatureProviderFactory.ValidateShaHashingAlgorithm(idpEndPoint.ShaHashingAlgorithm);
+            var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(shaHashingAlgorithm);
             signatureProvider.SignAssertion(responseDoc, response.ID, signingCertificate);
 
             if(Trace.ShouldTrace(TraceEventType.Information))
@@ -194,7 +203,8 @@ namespace dk.nita.saml20.Bindings
                 doc.RemoveChild(doc.FirstChild);
 
             var signingCertificate = FederationConfig.GetConfig().SigningCertificate.GetCertificate();
-            var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(ShaHashingAlgorithm);
+            var shaHashingAlgorithm = SignatureProviderFactory.ValidateShaHashingAlgorithm(idpEndPoint.ShaHashingAlgorithm);
+            var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(shaHashingAlgorithm);
             signatureProvider.SignAssertion(doc, resolve.ID, signingCertificate);
 
             string artifactResolveString = doc.OuterXml;

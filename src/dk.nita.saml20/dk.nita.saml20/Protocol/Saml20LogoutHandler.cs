@@ -116,17 +116,7 @@ namespace dk.nita.saml20.protocol
         private void HandleArtifact(HttpContext context)
         {
             HttpArtifactBindingBuilder builder = new HttpArtifactBindingBuilder(context);
-            Saml20AssertionLite saml20AssertionLite = Saml20PrincipalCache.GetSaml20AssertionLite();
-            if (saml20AssertionLite != null)
-            {
-                var idpEndpoint = RetrieveIDPConfiguration(saml20AssertionLite.Issuer);
-                if (idpEndpoint != null)
-                {
-                    builder.ShaHashingAlgorithm =
-                        SignatureProviderFactory.ValidateShaHashingAlgorithm(idpEndpoint.ShaHashingAlgorithm);
-                }
-            }
-
+            
             Stream inputStream = builder.ResolveArtifact();
 
             HandleSOAP(context, inputStream);
@@ -143,7 +133,6 @@ namespace dk.nita.saml20.protocol
 
             IDPEndPoint idp = RetrieveIDPConfiguration(parser.Issuer);
             var shaHashingAlgorithm = SignatureProviderFactory.ValidateShaHashingAlgorithm(idp.ShaHashingAlgorithm);
-            builder.ShaHashingAlgorithm = shaHashingAlgorithm;
             AuditLogging.IdpId = idp.Id;
 
 
@@ -158,7 +147,7 @@ namespace dk.nita.saml20.protocol
                 }
                 AuditLogging.AssertionId = parser.ArtifactResolve.ID;
                 AuditLogging.logEntry(Direction.IN, Operation.ARTIFACTRESOLVE, "", parser.SamlMessage);
-                builder.RespondToArtifactResolve(parser.ArtifactResolve);
+                builder.RespondToArtifactResolve(idp, parser.ArtifactResolve);
             }
             else if (parser.IsArtifactResponse())
             {
@@ -186,7 +175,7 @@ namespace dk.nita.saml20.protocol
                     IDPEndPointElement destination =
                         DetermineEndpointConfiguration(SAMLBinding.REDIRECT, idp.SLOEndpoint, idp.metadata.SLOEndpoints());
 
-                    builder.RedirectFromLogout(destination, response);
+                    builder.RedirectFromLogout(idp, destination, response);
                 }
                 else if (parser.ArtifactResponse.Any.LocalName == LogoutResponse.ELEMENT_NAME)
                 {
@@ -342,19 +331,8 @@ namespace dk.nita.saml20.protocol
                 request.SessionIndex = Saml20PrincipalCache.GetSaml20AssertionLite().SessionIndex;
 
                 HttpArtifactBindingBuilder builder = new HttpArtifactBindingBuilder(context);
-                Saml20AssertionLite saml20AssertionLite = Saml20PrincipalCache.GetSaml20AssertionLite();
-                if (saml20AssertionLite != null)
-                {
-                    var idpEndpoint = RetrieveIDPConfiguration(saml20AssertionLite.Issuer);
-                    if (idpEndpoint != null)
-                    {
-                        builder.ShaHashingAlgorithm =
-                            SignatureProviderFactory.ValidateShaHashingAlgorithm(idpEndpoint.ShaHashingAlgorithm);
-                    }
-                }
-
                 AuditLogging.logEntry(Direction.OUT, Operation.LOGOUTREQUEST, "Method: Artifact");
-                builder.RedirectFromLogout(destination, request, Guid.NewGuid().ToString("N"));
+                builder.RedirectFromLogout(endpoint, destination, request, Guid.NewGuid().ToString("N"));
             }
 
             HandleError(context, Resources.BindingError);

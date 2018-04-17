@@ -117,18 +117,6 @@ namespace dk.nita.saml20.protocol
         private void HandleArtifact(HttpContext context)
         {
             HttpArtifactBindingBuilder builder = new HttpArtifactBindingBuilder(context);
-
-            Saml20AssertionLite saml20AssertionLite = Saml20PrincipalCache.GetSaml20AssertionLite();
-            if (saml20AssertionLite != null)
-            {
-                var idpEndpoint = RetrieveIDPConfiguration(saml20AssertionLite.Issuer);
-                if (idpEndpoint != null)
-                {
-                    builder.ShaHashingAlgorithm =
-                        SignatureProviderFactory.ValidateShaHashingAlgorithm(idpEndpoint.ShaHashingAlgorithm);
-                }
-            }
-
             Stream inputStream = builder.ResolveArtifact();
             HandleSOAP(context, inputStream);
         }
@@ -138,17 +126,6 @@ namespace dk.nita.saml20.protocol
             Trace.TraceMethodCalled(GetType(), "HandleSOAP");
             HttpArtifactBindingParser parser = new HttpArtifactBindingParser(inputStream);
             HttpArtifactBindingBuilder builder = new HttpArtifactBindingBuilder(context);
-
-            Saml20AssertionLite saml20AssertionLite = Saml20PrincipalCache.GetSaml20AssertionLite();
-            if (saml20AssertionLite != null)
-            {
-                var idpEndpoint = RetrieveIDPConfiguration(saml20AssertionLite.Issuer);
-                if (idpEndpoint != null)
-                {
-                    builder.ShaHashingAlgorithm =
-                        SignatureProviderFactory.ValidateShaHashingAlgorithm(idpEndpoint.ShaHashingAlgorithm);
-                }
-            }
 
             if (parser.IsArtifactResolve())
             {
@@ -162,7 +139,7 @@ namespace dk.nita.saml20.protocol
                     HandleError(context, "Invalid Saml message signature");
                     AuditLogging.logEntry(Direction.IN, Operation.ARTIFACTRESOLVE, "Could not verify signature", parser.SamlMessage);
                 }
-                builder.RespondToArtifactResolve(parser.ArtifactResolve);
+                builder.RespondToArtifactResolve(idp, parser.ArtifactResolve);
             }else if(parser.IsArtifactResponse())
             {
                 Trace.TraceData(TraceEventType.Information, Tracing.ArtifactResponseIn);
@@ -749,15 +726,13 @@ namespace dk.nita.saml20.protocol
                 Trace.TraceData(TraceEventType.Information, string.Format(Tracing.SendAuthnRequest, Saml20Constants.ProtocolBindings.HTTP_Artifact, idpEndpoint.Id));
 
                 HttpArtifactBindingBuilder builder = new HttpArtifactBindingBuilder(context);
-                builder.ShaHashingAlgorithm =
-                    shaHashingAlgorithm;
                 
                 //Honor the ForceProtocolBinding and only set this if it's not already set
                 if (string.IsNullOrEmpty(request.ProtocolBinding))
                     request.ProtocolBinding = Saml20Constants.ProtocolBindings.HTTP_Artifact;
                 AuditLogging.logEntry(Direction.OUT, Operation.AUTHNREQUEST_REDIRECT_ARTIFACT);
 
-                builder.RedirectFromLogin(destination, request);
+                builder.RedirectFromLogin(idpEndpoint, destination, request);
             }
 
             HandleError(context, Resources.BindingError);

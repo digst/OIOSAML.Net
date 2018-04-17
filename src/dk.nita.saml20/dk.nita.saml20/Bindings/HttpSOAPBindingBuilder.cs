@@ -33,11 +33,6 @@ namespace dk.nita.saml20.Bindings
         }
 
         /// <summary>
-        /// Hashing algorithm to use when signing. Default is SHA256.
-        /// </summary>
-        public ShaHashingAlgorithm ShaHashingAlgorithm { get; set; } = ShaHashingAlgorithm.SHA256;
-
-        /// <summary>
         /// Sends a response message.
         /// </summary>
         /// <param name="samlMessage">The saml message.</param>
