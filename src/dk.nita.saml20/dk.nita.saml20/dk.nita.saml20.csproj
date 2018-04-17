@@ -151,7 +151,6 @@
     <Compile Include="Actions\IAction.cs" />
     <Compile Include="Actions\RedirectAction.cs" />
     <Compile Include="Actions\SamlPrincipalAction.cs" />
-    <Compile Include="Bindings\SignatureProviders\DsaSha1SignatureProvider.cs" />
     <Compile Include="Bindings\SignatureProviders\ISignatureProvider.cs" />
     <Compile Include="Bindings\SignatureProviders\RsaSha1SignatureProvider.cs" />
     <Compile Include="Bindings\SignatureProviders\RsaSha256SignatureProvider.cs" />
@@ -380,7 +379,6 @@
     <Compile Include="Schema\XEnc\TransformsType1.cs" />
     <Compile Include="Schema\XmlDSig\CanonicalizationMethod.cs" />
     <Compile Include="Schema\XmlDSig\DigestMethod.cs" />
-    <Compile Include="Schema\XmlDSig\DSAKeyValue.cs" />
     <Compile Include="Schema\XmlDSig\Enums.cs" />
     <Compile Include="Schema\XmlDSig\KeyInfo.cs" />
     <Compile Include="Schema\XmlDSig\KeyValue.cs" />

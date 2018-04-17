@@ -97,30 +97,6 @@ namespace dk.nita.test.Saml20.Protocol
         }
 
         /// <summary>
-        /// Uses a DSA key to sign and verify the Authentication request.
-        /// </summary>
-        [Test]
-        public void TestDSASigning()
-        {
-            HttpRedirectBindingBuilder binding = new HttpRedirectBindingBuilder();            
-            
-            DSACryptoServiceProvider key = new DSACryptoServiceProvider();
-            binding.signingKey = key;
-            binding.Request = string.Empty.PadLeft(500, 'a');
-
-            // Now, parse the query.
-            Uri url = new Uri("http://localhost/?" + binding.ToQuery());
-            HttpRedirectBindingParser parser = new HttpRedirectBindingParser(url);
-            Assert.That(parser.IsSigned);
-            Assert.That(parser.IsRequest);
-            Assert.That(parser.CheckSignature(key));
-
-            // Create a new key set, and check that it can not verify the signature.
-            DSACryptoServiceProvider evilKey = new DSACryptoServiceProvider();
-            Assert.IsFalse(parser.CheckSignature(evilKey));
-        }
-
-        /// <summary>
         /// Verify that basic encoding and decoding of a Request works.
         /// Verify that the parser correctly detects a Request parameter.
         /// </summary>

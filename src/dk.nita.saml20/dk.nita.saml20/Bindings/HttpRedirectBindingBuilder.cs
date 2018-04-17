@@ -78,8 +78,8 @@ namespace dk.nita.saml20.Bindings
             set
             {
                 // Check if the key is of a supported type. [SAMLBind] sect. 3.4.4.1 specifies this.
-                if (!(value is RSACryptoServiceProvider || value is DSA || value == null))
-                    throw new ArgumentException("Signing key must be an instance of either RSACryptoServiceProvider or DSA.");
+                if (!(value is RSACryptoServiceProvider || value == null))
+                    throw new ArgumentException("Signing key must be an instance of RSACryptoServiceProvider.");
                 _signingKey = value;
             }
 
@@ -118,7 +118,7 @@ namespace dk.nita.saml20.Bindings
 
             result.Append(string.Format("&{0}=", HttpRedirectBindingConstants.SigAlg));
 
-            var signingProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(_signingKey.GetType(), ShaHashingAlgorithm);
+            var signingProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(ShaHashingAlgorithm);
 
             result.Append(UpperCaseUrlEncode(HttpUtility.UrlEncode(signingProvider.SignatureUri)));
 

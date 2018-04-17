@@ -175,12 +175,6 @@ namespace dk.nita.saml20.Utils
                     int count = x509data.Certificates.Count;
                     cert = (X509Certificate2)x509data.Certificates[count - 1];
                 }
-                else if (clause is DSAKeyValue)
-                {
-                    DSAKeyValue key = (DSAKeyValue)clause;
-                    alg = key.Key;
-                    break;
-                }
             }
 
             if (alg == null && cert == null)
@@ -210,12 +204,7 @@ namespace dk.nita.saml20.Utils
 
                 return cert != null ? cert.PublicKey.Key : null;
             }
-            else if (keyInfoClause is DSAKeyValue)
-            {
-                DSAKeyValue key = (DSAKeyValue)keyInfoClause;
-                return key.Key;
-            }
-
+            
             return null;
         }
 
