@@ -37,7 +37,7 @@ namespace dk.nita.saml20.Bindings
             XmlDocument doc = request.GetXml();
 
             var signingCertificate = FederationConfig.GetConfig().SigningCertificate.GetCertificate();
-            var signatureProvider = SignatureProviderFactory.CreateFromAlgorithmName(ShaHashingAlgorithm);
+            var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(ShaHashingAlgorithm);
             signatureProvider.SignAssertion(doc, request.Request.ID, signingCertificate);
             ArtifactRedirect(destination, index, doc);
         }
@@ -53,7 +53,7 @@ namespace dk.nita.saml20.Bindings
             Int16 index = (Int16)config.ServiceProvider.LogoutEndpoint.endPointIndex;
             XmlDocument doc = request.GetXml();
             var signingCertificate = FederationConfig.GetConfig().SigningCertificate.GetCertificate();
-            var signatureProvider = SignatureProviderFactory.CreateFromAlgorithmName(ShaHashingAlgorithm);
+            var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(ShaHashingAlgorithm);
             signatureProvider.SignAssertion(doc, request.Request.ID, signingCertificate);
             ArtifactRedirect(destination, index, doc);
         }
@@ -70,7 +70,7 @@ namespace dk.nita.saml20.Bindings
             Int16 index = (Int16)config.ServiceProvider.LogoutEndpoint.endPointIndex;
             XmlDocument doc = request.GetXml();
             var signingCertificate = FederationConfig.GetConfig().SigningCertificate.GetCertificate();
-            var signatureProvider = SignatureProviderFactory.CreateFromAlgorithmName(ShaHashingAlgorithm);
+            var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(ShaHashingAlgorithm);
             signatureProvider.SignAssertion(doc, request.Request.ID, signingCertificate);
             ArtifactRedirect(destination, index, doc, relayState);
         }
@@ -86,7 +86,7 @@ namespace dk.nita.saml20.Bindings
             Int16 index = (Int16)config.ServiceProvider.LogoutEndpoint.endPointIndex;
             XmlDocument doc = response.GetXml();
             var signingCertificate = FederationConfig.GetConfig().SigningCertificate.GetCertificate();
-            var signatureProvider = SignatureProviderFactory.CreateFromAlgorithmName(ShaHashingAlgorithm);
+            var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(ShaHashingAlgorithm);
             signatureProvider.SignAssertion(doc, response.Response.ID, signingCertificate);
 
             ArtifactRedirect(destination, index, doc);
@@ -155,7 +155,7 @@ namespace dk.nita.saml20.Bindings
                 responseDoc.RemoveChild(responseDoc.FirstChild);
 
             var signingCertificate = FederationConfig.GetConfig().SigningCertificate.GetCertificate();
-            var signatureProvider = SignatureProviderFactory.CreateFromAlgorithmName(ShaHashingAlgorithm);
+            var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(ShaHashingAlgorithm);
             signatureProvider.SignAssertion(responseDoc, response.ID, signingCertificate);
 
             if(Trace.ShouldTrace(TraceEventType.Information))
@@ -194,7 +194,7 @@ namespace dk.nita.saml20.Bindings
                 doc.RemoveChild(doc.FirstChild);
 
             var signingCertificate = FederationConfig.GetConfig().SigningCertificate.GetCertificate();
-            var signatureProvider = SignatureProviderFactory.CreateFromAlgorithmName(ShaHashingAlgorithm);
+            var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(ShaHashingAlgorithm);
             signatureProvider.SignAssertion(doc, resolve.ID, signingCertificate);
 
             string artifactResolveString = doc.OuterXml;

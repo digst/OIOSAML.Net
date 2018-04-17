@@ -6,7 +6,7 @@ using dk.nita.saml20.config;
 namespace dk.nita.saml20.Bindings.SignatureProviders
 {
     /// <summary>
-    /// Provides a concrete implementations of <see cref="ISignatureProvider"/>
+    /// Provides concrete instances of <see cref="ISignatureProvider"/>
     /// </summary>
     public class SignatureProviderFactory
     {
@@ -32,7 +32,7 @@ namespace dk.nita.saml20.Bindings.SignatureProviders
         /// <param name="signingKeyType"></param>
         /// <param name="algorithmUri"></param>
         /// <returns></returns>
-        public static ISignatureProvider CreateFromAlgorithmUri(Type signingKeyType, string algorithmUri)
+        public static ISignatureProvider CreateFromHashingAlgorithmSignatureUri(Type signingKeyType, string algorithmUri)
         {
             if (signingKeyType == typeof(RSA) || signingKeyType.IsSubclassOf(typeof(RSA)))
             {
@@ -58,9 +58,9 @@ namespace dk.nita.saml20.Bindings.SignatureProviders
         /// </summary>
         /// <param name="hashingAlgorithm"></param>
         /// <returns></returns>
-        public static ISignatureProvider CreateFromAlgorithmName(ShaHashingAlgorithm hashingAlgorithm)
+        public static ISignatureProvider CreateFromShaHashingAlgorithmName(ShaHashingAlgorithm hashingAlgorithm)
         {
-            return CreateFromAlgorithmName(typeof(RSA), hashingAlgorithm);
+            return CreateFromShaHashingAlgorithmName(typeof(RSA), hashingAlgorithm);
         }
 
         /// <summary>
@@ -69,7 +69,7 @@ namespace dk.nita.saml20.Bindings.SignatureProviders
         /// <param name="signingKeyType"></param>
         /// <param name="hashingAlgorithm"></param>
         /// <returns></returns>
-        public static ISignatureProvider CreateFromAlgorithmName(Type signingKeyType, ShaHashingAlgorithm hashingAlgorithm)
+        public static ISignatureProvider CreateFromShaHashingAlgorithmName(Type signingKeyType, ShaHashingAlgorithm hashingAlgorithm)
         {
             if (signingKeyType == typeof(RSA) || signingKeyType.IsSubclassOf(typeof(RSA)))
             {

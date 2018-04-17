@@ -69,7 +69,7 @@ namespace IdentityProviderDemo
             doc.PreserveWhitespace = true;
             doc.LoadXml(Serialization.SerializeToXmlString(metadata));
 
-            var signatureProvider = SignatureProviderFactory.CreateFromAlgorithmName(ShaHashingAlgorithm.SHA256);
+            var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(ShaHashingAlgorithm.SHA256);
 
             X509Certificate2 cert = IDPConfig.IDPCertificate;
             var id = doc.DocumentElement.GetAttribute("ID");

@@ -138,17 +138,12 @@ namespace dk.nita.saml20.protocol
 
             HttpArtifactBindingParser parser = new HttpArtifactBindingParser(inputStream);
             HttpArtifactBindingBuilder builder = new HttpArtifactBindingBuilder(context);
-            Saml20AssertionLite saml20AssertionLite = Saml20PrincipalCache.GetSaml20AssertionLite();
-            var idpEndpoint = RetrieveIDPConfiguration(saml20AssertionLite.Issuer);
-            if (idpEndpoint != null)
-            {
-                builder.ShaHashingAlgorithm =
-                    SignatureProviderFactory.ValidateShaHashingAlgorithm(idpEndpoint.ShaHashingAlgorithm);
-            }
-
+            
             SAML20FederationConfig config = SAML20FederationConfig.GetConfig();
 
             IDPEndPoint idp = RetrieveIDPConfiguration(parser.Issuer);
+            var shaHashingAlgorithm = SignatureProviderFactory.ValidateShaHashingAlgorithm(idp.ShaHashingAlgorithm);
+            builder.ShaHashingAlgorithm = shaHashingAlgorithm;
             AuditLogging.IdpId = idp.Id;
 
 
@@ -189,7 +184,7 @@ namespace dk.nita.saml20.protocol
                     response.StatusCode = Saml20Constants.StatusCodes.Success;
                     response.InResponseTo = req.ID;
                     IDPEndPointElement destination =
-                        DetermineEndpointConfiguration(SAMLBinding.REDIRECT, idpEndpoint.SLOEndpoint, idpEndpoint.metadata.SLOEndpoints());
+                        DetermineEndpointConfiguration(SAMLBinding.REDIRECT, idp.SLOEndpoint, idp.metadata.SLOEndpoints());
 
                     builder.RedirectFromLogout(destination, response);
                 }
@@ -250,10 +245,8 @@ namespace dk.nita.saml20.protocol
                 response.StatusCode = Saml20Constants.StatusCodes.Success;
                 response.InResponseTo = req.ID;
                 XmlDocument doc = response.GetXml();
-
-                var shaHashingAlgorithm = idpEndpoint != null ? SignatureProviderFactory.ValidateShaHashingAlgorithm(idpEndpoint.ShaHashingAlgorithm) : ShaHashingAlgorithm.SHA256;
                 var signingCertificate = FederationConfig.GetConfig().SigningCertificate.GetCertificate();
-                                var signatureProvider = SignatureProviderFactory.CreateFromAlgorithmName(shaHashingAlgorithm);
+                                var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(shaHashingAlgorithm);
                 signatureProvider.SignAssertion(doc, response.ID, signingCertificate);
                 if (doc.FirstChild is XmlDeclaration)
                     doc.RemoveChild(doc.FirstChild);
@@ -304,7 +297,7 @@ namespace dk.nita.saml20.protocol
                 request.SessionIndex = Saml20PrincipalCache.GetSaml20AssertionLite().SessionIndex;
                 XmlDocument requestDocument = request.GetXml();
                 var signingCertificate = FederationConfig.GetConfig().SigningCertificate.GetCertificate();
-                var signatureProvider = SignatureProviderFactory.CreateFromAlgorithmName(shaHashingAlgorithm);
+                var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(shaHashingAlgorithm);
                 signatureProvider.SignAssertion(requestDocument, request.ID, signingCertificate);
                 builder.Request = requestDocument.OuterXml;
 
@@ -628,7 +621,7 @@ namespace dk.nita.saml20.protocol
                 builder.Action = SAMLAction.SAMLResponse;
                 XmlDocument responseDocument = response.GetXml();
                 var signingCertificate = FederationConfig.GetConfig().SigningCertificate.GetCertificate();
-                var signatureProvider = SignatureProviderFactory.CreateFromAlgorithmName(shaHashingAlgorithm);
+                var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(shaHashingAlgorithm);
                 signatureProvider.SignAssertion(responseDocument, response.ID, signingCertificate);
                 builder.Response = responseDocument.OuterXml;
                 builder.RelayState = context.Request.Params["RelayState"];

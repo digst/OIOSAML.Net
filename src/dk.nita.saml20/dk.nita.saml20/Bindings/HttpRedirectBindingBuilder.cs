@@ -118,7 +118,7 @@ namespace dk.nita.saml20.Bindings
 
             result.Append(string.Format("&{0}=", HttpRedirectBindingConstants.SigAlg));
 
-            var signingProvider = SignatureProviderFactory.CreateFromAlgorithmName(_signingKey.GetType(), ShaHashingAlgorithm);
+            var signingProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(_signingKey.GetType(), ShaHashingAlgorithm);
 
             result.Append(UpperCaseUrlEncode(HttpUtility.UrlEncode(signingProvider.SignatureUri)));
 

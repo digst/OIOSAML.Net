@@ -148,7 +148,7 @@ namespace dk.nita.saml20.Bindings
             if (!IsSigned)
                 throw new InvalidOperationException("Query is not signed, so there is no signature to verify.");
 
-            var signatureProvider = SignatureProviderFactory.CreateFromAlgorithmUri(key.GetType(), _signatureAlgorithm);
+            var signatureProvider = SignatureProviderFactory.CreateFromHashingAlgorithmSignatureUri(key.GetType(), _signatureAlgorithm);
             return signatureProvider.VerifySignature(key, Encoding.UTF8.GetBytes(_signedquery), DecodeSignature());
         }
 

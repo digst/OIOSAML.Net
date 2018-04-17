@@ -144,7 +144,7 @@ namespace IdentityProviderDemo
             assertionDoc.LoadXml(Serialization.SerializeToXmlString(response));
 
             // Sign the assertion inside the response message.
-            var signatureProvider = SignatureProviderFactory.CreateFromAlgorithmName(ShaHashingAlgorithm.SHA256);
+            var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(ShaHashingAlgorithm.SHA256);
             signatureProvider.SignAssertion(assertionDoc, assertion.ID, IDPConfig.IDPCertificate);
             
             HttpPostBindingBuilder builder = new HttpPostBindingBuilder(endpoint);

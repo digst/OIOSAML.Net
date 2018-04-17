@@ -172,7 +172,7 @@ namespace dk.nita.saml20
 
             var signingCertificate = FederationConfig.GetConfig().SigningCertificate.GetCertificate();
             var shaHashingAlgorithm = SignatureProviderFactory.ValidateShaHashingAlgorithm(endPoint.ShaHashingAlgorithm);
-            var signatureProvider = SignatureProviderFactory.CreateFromAlgorithmName(shaHashingAlgorithm);
+            var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(shaHashingAlgorithm);
             signatureProvider.SignAssertion(query, ID, signingCertificate);
             if (query.FirstChild is XmlDeclaration)
                 query.RemoveChild(query.FirstChild);

@@ -735,7 +735,7 @@ namespace dk.nita.saml20.protocol
                     request.ProtocolBinding = Saml20Constants.ProtocolBindings.HTTP_Post;
                 XmlDocument req = request.GetXml();
                 var signingCertificate = FederationConfig.GetConfig().SigningCertificate.GetCertificate();
-                var signatureProvider = SignatureProviderFactory.CreateFromAlgorithmName(shaHashingAlgorithm);
+                var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(shaHashingAlgorithm);
                 signatureProvider.SignAssertion(req, request.ID, signingCertificate);
                 builder.Request = req.OuterXml;
                 AuditLogging.logEntry(Direction.OUT, Operation.AUTHNREQUEST_POST);
