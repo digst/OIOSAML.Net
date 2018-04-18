@@ -31,7 +31,7 @@ namespace dk.nita.saml20.Bindings.SignatureProviders
             SignedXml signedXml = new SignedXml(doc);
             signedXml.SignedInfo.CanonicalizationMethod = SignedXml.XmlDsigExcC14NTransformUrl;
             signedXml.SignedInfo.SignatureMethod = SignatureUri;
-            signedXml.SigningKey = cert.PrivateKey;
+            signedXml.SigningKey = cert.GetRSAPrivateKey();
 
             // Retrieve the value of the "ID" attribute on the root assertion element.
             Reference reference = new Reference("#" + id);
