@@ -20,7 +20,7 @@ namespace dk.nita.saml20.Bindings.SignatureProviders
         string DigestUri { get; }
 
         /// <summary>
-        /// Signs a chunk of bytes
+        /// Signs a chunk of bytes. If provider type is 1 it will be converted to 24 in order to support SHA2
         /// </summary>
         /// <param name="key"></param>
         /// <param name="data"></param>
@@ -28,7 +28,7 @@ namespace dk.nita.saml20.Bindings.SignatureProviders
         byte[] SignData(AsymmetricAlgorithm key, byte[] data);
 
         /// <summary>
-        /// Verifies a a chunk of bytes
+        /// Verifies a a chunk of bytes. If provider type is 1 it will be converted to 24 in order to support SHA2
         /// </summary>
         /// <param name="key"></param>
         /// <param name="data"></param>
