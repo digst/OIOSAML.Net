@@ -12,7 +12,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>IdentityProviderDemo</RootNamespace>
     <AssemblyName>IdentityProviderDemo</AssemblyName>
-    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
     <UpgradeBackupLocation>
@@ -25,6 +25,7 @@
     <IISExpressWindowsAuthentication />
     <IISExpressUseClassicPipelineMode />
     <UseGlobalApplicationHostFile />
+    <Use64BitIISExpress />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -265,7 +266,7 @@
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v10.0\WebApplications\Microsoft.WebApplication.targets" Condition="false" />
   <PropertyGroup>
     <PreBuildEvent>::Add https binding to *, allowing access on custom domain name
-"%25programfiles%25\IIS Express\appcmd.exe" set site "IdentityProviderDemo" /-bindings.[protocol='https',bindingInformation='*:20001:'] /apphostconfig:"$(SolutionDir).vs\config\applicationhost.config"
-"%25programfiles%25\IIS Express\appcmd.exe" set site "IdentityProviderDemo" /+bindings.[protocol='https',bindingInformation='*:20001:'] /apphostconfig:"$(SolutionDir).vs\config\applicationhost.config"</PreBuildEvent>
+"%25programfiles%25\IIS Express\appcmd.exe" set site "IdentityProviderDemo" /-bindings.[protocol='https',bindingInformation='*:20001:'] /apphostconfig:"$(SolutionDir).vs\dk.nita.saml20\config\applicationhost.config"
+"%25programfiles%25\IIS Express\appcmd.exe" set site "IdentityProviderDemo" /+bindings.[protocol='https',bindingInformation='*:20001:'] /apphostconfig:"$(SolutionDir).vs\dk.nita.saml20\config\applicationhost.config"</PreBuildEvent>
   </PropertyGroup>
 </Project>
