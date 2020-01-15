@@ -122,7 +122,8 @@ namespace dk.nita.saml20.Session
             var httpCookie = new HttpCookie(GetSessionCookieName(), sessionId.ToString())
             {
                 Secure = true,
-                HttpOnly = true
+                HttpOnly = true,
+                SameSite = SameSiteMode.None
             };
             HttpContext.Current.Response.Cookies.Add(httpCookie); // When a cookie is added to the response it is automatically added to the request. Thus, SessionId is available immeditly when reading cookies from the request.
         }
