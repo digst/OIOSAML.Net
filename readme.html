@@ -14,7 +14,7 @@
 <ul>
 	<li><a href="https://digitaliser.dk/group/42063" target="_blank">Project maintenance</a></li>
 	<li><a href="https://www.nuget.org/profiles/Digitaliseringsstyrelsen" target="_blank">Nuget packages (prefixed dk.nita.saml20)</a></li>
-	<li><a href="https://svn.softwareborsen.dk/oiosaml.net/" target="_blank">Code repository</a></li>
+	<li><a href="https://github.com/digst/OIOSAML.Net" target="_blank">Code repository</a></li>
 </ul>
 
 <h2>Repository content</h2>
@@ -32,11 +32,11 @@
 <p>
 	The source code contains everything you need to get a demonstration environment up and running, federating with your own local Identity Provider, as well as directly against NemLog-in. 
 </p>
-<p><i>The full documentation on the project is available in the document 'Net SAML2 Service Provider Framework.pdf'</i></p>
+<p><i>The full documentation on the project is available in the document 'Net SAML2 Service Provider Framework.docx'</i></p>
 <p>	For a quick setup, you must do the following:</p>
 <ul>
 	<li>Run the script 'setup\setup_prerequisites.ps1' from an elevated powershell. This installs all required certificates and performs sslcert bindings to be able to host local websites using https</li>
-	<li>Open the solution 'dk.nita.saml20.sln' in Visual Studio 2017 (Elevated mode) and build it (if you get errors on external dependencies, ensure nuget packages are being restored)</li>
+	<li>Open the solution 'dk.nita.saml20.sln' in Visual Studio 2019 (Elevated mode) and build it (if you get errors on external dependencies, ensure nuget packages are being restored)</li>
 	<li>Set the projects 'IdentityProviderDemo' and 'WebsiteDemo' as startup projects by right-clicking solution, select 'properties', selecting 'Multiple start projects'</li>
 	<li>For the web projects, you must manually set the 'Start URL' that IIS express uses. You do this by:
 		<ul>
