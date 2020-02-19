@@ -93,7 +93,7 @@ namespace dk.nita.saml20.config
             set { _showError = value; }
         }
 
-        // default to 3. Cooresponds to certificate level in the OIOSAML specification.
+        // default to Substantial. Cooresponds to certificate level in the OIOSAML specification.
         private string _minimumAssuranceLevel = "Substantial";
 
         /// <summary>
