@@ -27,7 +27,7 @@ using dk.nita.saml20.Schema.Protocol;
 using dk.nita.saml20.Specification;
 using dk.nita.saml20.Utils;
 using Saml2.Properties;
-using Trace=dk.nita.saml20.Utils.Trace;
+using Trace = dk.nita.saml20.Utils.Trace;
 
 namespace dk.nita.saml20.protocol
 {
@@ -36,7 +36,7 @@ namespace dk.nita.saml20.protocol
     /// </summary>
     public class Saml20SignonHandler : Saml20AbstractEndpointHandler
     {
-        private readonly X509Certificate2  _certificate;
+        private readonly X509Certificate2 _certificate;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Saml20SignonHandler"/> class.
@@ -51,7 +51,7 @@ namespace dk.nita.saml20.protocol
                 RedirectUrl = SAML20FederationConfig.GetConfig().ServiceProvider.SignOnEndpoint.RedirectUrl;
                 ErrorBehaviour = SAML20FederationConfig.GetConfig().ServiceProvider.SignOnEndpoint.ErrorBehaviour.ToString();
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 if (Trace.ShouldTrace(TraceEventType.Error))
                     Trace.TraceData(TraceEventType.Error, e.ToString());
@@ -70,7 +70,7 @@ namespace dk.nita.saml20.protocol
 
             //Some IdP's are known to fail to set an actual value in the SOAPAction header
             //so we just check for the existence of the header field.
-            if (Array.Exists(context.Request.Headers.AllKeys, delegate(string s) { return s == SOAPConstants.SOAPAction; }))
+            if (Array.Exists(context.Request.Headers.AllKeys, delegate (string s) { return s == SOAPConstants.SOAPAction; }))
             {
                 SessionStore.AssertSessionExists();
 
@@ -111,7 +111,7 @@ namespace dk.nita.saml20.protocol
                 }
             }
         }
-                
+
         #endregion
 
         private void HandleArtifact(HttpContext context)
@@ -140,7 +140,8 @@ namespace dk.nita.saml20.protocol
                     AuditLogging.logEntry(Direction.IN, Operation.ARTIFACTRESOLVE, "Could not verify signature", parser.SamlMessage);
                 }
                 builder.RespondToArtifactResolve(idp, parser.ArtifactResolve);
-            }else if(parser.IsArtifactResponse())
+            }
+            else if (parser.IsArtifactResponse())
             {
                 Trace.TraceData(TraceEventType.Information, Tracing.ArtifactResponseIn);
 
@@ -151,28 +152,31 @@ namespace dk.nita.saml20.protocol
                     AuditLogging.logEntry(Direction.IN, Operation.ARTIFACTRESOLVE, string.Format("Illegal status for ArtifactResponse {0} expected 'Success', msg: {1}", status.StatusCode.Value, parser.SamlMessage));
                     return;
                 }
-                if(parser.ArtifactResponse.Any.LocalName == Response.ELEMENT_NAME)
+                if (parser.ArtifactResponse.Any.LocalName == Response.ELEMENT_NAME)
                 {
                     bool isEncrypted;
                     XmlElement assertion = GetAssertion(parser.ArtifactResponse.Any, out isEncrypted);
                     if (assertion == null)
                         HandleError(context, "Missing assertion");
-                    if(isEncrypted)
+                    if (isEncrypted)
                     {
                         HandleEncryptedAssertion(context, assertion);
-                    }else
+                    }
+                    else
                     {
                         HandleAssertion(context, assertion);
                     }
 
-                }else
+                }
+                else
                 {
                     AuditLogging.logEntry(Direction.IN, Operation.ARTIFACTRESOLVE, string.Format("Unsupported payload message in ArtifactResponse: {0}, msg: {1}", parser.ArtifactResponse.Any.LocalName, parser.SamlMessage));
                     HandleError(context,
                                 string.Format("Unsupported payload message in ArtifactResponse: {0}",
                                               parser.ArtifactResponse.Any.LocalName));
                 }
-            }else
+            }
+            else
             {
                 Status s = parser.GetStatus();
                 if (s != null)
@@ -199,7 +203,7 @@ namespace dk.nita.saml20.protocol
             // If PreventOpenRedirectAttack has been enabled ... the return URL is only set if the URL is local.
             if (!string.IsNullOrEmpty(returnUrl) && (!FederationConfig.GetConfig().PreventOpenRedirectAttack || IsLocalUrl(returnUrl)))
                 SessionStore.CurrentSession[SessionConstants.RedirectUrl] = returnUrl;
-            
+
             IDPEndPoint idpEndpoint = RetrieveIDP(context);
 
             if (idpEndpoint == null)
@@ -211,7 +215,7 @@ namespace dk.nita.saml20.protocol
             }
 
             Saml20AuthnRequest authnRequest = Saml20AuthnRequest.GetDefault();
-            TransferClient(idpEndpoint, authnRequest, context);            
+            TransferClient(idpEndpoint, authnRequest, context);
         }
 
         /// <summary>
@@ -244,7 +248,7 @@ namespace dk.nita.saml20.protocol
 
         internal static XmlElement GetAssertion(XmlElement el, out bool isEncrypted)
         {
-            
+
             XmlNodeList encryptedList =
                 el.GetElementsByTagName(EncryptedAssertion.ELEMENT_NAME, Saml20Constants.ASSERTION);
 
@@ -283,13 +287,13 @@ namespace dk.nita.saml20.protocol
                 XmlAttribute inResponseToAttribute =
                     doc.DocumentElement.Attributes["InResponseTo"];
 
-                if(inResponseToAttribute == null)
+                if (inResponseToAttribute == null)
                     throw new Saml20Exception("Received a response message that did not contain an InResponseTo attribute");
 
                 string inResponseTo = inResponseToAttribute.Value;
 
                 CheckReplayAttack(context, inResponseTo);
-                
+
                 Status status = GetStatusElement(doc);
 
                 if (status.StatusCode.Value != Saml20Constants.StatusCodes.Success)
@@ -302,7 +306,7 @@ namespace dk.nita.saml20.protocol
                 }
 
                 // Determine whether the assertion should be decrypted before being validated.
-            
+
                 bool isEncrypted;
                 XmlElement assertion = GetAssertion(doc.DocumentElement, out isEncrypted);
                 if (isEncrypted)
@@ -404,7 +408,7 @@ namespace dk.nita.saml20.protocol
             XmlNodeList list = assertion.GetElementsByTagName("Issuer", Saml20Constants.ASSERTION);
             if (list.Count > 0)
             {
-                XmlElement issuer = (XmlElement) list[0];
+                XmlElement issuer = (XmlElement)list[0];
                 result = issuer.InnerText;
             }
 
@@ -440,7 +444,7 @@ namespace dk.nita.saml20.protocol
             Trace.TraceMethodCalled(GetType(), "HandleAssertion");
 
             string issuer = GetIssuer(elem);
-            
+
             IDPEndPoint endp = RetrieveIDPConfiguration(issuer);
 
             AuditLogging.IdpId = endp.Id;
@@ -453,9 +457,9 @@ namespace dk.nita.saml20.protocol
             {
                 quirksMode = endp.QuirksMode;
             }
-            
+
             Saml20Assertion assertion = new Saml20Assertion(elem, null, quirksMode);
-                        
+
             if (endp == null || endp.metadata == null)
             {
                 AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST,
@@ -495,28 +499,66 @@ namespace dk.nita.saml20.protocol
                 return;
             }
 
+            // Can be either v2 AssuranceLevel or v3 LOA
+            string minimumconfiguredAssuranceLevel = SAML20FederationConfig.GetConfig().MinimumAssuranceLevel;
+
             // Only check if assertion has the required assurancelevel if it is present.
             string assuranceLevel = GetAssuranceLevel(assertion);
-            string minimumAssuranceLevel = SAML20FederationConfig.GetConfig().MinimumAssuranceLevel;
             if (assuranceLevel != null)
             {
                 // Assurance level is ok if the string matches the configured minimum assurance level. This is in order to support the value "Test". However, normally the value will be an integer
-                if (assuranceLevel != minimumAssuranceLevel)
+                if (assuranceLevel != minimumconfiguredAssuranceLevel)
                 {
                     // If strings are different it is still ok if the assertion has stronger assurance level than the minimum required.
                     int assuranceLevelAsInt;
                     int minimumAssuranceLevelAsInt;
                     if (!int.TryParse(assuranceLevel, out assuranceLevelAsInt) ||
-                        !int.TryParse(minimumAssuranceLevel, out minimumAssuranceLevelAsInt) ||
+                        !int.TryParse(minimumconfiguredAssuranceLevel, out minimumAssuranceLevelAsInt) ||
                         assuranceLevelAsInt < minimumAssuranceLevelAsInt)
                     {
                         string errorMessage = string.Format(Resources.AssuranceLevelTooLow, assuranceLevel,
-                                                            minimumAssuranceLevel);
+                                                            minimumconfiguredAssuranceLevel);
                         AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST,
                                               errorMessage + " Assertion: " + elem.OuterXml);
 
                         HandleError(context,
-                                    string.Format(Resources.AssuranceLevelTooLow, assuranceLevel, minimumAssuranceLevel));
+                                    string.Format(Resources.AssuranceLevelTooLow, assuranceLevel, minimumconfiguredAssuranceLevel));
+                        return;
+                    }
+                }
+            }
+
+            // Only check if assertion has the required level of assurance (OIOSAML 3.0) if it is present.
+            string levelOfAssurance = GetLevelOfAssurance(assertion);
+            if (levelOfAssurance != null)
+            {
+                // Verify demanded assurance level if any
+                if (SessionStore.CurrentSession[SessionConstants.ExpectedLevelOfAssurance] != null)
+                {
+                    var expectedLevelOfAssurance = SessionStore.CurrentSession[SessionConstants.ExpectedLevelOfAssurance].ToString();
+                    SessionStore.CurrentSession[SessionConstants.ExpectedLevelOfAssurance] = null;
+                    if (!CheckLevelOfAssurance(levelOfAssurance, expectedLevelOfAssurance))
+                    {
+                        string errorMessage = string.Format(Resources.AssuranceLevelTooLowAccordingToDemand, levelOfAssurance,
+                                                       expectedLevelOfAssurance);
+                        AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST,
+                                              errorMessage + " Assertion: " + elem.OuterXml);
+
+                        HandleError(context, errorMessage);
+                        return;
+                    }
+                }
+                else
+                {
+                    // Verify minimum configured assurance level if no demand are present
+                    if (!CheckLevelOfAssurance(levelOfAssurance, minimumconfiguredAssuranceLevel))
+                    {
+                        string errorMessage = string.Format(Resources.AssuranceLevelTooLow, levelOfAssurance,
+                                                           minimumconfiguredAssuranceLevel);
+                        AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST,
+                                              errorMessage + " Assertion: " + elem.OuterXml);
+
+                        HandleError(context, errorMessage);
                         return;
                     }
                 }
@@ -539,13 +581,13 @@ namespace dk.nita.saml20.protocol
             List<AsymmetricAlgorithm> result = new List<AsymmetricAlgorithm>(keys.Count);
             foreach (KeyDescriptor keyDescriptor in keys)
             {
-                KeyInfo ki = (KeyInfo) keyDescriptor.KeyInfo;
-                    
+                KeyInfo ki = (KeyInfo)keyDescriptor.KeyInfo;
+
                 foreach (KeyInfoClause clause in ki)
                 {
-                    if(clause is KeyInfoX509Data)
+                    if (clause is KeyInfoX509Data)
                     {
-                        X509Certificate2 cert = XmlSignatureUtils.GetCertificateFromKeyInfo((KeyInfoX509Data) clause);
+                        X509Certificate2 cert = XmlSignatureUtils.GetCertificateFromKeyInfo((KeyInfoX509Data)clause);
 
                         string failureReason;
                         if (!IsSatisfiedByAllSpecifications(ep, cert, out failureReason))
@@ -558,7 +600,7 @@ namespace dk.nita.saml20.protocol
                     AsymmetricAlgorithm key = XmlSignatureUtils.ExtractKey(clause);
                     result.Add(key);
                 }
-                
+
             }
 
             validationFailureReasons = failures;
@@ -567,7 +609,7 @@ namespace dk.nita.saml20.protocol
 
         private static bool IsSatisfiedByAllSpecifications(IDPEndPoint ep, X509Certificate2 cert, out string failureReason)
         {
-            foreach(ICertificateSpecification spec in SpecificationFactory.GetCertificateSpecifications(ep))
+            foreach (ICertificateSpecification spec in SpecificationFactory.GetCertificateSpecifications(ep))
             {
                 string r;
                 if (!spec.IsSatisfiedBy(cert, out r))
@@ -582,15 +624,37 @@ namespace dk.nita.saml20.protocol
             return true;
         }
 
+        private bool CheckLevelOfAssurance(string levelOfAssurance, string expectedLevelOfAssurance)
+        {
+            // Assurance level is ok if the string matches the configured minimum assurance level.
+            if (levelOfAssurance != expectedLevelOfAssurance)
+            {
+                // If strings are different it is still ok if the assertion has stronger assurance level than the minimum demanded.
+                if (expectedLevelOfAssurance == "High" && levelOfAssurance != "High")
+                {
+                    return false;
+                }
+
+                // If strings are different it is still ok if the assertion has stronger assurance level than the minimum demanded.
+                if (expectedLevelOfAssurance == "Substantial" && (levelOfAssurance != "High" && levelOfAssurance != "Substantial"))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
 
         private void CheckConditions(HttpContext context, Saml20Assertion assertion)
         {
-            if(assertion.IsOneTimeUse)
+            if (assertion.IsOneTimeUse)
             {
                 if (context.Cache[assertion.Id] != null)
                 {
                     HandleError(context, Resources.OneTimeUseReplay);
-                }else
+                }
+                else
                 {
                     context.Cache.Insert(assertion.Id, string.Empty, null, assertion.NotOnOrAfter, Cache.NoSlidingExpiration);
                 }
@@ -603,29 +667,28 @@ namespace dk.nita.saml20.protocol
 
             // The assertion is what keeps the session alive. If it is ever removed ... the session will appear as removed in the SessionStoreProvider because Saml20AssertionLite is the only thing kept in session store when login flow is completed..
             SessionStore.CurrentSession[SessionConstants.Saml20AssertionLite] = Saml20AssertionLite.ToLite(assertion);
-            
-            if(Trace.ShouldTrace(TraceEventType.Information))
+
+            if (Trace.ShouldTrace(TraceEventType.Information))
             {
                 Trace.TraceData(TraceEventType.Information, string.Format(Tracing.Login, assertion.Subject.Value, assertion.SessionIndex, assertion.Subject.Format));
             }
 
-            string assuranceLevel = GetAssuranceLevel(assertion) ?? "(Unknown)";
-            
-            AuditLogging.logEntry(Direction.IN, Operation.LOGIN, string.Format("Subject: {0} NameIDFormat: {1}  Level of authentication: {2}  Session timeout in minutes: {3}", assertion.Subject.Value, assertion.Subject.Format, assuranceLevel, FederationConfig.GetConfig().SessionTimeout));
+            string assuranceLevel = GetAssuranceLevel(assertion) ?? GetLevelOfAssurance(assertion) ?? "(Unknown)";
 
+            AuditLogging.logEntry(Direction.IN, Operation.LOGIN, string.Format("Subject: {0} NameIDFormat: {1}  Level of assurance: {2}  Session timeout in minutes: {3}", assertion.Subject.Value, assertion.Subject.Format, assuranceLevel, FederationConfig.GetConfig().SessionTimeout));
 
-            foreach(IAction action in Actions.Actions.GetActions())
+            foreach (IAction action in Actions.Actions.GetActions())
             {
                 Trace.TraceMethodCalled(action.GetType(), "LoginAction()");
 
                 action.LoginAction(this, context, assertion);
-                
+
                 Trace.TraceMethodDone(action.GetType(), "LoginAction()");
             }
         }
 
         /// <summary>
-        /// Retrieves the assurance level from the assertion.
+        /// Retrieves the assurance level (OIOSAML 2) from the assertion.
         /// </summary>
         /// <returns>Returns the assurance level or null if it has not been defined.</returns>
         private string GetAssuranceLevel(Saml20Assertion assertion)
@@ -641,24 +704,63 @@ namespace dk.nita.saml20.protocol
             return null;
         }
 
+        /// <summary>
+        /// Retrieves the level of assurance from the assertion.
+        /// </summary>
+        /// <returns>Returns the level of assurance or null if it has not been defined.</returns>
+        private string GetLevelOfAssurance(Saml20Assertion assertion)
+        {
+            foreach (var attribute in assertion.Attributes)
+            {
+                if (attribute.Name == DKSaml20LoaAttribute.NAME
+                    && attribute.AttributeValue != null
+                    && attribute.AttributeValue.Length > 0)
+                    return attribute.AttributeValue[0];
+            }
+
+            return null;
+        }
+
         private void TransferClient(IDPEndPoint idpEndpoint, Saml20AuthnRequest request, HttpContext context)
         {
             AuditLogging.AssertionId = request.ID;
             AuditLogging.IdpId = idpEndpoint.Id;
 
             // Determine which endpoint to use from the configuration file or the endpoint metadata.
-            IDPEndPointElement destination = 
+            IDPEndPointElement destination =
                 DetermineEndpointConfiguration(SAMLBinding.REDIRECT, idpEndpoint.SSOEndpoint, idpEndpoint.metadata.SSOEndpoints());
 
- 
-    
+
+
             request.Destination = destination.Url;
+
 
             bool isPassive;
             string isPassiveAsString = context.Request.Params[IDPIsPassive];
             if (bool.TryParse(isPassiveAsString, out isPassive))
             {
                 request.IsPassive = isPassive;
+            }
+
+            if (!string.IsNullOrEmpty(context.Request.Params[LevelOfAssurance]))
+            {
+                string levelOfAssurance = context.Request.Params[LevelOfAssurance].ToString();
+
+                if (!new[] { "Low", "Substantial", "High" }.Contains(levelOfAssurance))
+                {
+                    HandleError(context, string.Format(Resources.DemandingLevelOfAssuranceError, levelOfAssurance));
+                    return;
+                }
+
+                request.Request.RequestedAuthnContext = new RequestedAuthnContext();
+                request.Request.RequestedAuthnContext.Comparison = AuthnContextComparisonType.minimum;
+                request.Request.RequestedAuthnContext.ItemsElementName = new ItemsChoiceType7[] { ItemsChoiceType7.AuthnContextClassRef };
+                request.Request.RequestedAuthnContext.Items = new string[] { "https://data.gov.dk/concept/core/nsis/loa/" + levelOfAssurance };
+
+                // Persist demanded Level of Assurance in session to be able to verify assertion
+                SessionStore.CurrentSession[SessionConstants.ExpectedLevelOfAssurance] = levelOfAssurance;
+
+                Trace.TraceData(TraceEventType.Information, string.Format(Tracing.DemandingLevelOfAssurance, levelOfAssurance));
             }
 
             if (idpEndpoint.IsPassive)
@@ -689,7 +791,7 @@ namespace dk.nita.saml20.protocol
             if (destination.Binding == SAMLBinding.REDIRECT)
             {
                 Trace.TraceData(TraceEventType.Information, string.Format(Tracing.SendAuthnRequest, Saml20Constants.ProtocolBindings.HTTP_Redirect, idpEndpoint.Id));
-                
+
                 HttpRedirectBindingBuilder builder = new HttpRedirectBindingBuilder();
                 builder.signingKey = _certificate.PrivateKey;
                 builder.Request = request.GetXml().OuterXml;
@@ -721,12 +823,12 @@ namespace dk.nita.saml20.protocol
                 return;
             }
 
-            if(destination.Binding == SAMLBinding.ARTIFACT)
+            if (destination.Binding == SAMLBinding.ARTIFACT)
             {
                 Trace.TraceData(TraceEventType.Information, string.Format(Tracing.SendAuthnRequest, Saml20Constants.ProtocolBindings.HTTP_Artifact, idpEndpoint.Id));
 
                 HttpArtifactBindingBuilder builder = new HttpArtifactBindingBuilder(context);
-                
+
                 //Honor the ForceProtocolBinding and only set this if it's not already set
                 if (string.IsNullOrEmpty(request.ProtocolBinding))
                     request.ProtocolBinding = Saml20Constants.ProtocolBindings.HTTP_Artifact;

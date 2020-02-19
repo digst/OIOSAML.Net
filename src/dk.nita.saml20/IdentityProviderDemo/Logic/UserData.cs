@@ -72,15 +72,18 @@ namespace IdentityProviderDemo.Logic
             get { return (AttributeCollection)base["attributes"]; }
         }
 
+        public List<KeyValuePair<string, string>> DynamicAttributes { get; } = new List<KeyValuePair<string, string>>();
+
         public List<KeyValuePair<string, string>> Attributes
         {
             get 
             {
-                List<KeyValuePair<string, string>> returnValue = new List<KeyValuePair<string, string>>();
+                List<KeyValuePair<string, string>> returnValue = new List<KeyValuePair<string, string>>(DynamicAttributes);
                 foreach (Attribute a in this.ConfiguredAttributes)
                 {
                     returnValue.Add(new KeyValuePair<string, string>(a.Name, a.Value));
                 }
+
                 return returnValue;
             }
         }

@@ -94,7 +94,7 @@ namespace dk.nita.saml20.config
         }
 
         // default to 3. Cooresponds to certificate level in the OIOSAML specification.
-        private string _minimumAssuranceLevel = "3";
+        private string _minimumAssuranceLevel = "Substantial";
 
         /// <summary>
         /// Gets or sets the minimum assurance level configuration
@@ -1013,9 +1013,9 @@ namespace dk.nita.saml20.config
         /// Get a URL that redirects the user to the login-page for this IDPEndPoint
         /// </summary>
         /// <returns></returns>
-        public string GetIDPLoginUrl(bool forceAuthn, bool isPassive)
+        public string GetIDPLoginUrl(bool forceAuthn, bool isPassive, string desiredLoa)
         {
-            return IDPSelectionUtil.GetIDPLoginUrl(Id, forceAuthn, isPassive);
+            return IDPSelectionUtil.GetIDPLoginUrl(Id, forceAuthn, isPassive, desiredLoa);
         }
 
         

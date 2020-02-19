@@ -153,6 +153,15 @@ namespace Saml2.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Saml assertion does not have the required assurance level. Assurance level was: {0} and demanded minimum assurance level was: {1}..
+        /// </summary>
+        internal static string AssuranceLevelTooLowAccordingToDemand {
+            get {
+                return ResourceManager.GetString("AssuranceLevelTooLowAccordingToDemand", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Xml error: {0} attribute is required on {1}: {2} element..
         /// </summary>
         internal static string AttributeMissing {
@@ -338,6 +347,15 @@ namespace Saml2.Properties {
         internal static string DefaultStyle {
             get {
                 return ResourceManager.GetString("DefaultStyle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Received bad level os assurance value: &quot;{0}&quot;. Valid values are &quot;Low&quot;, &quot;Substantial&quot;, &quot;High&quot;..
+        /// </summary>
+        internal static string DemandingLevelOfAssuranceError {
+            get {
+                return ResourceManager.GetString("DemandingLevelOfAssuranceError", resourceCulture);
             }
         }
         

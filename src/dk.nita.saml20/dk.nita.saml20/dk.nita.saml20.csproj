@@ -171,6 +171,7 @@
     <Compile Include="Logging\AuditLogging.cs" />
     <Compile Include="Logging\IAuditLogger.cs" />
     <Compile Include="Logging\TraceAuditLogger.cs" />
+    <Compile Include="Profiles\DKSaml20\Attributes\DKSaml20LoaAttribute.cs" />
     <Compile Include="Protocol\Saml20CDCIdPReturnPoint.cs" />
     <Compile Include="Protocol\Saml20CDCReader.cs" />
     <Compile Include="Saml20ArtifactResolve.cs" />

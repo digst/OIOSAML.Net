@@ -14,25 +14,46 @@ using dk.nita.saml20.Schema.Core;
 using dk.nita.saml20.Bindings;
 using dk.nita.saml20.Bindings.SignatureProviders;
 using dk.nita.saml20.Utils;
+using System.Linq;
+using dk.nita.saml20.Profiles.DKSaml20.Attributes;
 
 namespace IdentityProviderDemo
 {
     public partial class SignonForm : Page
-    {                        
+    {
         private AuthnRequest request;
 
         protected override void OnInit(EventArgs e)
-        {            
+        {
             request = Context.Session["authenticationrequest"] as AuthnRequest;
 
             if (request == null)
             {
                 HandleRequestMissing();
-                return; 
+                return;
+            }
+
+            if (request.RequestedAuthnContext != null)
+            {
+                for (int i = 0; i < request.RequestedAuthnContext.ItemsElementName.Length; i++)
+                {
+                    var elementName = request.RequestedAuthnContext.ItemsElementName[i];
+                    if (elementName == ItemsChoiceType7.AuthnContextClassRef)
+                    {
+                        if (request.RequestedAuthnContext.Items.Length <= i)
+                        {
+                            Context.Response.Write("This desired level of assurance could not be determined.");
+                            Context.Response.End();
+                            return;
+                        }
+
+                        DesiredLoaLabel.Text = "(SP has desired the level: " + request.RequestedAuthnContext.Items[i] + ")";
+                    }
+                }
             }
 
             User user = UserSessionsHandler.CurrentUser;
-            
+
             if (user != null)
             {
                 // don't issue new assertion if ForceAuthn is set
@@ -47,11 +68,11 @@ namespace IdentityProviderDemo
         private void HandleRequestMissing()
         {
             Context.Response.Write("This page cannot be accessed directly.");
-            Context.Response.End();            
+            Context.Response.End();
         }
 
         protected void Page_Load(object sender, EventArgs e)
-        {}
+        { }
 
         protected void AuthenticateUser(object sender, EventArgs e)
         {
@@ -64,6 +85,7 @@ namespace IdentityProviderDemo
             }
 
             User user = UserData.Users[UsernameTextbox.Text];
+
             if (user.Password != PasswordTestbox.Text)
             {
                 ErrorLabel.Text = "Bad password";
@@ -72,10 +94,34 @@ namespace IdentityProviderDemo
             }
             else
             {
+                SetLevelOfAssurance(user);
                 UserSessionsHandler.CurrentUser = user;
                 WriteCommonDomainCookie();
                 CreateAssertionResponse(user);
                 return;
+            }
+        }
+
+        private void SetLevelOfAssurance(User user)
+        {
+            user.DynamicAttributes.RemoveAll(x => x.Key == DKSaml20AssuranceLevelAttribute.NAME);
+            user.DynamicAttributes.RemoveAll(x => x.Key == DKSaml20LoaAttribute.NAME);
+
+            if (LoaLegacy.Checked)
+            {
+                user.DynamicAttributes.Add(new KeyValuePair<string, string>(DKSaml20AssuranceLevelAttribute.NAME, "3"));
+            }
+            else
+            {
+                string level = LoaLow.Text;
+
+                if (LoaHigh.Checked)
+                    level = LoaHigh.Text;
+
+                if (LoaSubstantial.Checked)
+                    level = LoaSubstantial.Text;
+
+                user.DynamicAttributes.Add(new KeyValuePair<string, string>(DKSaml20LoaAttribute.NAME, level));
             }
         }
 
@@ -84,7 +130,7 @@ namespace IdentityProviderDemo
             string entityId = request.Issuer.Value;
             Saml20MetadataDocument metadataDocument = IDPConfig.GetServiceProviderMetadata(entityId);
             IDPEndPointElement endpoint =
-                metadataDocument.AssertionConsumerServiceEndpoints().Find(delegate(IDPEndPointElement e) { return e.Binding == SAMLBinding.POST; });
+                metadataDocument.AssertionConsumerServiceEndpoints().Find(delegate (IDPEndPointElement e) { return e.Binding == SAMLBinding.POST; });
 
             if (endpoint == null)
             {
@@ -108,7 +154,7 @@ namespace IdentityProviderDemo
             builder.Response = Serialization.SerializeToXmlString(response);
 
             builder.GetPage().ProcessRequest(Context);
-            Context.Response.End();            
+            Context.Response.End();
         }
 
         private void CreateAssertionResponse(User user)
@@ -116,7 +162,7 @@ namespace IdentityProviderDemo
             string entityId = request.Issuer.Value;
             Saml20MetadataDocument metadataDocument = IDPConfig.GetServiceProviderMetadata(entityId);
             IDPEndPointElement endpoint =
-                metadataDocument.AssertionConsumerServiceEndpoints().Find(delegate(IDPEndPointElement e) { return e.Binding == SAMLBinding.POST; });
+                metadataDocument.AssertionConsumerServiceEndpoints().Find(delegate (IDPEndPointElement e) { return e.Binding == SAMLBinding.POST; });
 
             if (endpoint == null)
             {
@@ -146,7 +192,7 @@ namespace IdentityProviderDemo
             // Sign the assertion inside the response message.
             var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(ShaHashingAlgorithm.SHA256);
             signatureProvider.SignAssertion(assertionDoc, assertion.ID, IDPConfig.IDPCertificate);
-            
+
             HttpPostBindingBuilder builder = new HttpPostBindingBuilder(endpoint);
             builder.Action = SAMLAction.SAMLResponse;
             builder.Response = assertionDoc.OuterXml;
@@ -167,12 +213,12 @@ namespace IdentityProviderDemo
         private Assertion CreateAssertion(User user, string receiver)
         {
             Assertion assertion = new Assertion();
-                        
+
             { // Subject element                
                 assertion.Subject = new Subject();
                 assertion.ID = "id" + Guid.NewGuid().ToString("N");
                 assertion.IssueInstant = DateTime.Now.AddMinutes(10);
-                
+
                 assertion.Issuer = new NameID();
                 assertion.Issuer.Value = IDPConfig.ServerBaseUrl;
 
@@ -185,7 +231,9 @@ namespace IdentityProviderDemo
                 NameID nameId = new NameID();
                 nameId.Format = Saml20Constants.NameIdentifierFormats.Persistent;
                 nameId.Value = user.ppid;
-                
+
+
+
                 assertion.Subject.Items = new object[] { nameId, subjectConfirmation };
             }
 
@@ -195,7 +243,7 @@ namespace IdentityProviderDemo
 
                 assertion.Conditions.NotOnOrAfter = DateTime.Now.AddHours(1);
 
-                AudienceRestriction audienceRestriction = new AudienceRestriction();                
+                AudienceRestriction audienceRestriction = new AudienceRestriction();
                 audienceRestriction.Audience = new List<string>();
                 audienceRestriction.Audience.Add(receiver);
                 assertion.Conditions.Items.Add(audienceRestriction);
@@ -206,16 +254,16 @@ namespace IdentityProviderDemo
                 AuthnStatement authnStatement = new AuthnStatement();
                 authnStatement.AuthnInstant = DateTime.Now;
                 authnStatement.SessionIndex = Convert.ToString(new Random().Next());
-                
+
                 authnStatement.AuthnContext = new AuthnContext();
 
-                authnStatement.AuthnContext.Items = 
-                    new object[] {"urn:oasis:names:tc:SAML:2.0:ac:classes:X509"};
+                authnStatement.AuthnContext.Items =
+                    new object[] { "urn:oasis:names:tc:SAML:2.0:ac:classes:X509" };
 
                 // Wow! Setting the AuthnContext is .... verbose.
                 authnStatement.AuthnContext.ItemsElementName =
                     new ItemsChoiceType5[] { ItemsChoiceType5.AuthnContextClassRef };
-                                    
+
                 statements.Add(authnStatement);
             }
 
@@ -231,6 +279,8 @@ namespace IdentityProviderDemo
                     attribute.NameFormat = SamlAttribute.NAMEFORMAT_BASIC;
                     attributes.Add(attribute);
                 }
+
+
                 attributeStatement.Items = attributes.ToArray();
 
                 statements.Add(attributeStatement);

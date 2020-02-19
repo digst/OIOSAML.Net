@@ -6,6 +6,7 @@ using dk.nita.saml20.config;
 using dk.nita.saml20.Utils;
 using dk.nita.saml20.session;
 using dk.nita.saml20.Session;
+using dk.nita.saml20.Profiles.DKSaml20.Attributes;
 
 namespace dk.nita.saml20.Logging
 {
@@ -69,7 +70,10 @@ namespace dk.nita.saml20.Logging
             string currentAuthLevel = "Unknown";
             if (Saml20Identity.IsInitialized() && Saml20Identity.Current != null)
             {
-                currentAuthLevel = Saml20Identity.Current["dk:gov:saml:attribute:AssuranceLevel"][0].AttributeValue[0];
+                if (Saml20Identity.Current[DKSaml20LoaAttribute.NAME].Count > 0)
+                    currentAuthLevel = Saml20Identity.Current[DKSaml20LoaAttribute.NAME][0].AttributeValue[0];
+                else
+                    currentAuthLevel = Saml20Identity.Current[DKSaml20AssuranceLevelAttribute.NAME][0].AttributeValue[0];
             }
 
             logEntry(Direction.UNDEFINED, Operation.LOGIN_PERSISTENT_PSEUDONYME, string.Format("Authenticated nameid: {0} as local user id: {1}, auth.level: {2}, session timeout in minutes: {3}", nameid, localuserid, currentAuthLevel, FederationConfig.GetConfig().SessionTimeout));

@@ -31,7 +31,10 @@ namespace dk.nita.saml20.protocol
         /// Parameter name for idp choice
         /// </summary>
         public const string IDPIsPassive = "isPassive";
-        
+        /// <summary>
+        /// Parameter name for level of assurance
+        /// </summary>
+        public const string LevelOfAssurance = "levelOfAssurance";
         /// <summary>
         /// Determines if configuration has been validated
         /// </summary>

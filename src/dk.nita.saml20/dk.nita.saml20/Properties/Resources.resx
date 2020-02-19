@@ -513,4 +513,10 @@ AppID={1}</value>
   <data name="UsernameAndPasswordMissing" xml:space="preserve">
     <value>The SAMLtoken cannot be automatically issued when using username/password authentication</value>
   </data>
+  <data name="DemandingLevelOfAssuranceError" xml:space="preserve">
+    <value>Received bad level os assurance value: "{0}". Valid values are "Low", "Substantial", "High".</value>
+  </data>
+  <data name="AssuranceLevelTooLowAccordingToDemand" xml:space="preserve">
+    <value>Saml assertion does not have the required assurance level. Assurance level was: {0} and demanded minimum assurance level was: {1}.</value>
+  </data>
 </root>

@@ -6,6 +6,7 @@ using dk.nita.saml20.config;
 using dk.nita.saml20.identity;
 using dk.nita.saml20.Logging;
 using dk.nita.saml20.protocol;
+using dk.nita.saml20.Profiles.DKSaml20.Attributes;
 
 namespace WebsiteDemo
 {
