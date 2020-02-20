@@ -742,25 +742,44 @@ namespace dk.nita.saml20.protocol
                 request.IsPassive = isPassive;
             }
 
+            var requestContextItems = new List<(string value, ItemsChoiceType7 type)>();
             if (!string.IsNullOrEmpty(context.Request.Params[LevelOfAssurance]))
             {
-                string levelOfAssurance = context.Request.Params[LevelOfAssurance].ToString();
+                string demandedLevelOfAssurance = context.Request.Params[LevelOfAssurance].ToString();
 
-                if (!new[] { "Low", "Substantial", "High" }.Contains(levelOfAssurance))
+                if (!new[] { "Low", "Substantial", "High" }.Contains(demandedLevelOfAssurance))
                 {
-                    HandleError(context, string.Format(Resources.DemandingLevelOfAssuranceError, levelOfAssurance));
+                    HandleError(context, string.Format(Resources.DemandingLevelOfAssuranceError, demandedLevelOfAssurance));
                     return;
                 }
 
-                request.Request.RequestedAuthnContext = new RequestedAuthnContext();
-                request.Request.RequestedAuthnContext.Comparison = AuthnContextComparisonType.minimum;
-                request.Request.RequestedAuthnContext.ItemsElementName = new ItemsChoiceType7[] { ItemsChoiceType7.AuthnContextClassRef };
-                request.Request.RequestedAuthnContext.Items = new string[] { "https://data.gov.dk/concept/core/nsis/loa/" + levelOfAssurance };
+                requestContextItems.Add(("https://data.gov.dk/concept/core/nsis/loa/" + demandedLevelOfAssurance, ItemsChoiceType7.AuthnContextClassRef));
 
                 // Persist demanded Level of Assurance in session to be able to verify assertion
-                SessionStore.CurrentSession[SessionConstants.ExpectedLevelOfAssurance] = levelOfAssurance;
+                SessionStore.CurrentSession[SessionConstants.ExpectedLevelOfAssurance] = demandedLevelOfAssurance;
 
-                Trace.TraceData(TraceEventType.Information, string.Format(Tracing.DemandingLevelOfAssurance, levelOfAssurance));
+                Trace.TraceData(TraceEventType.Information, string.Format(Tracing.DemandingLevelOfAssurance, demandedLevelOfAssurance));
+            }
+
+            if (!string.IsNullOrEmpty(context.Request.Params[Profile]))
+            {
+                string demandedProfile = context.Request.Params[Profile].ToString();
+
+                if (!new[] { "Professional", "Person" }.Contains(demandedProfile))
+                {
+                    HandleError(context, string.Format(Resources.DemandingProfileError, demandedProfile));
+                    return;
+                }
+                requestContextItems.Add(("https://data.gov.dk/eid/" + demandedProfile, ItemsChoiceType7.AuthnContextClassRef));
+
+                Trace.TraceData(TraceEventType.Information, string.Format(Tracing.DemandingProfile, demandedProfile));
+            }
+            if(requestContextItems.Count > 0)
+            {
+                request.Request.RequestedAuthnContext = new RequestedAuthnContext();
+                request.Request.RequestedAuthnContext.Comparison = AuthnContextComparisonType.minimum;
+                request.Request.RequestedAuthnContext.ItemsElementName = requestContextItems.Select(x => x.type).ToArray();
+                request.Request.RequestedAuthnContext.Items = requestContextItems.Select(x => x.value).ToArray();
             }
 
             if (idpEndpoint.IsPassive)

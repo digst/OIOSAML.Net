@@ -36,6 +36,10 @@ namespace dk.nita.saml20.protocol
         /// </summary>
         public const string LevelOfAssurance = "levelOfAssurance";
         /// <summary>
+        /// Parameter name for profile type (Person/Professional)
+        /// </summary>
+        public const string Profile = "profile";
+        /// <summary>
         /// Determines if configuration has been validated
         /// </summary>
         public static bool validated = false;

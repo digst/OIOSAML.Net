@@ -10,6 +10,9 @@
             <li>
                 <a href="/login.ashx?levelOfAssurance=High&returnUrl=MyPage.aspx">Go to My Page (high assurance level)</a>
             </li>
+              <li>
+                <a href="/login.ashx?profile=Professional&returnUrl=MyPage.aspx">Go to My Page (as a Professional)</a>
+            </li>
         </ul>
     </div>
     <div style="margin-top: 1em;">

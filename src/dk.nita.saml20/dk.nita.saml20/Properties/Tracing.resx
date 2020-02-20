@@ -207,4 +207,7 @@ Exception was: {2}</value>
   <data name="DemandingLevelOfAssurance" xml:space="preserve">
     <value>Demanding level of assurance: "{0}"</value>
   </data>
+  <data name="DemandingProfile" xml:space="preserve">
+    <value>Demanding profile: "{0}"</value>
+  </data>
 </root>

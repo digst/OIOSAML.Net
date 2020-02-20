@@ -162,6 +162,15 @@ namespace dk.nita.saml20.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Demanding profile: &quot;{0}&quot;.
+        /// </summary>
+        internal static string DemandingProfile {
+            get {
+                return ResourceManager.GetString("DemandingProfile", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to done.
         /// </summary>
         internal static string Done {

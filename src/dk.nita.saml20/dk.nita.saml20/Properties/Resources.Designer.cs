@@ -360,6 +360,15 @@ namespace Saml2.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Received bad profile demand value: &quot;{0}&quot;. Valid values are &quot;Professional&quot;, &quot;Person&quot;..
+        /// </summary>
+        internal static string DemandingProfileError {
+            get {
+                return ResourceManager.GetString("DemandingProfileError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to More than one EncryptedKeyToken is present in the security header of the incoming message, but only one was expected..
         /// </summary>
         internal static string DuplicateEncryptedKeyToken {

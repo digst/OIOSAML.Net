@@ -42,15 +42,6 @@ namespace IdentityProviderDemo
         protected global::System.Web.UI.WebControls.TextBox PasswordTestbox;
 
         /// <summary>
-        /// DesiredLoaLabel control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Label DesiredLoaLabel;
-
-        /// <summary>
         /// LoaLegacy control.
         /// </summary>
         /// <remarks>
@@ -85,6 +76,24 @@ namespace IdentityProviderDemo
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.RadioButton LoaHigh;
+
+        /// <summary>
+        /// DemandArea control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl DemandArea;
+
+        /// <summary>
+        /// SPDesiredContext control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Label SPDesiredContext;
 
         /// <summary>
         /// MessageLbl control.

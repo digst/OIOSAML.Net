@@ -42,14 +42,17 @@ namespace IdentityProviderDemo
                     {
                         if (request.RequestedAuthnContext.Items.Length <= i)
                         {
-                            Context.Response.Write("This desired level of assurance could not be determined.");
+                            Context.Response.Write(string.Format("The RequestedAuthnContext {0} could not be determined.", i));
                             Context.Response.End();
                             return;
                         }
 
-                        DesiredLoaLabel.Text = "(SP has desired the level: " + request.RequestedAuthnContext.Items[i] + ")";
+                        SPDesiredContext.Text += request.RequestedAuthnContext.Items[i] + "<br/>";
                     }
                 }
+
+                if (!string.IsNullOrEmpty(SPDesiredContext.Text))
+                    DemandArea.Visible = true;
             }
 
             User user = UserSessionsHandler.CurrentUser;

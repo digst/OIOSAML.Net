@@ -519,4 +519,7 @@ AppID={1}</value>
   <data name="AssuranceLevelTooLowAccordingToDemand" xml:space="preserve">
     <value>Saml assertion does not have the required assurance level. Assurance level was: {0} and demanded minimum assurance level was: {1}.</value>
   </data>
+  <data name="DemandingProfileError" xml:space="preserve">
+    <value>Received bad profile demand value: "{0}". Valid values are "Professional", "Person".</value>
+  </data>
 </root>
