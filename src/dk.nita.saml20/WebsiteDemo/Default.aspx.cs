@@ -17,7 +17,7 @@ namespace WebsiteDemo
         {
             try
             {
-                FederationConfig.GetConfig().SigningCertificate.GetCertificate();
+                FederationConfig.GetConfig().GetCurrentCertificate().GetCertificate();
                 certificateMissing = false; // GetCertificate() throws an exception when the certificate can not be retrieved.
             } catch(ConfigurationErrorsException)
             {

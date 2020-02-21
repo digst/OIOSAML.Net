@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
+using System.Configuration;
+using System.Linq;
 using System.Xml.Serialization;
-using dk.nita.saml20.session;
 using dk.nita.saml20.Session;
 
 namespace dk.nita.saml20.config
@@ -20,16 +22,18 @@ namespace dk.nita.saml20.config
         /// </summary>
         public FederationConfig()
         {
-            SigningCertificate = new Certificate();
+            
         }
 
-        // To create a new XSD Run this command:
-        // xsd -t:Safewhere.Config.Federation   Safewhere.dll
         /// <summary>
+        /// The list of signing certificates - each represented by an X509 certificate reference
+        /// To create a new XSD Run this command:
+        /// xsd -t:Safewhere.Config.Federation   Safewhere.dll
         /// Certificate used to sign exchanged saml tokens
         /// </summary>
-        [XmlElement] 
-        public Certificate SigningCertificate;
+        [XmlArray("SigningCertificates", IsNullable = false)]
+        [XmlArrayItem("SigningCertificate", IsNullable = false)]
+        public List<Certificate> SigningCertificates;
 
         // default to 30 minutes
         private int _sessionTimeout = 30;
@@ -82,7 +86,7 @@ namespace dk.nita.saml20.config
             get { return _preventOpenRedirectAttack; }
             set { _preventOpenRedirectAttack = value; }
         }
-        
+
         /// <summary>
         /// The list of audience uris that are allowed by a receiver
         /// </summary>
@@ -122,7 +126,7 @@ namespace dk.nita.saml20.config
         {
             get
             {
-                if(_actions == null)
+                if (_actions == null)
                 {
                     _actions = new ActionsConfig();
                 }
@@ -130,7 +134,42 @@ namespace dk.nita.saml20.config
             }
             set { _actions = value; }
         }
+
+
+
+        /// <summary>
+        /// Determines the single certificate currently configured as the active certificate.
+        /// </summary>
+        public Certificate GetCurrentCertificate()
+        {
+            if(SigningCertificates.Count == 0)
+            {
+                var msg = $"Found no certificate configured as the current in the certificate configuration. Make sure at least one certificate is configured.";
+                throw new ConfigurationErrorsException(msg);
+            }
+
+            if (SigningCertificates.Count == 1)
+            {
+                return SigningCertificates.Single();
+            }
+
+            var currentCertificates = SigningCertificates.Where(x => x.isCurrent);
+            if (currentCertificates.Count() == 0)
+            {
+                var msg = $"Found no certificate configured as the current in the certificate configuration. Make sure at least one certificate is configured as current.";
+                throw new ConfigurationErrorsException(msg);
+            }
+
+            if (currentCertificates.Count() > 1)
+            {
+                var msg = $"Found more than one certificate configured as the current in the certificate configuration. Make sure you don't have duplicate certificates configured.";
+                throw new ConfigurationErrorsException(msg);
+            }
+
+            return currentCertificates.Single();
+        }
     }
+  
 
     /// <summary>
     /// The Actions configuration element class
@@ -149,7 +188,7 @@ namespace dk.nita.saml20.config
         [XmlElement("clear", typeof(ActionConfigClear))]
         public ActionConfigAbstract[] ActionList
         {
-            get { return _actionList ?? new ActionConfigAbstract[]{}; }
+            get { return _actionList ?? new ActionConfigAbstract[] { }; }
             set { _actionList = value; }
         }
     }
@@ -171,7 +210,7 @@ namespace dk.nita.saml20.config
         {
             get { return _name; }
             set { _name = value; }
-        } 
+        }
     }
 
     /// <summary>
@@ -200,7 +239,7 @@ namespace dk.nita.saml20.config
     [Serializable]
     public class ActionConfigClear : ActionConfigAbstract
     {
-        
+
     }
 
     /// <summary>
@@ -209,7 +248,7 @@ namespace dk.nita.saml20.config
     [Serializable]
     public class ActionConfigRemove : ActionConfigAbstract
     {
-        
+
     }
 
 }

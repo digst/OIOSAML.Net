@@ -234,7 +234,7 @@ namespace dk.nita.saml20.protocol
                 response.StatusCode = Saml20Constants.StatusCodes.Success;
                 response.InResponseTo = req.ID;
                 XmlDocument doc = response.GetXml();
-                var signingCertificate = FederationConfig.GetConfig().SigningCertificate.GetCertificate();
+                var signingCertificate = FederationConfig.GetConfig().GetCurrentCertificate().GetCertificate();
                                 var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(shaHashingAlgorithm);
                 signatureProvider.SignAssertion(doc, response.ID, signingCertificate);
                 if (doc.FirstChild is XmlDeclaration)
@@ -285,7 +285,7 @@ namespace dk.nita.saml20.protocol
                 request.SubjectToLogOut.Value = Saml20PrincipalCache.GetSaml20AssertionLite().Subject.Value;
                 request.SessionIndex = Saml20PrincipalCache.GetSaml20AssertionLite().SessionIndex;
                 XmlDocument requestDocument = request.GetXml();
-                var signingCertificate = FederationConfig.GetConfig().SigningCertificate.GetCertificate();
+                var signingCertificate = FederationConfig.GetConfig().GetCurrentCertificate().GetCertificate();
                 var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(shaHashingAlgorithm);
                 signatureProvider.SignAssertion(requestDocument, request.ID, signingCertificate);
                 builder.Request = requestDocument.OuterXml;
@@ -302,7 +302,7 @@ namespace dk.nita.saml20.protocol
             if (destination.Binding == SAMLBinding.REDIRECT)
             {
                 HttpRedirectBindingBuilder builder = new HttpRedirectBindingBuilder();
-                builder.signingKey = FederationConfig.GetConfig().SigningCertificate.GetCertificate().PrivateKey;
+                builder.signingKey = FederationConfig.GetConfig().GetCurrentCertificate().GetCertificate().PrivateKey;
                 request.Destination = destination.Url;
                 request.Reason = Saml20Constants.Reasons.User;
                 request.SubjectToLogOut.Value = Saml20PrincipalCache.GetSaml20AssertionLite().Subject.Value;
@@ -585,7 +585,7 @@ namespace dk.nita.saml20.protocol
                 HttpRedirectBindingBuilder builder = new HttpRedirectBindingBuilder();
                 builder.RelayState = context.Request.Params["RelayState"];
                 builder.Response = response.GetXml().OuterXml;
-                builder.signingKey = FederationConfig.GetConfig().SigningCertificate.GetCertificate().PrivateKey;
+                builder.signingKey = FederationConfig.GetConfig().GetCurrentCertificate().GetCertificate().PrivateKey;
                 builder.ShaHashingAlgorithm = shaHashingAlgorithm;
                 string s = destination.Url + "?" + builder.ToQuery();
                 context.Response.Redirect(s, true);
@@ -598,7 +598,7 @@ namespace dk.nita.saml20.protocol
                 HttpPostBindingBuilder builder = new HttpPostBindingBuilder(destination);
                 builder.Action = SAMLAction.SAMLResponse;
                 XmlDocument responseDocument = response.GetXml();
-                var signingCertificate = FederationConfig.GetConfig().SigningCertificate.GetCertificate();
+                var signingCertificate = FederationConfig.GetConfig().GetCurrentCertificate().GetCertificate();
                 var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(shaHashingAlgorithm);
                 signatureProvider.SignAssertion(responseDocument, response.ID, signingCertificate);
                 builder.Response = responseDocument.OuterXml;

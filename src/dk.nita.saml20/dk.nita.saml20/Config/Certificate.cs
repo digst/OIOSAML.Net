@@ -9,7 +9,7 @@ namespace dk.nita.saml20.config
     /// Common implementation of X509 certificate references used in configuration files. 
     /// Specializations are free to provide the xml namespace that fit the best (ie the namespace of the containing element)
     /// </summary>
-    public class Certificate
+    public class Certificate 
     {
         /// <summary>
         /// Opens the certificate from its store.
@@ -81,5 +81,11 @@ namespace dk.nita.saml20.config
         /// </summary>
         [XmlAttribute]
         public bool validOnly = false;
+
+        /// <summary>
+        /// Determines if the certificate is the currently active certificate
+        /// </summary>
+        [XmlAttribute]
+        public bool isCurrent = false;
     }
 }

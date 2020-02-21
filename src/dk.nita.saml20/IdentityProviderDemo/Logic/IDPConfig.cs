@@ -16,7 +16,7 @@ namespace IdentityProviderDemo.Logic
     /// Contains the settings for the identity provider.
     /// </summary>
     public class IDPConfig
-    {        
+    {
         static IDPConfig()
         {
             _metadataDocs = new Dictionary<string, Saml20MetadataDocument>();
@@ -36,10 +36,21 @@ namespace IdentityProviderDemo.Logic
         /// </summary>
         public static X509Certificate2 IDPCertificate
         {
-            get 
-            { 
+            get
+            {
                 LoadConfig();
                 return _idpCertificate;
+            }
+        }
+
+        /// <summary>
+        /// The certificate of the identity provider.
+        /// </summary>
+        public static X509Certificate2 ExpiredIDPCertificate
+        {
+            get
+            {
+                return GetExpiredCertificate();
             }
         }
 
@@ -98,7 +109,7 @@ namespace IdentityProviderDemo.Logic
             string filename = GetFilename(entityID);
             string path = Path.Combine(SPMetadataDir, filename);
 
-            if(File.Exists(path))
+            if (File.Exists(path))
                 File.Delete(path);
         }
 
@@ -125,7 +136,8 @@ namespace IdentityProviderDemo.Logic
 
                         _metadataDocs.Add(metadata.EntityId, metadata);
 
-                    }catch
+                    }
+                    catch
                     {
                         //If for some reason there is a file in the directory which does not contain 
                         //valid data we just continue to the next file
@@ -205,24 +217,24 @@ namespace IdentityProviderDemo.Logic
 
         private static string GetFilename(string entityID)
         {
-            byte[] hash; 
-            System.Security.Cryptography.MD5CryptoServiceProvider md5 = new System.Security.Cryptography.MD5CryptoServiceProvider(); 
-            hash = md5.ComputeHash(Encoding.UTF8.GetBytes(entityID)); 
-            
+            byte[] hash;
+            System.Security.Cryptography.MD5CryptoServiceProvider md5 = new System.Security.Cryptography.MD5CryptoServiceProvider();
+            hash = md5.ComputeHash(Encoding.UTF8.GetBytes(entityID));
+
             // convert hash value to hex string 
-            StringBuilder sb = new StringBuilder(); 
-            foreach ( byte b in hash) 
-            { 
+            StringBuilder sb = new StringBuilder();
+            foreach (byte b in hash)
+            {
                 // convert each byte to a Hexadecimalstring 
-                sb.Append(b.ToString("x2")); 
-            } 
+                sb.Append(b.ToString("x2"));
+            }
 
             return sb.ToString();
         }
 
         private static void LoadConfig()
         {
-            if(!_configLoaded)
+            if (!_configLoaded)
             {
                 _configLoaded = true;
                 string path = Path.Combine(ConfigHelper.GetIdpDataDirectory(), _configFileName);
@@ -233,7 +245,7 @@ namespace IdentityProviderDemo.Logic
 
                 BinaryFormatter bf = new BinaryFormatter();
 
-                FileConfig conf = (FileConfig) bf.Deserialize(fs);
+                FileConfig conf = (FileConfig)bf.Deserialize(fs);
 
                 fs.Close();
 
@@ -245,9 +257,9 @@ namespace IdentityProviderDemo.Logic
 
         private static void LoadCertificate(FileConfig conf)
         {
-            if(!string.IsNullOrEmpty(conf.certThumbPrint))
+            if (!string.IsNullOrEmpty(conf.certThumbPrint))
             {
-                _storeLocation = (StoreLocation) Enum.Parse(typeof (StoreLocation), conf.certLocation);
+                _storeLocation = (StoreLocation)Enum.Parse(typeof(StoreLocation), conf.certLocation);
                 _storeName = (StoreName)Enum.Parse(typeof(StoreName), conf.certStore);
 
                 X509Store store = new X509Store(_storeName, _storeLocation);
@@ -255,11 +267,30 @@ namespace IdentityProviderDemo.Logic
                 store.Open(OpenFlags.ReadOnly);
 
                 X509Certificate2Collection coll = store.Certificates.Find(X509FindType.FindByThumbprint, conf.certThumbPrint, true);
-                if(coll.Count == 1)
+                if (coll.Count == 1)
                 {
                     _idpCertificate = coll[0];
                 }
             }
+        }
+
+        private static X509Certificate2 GetExpiredCertificate()
+        {
+            _storeLocation = StoreLocation.LocalMachine;
+            _storeName = StoreName.My;
+
+            X509Store store = new X509Store(_storeName, _storeLocation);
+
+            store.Open(OpenFlags.ReadOnly);
+
+            X509Certificate2Collection coll = store.Certificates.Find(X509FindType.FindByThumbprint, "F4FDA1407AC21D9619E2E58B91D8EFE003C35CFD", true);
+            if (coll.Count == 1)
+            {
+                return coll[0];
+            }
+
+            throw new Exception("Demoidp expired signing certificate not found in the certificate store.");
+
         }
 
         private static void SaveConfig()
@@ -268,7 +299,7 @@ namespace IdentityProviderDemo.Logic
 
             FileConfig conf = new FileConfig();
             conf.BaseUrl = ServerBaseUrl;
-            if(IDPCertificate != null)
+            if (IDPCertificate != null)
             {
                 conf.certThumbPrint = IDPCertificate.Thumbprint;
                 conf.certLocation = _storeLocation.ToString();
@@ -288,14 +319,14 @@ namespace IdentityProviderDemo.Logic
             _idpCertificate = certificate;
             _storeName = name;
             _storeLocation = location;
-            
+
             SaveConfig();
         }
 
         public static void ClearCertificate()
         {
             _idpCertificate = null;
-            
+
             SaveConfig();
         }
     }

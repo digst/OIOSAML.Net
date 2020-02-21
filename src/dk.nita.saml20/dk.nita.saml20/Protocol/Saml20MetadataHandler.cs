@@ -75,13 +75,15 @@ namespace dk.nita.saml20.protocol
             SAML20FederationConfig configuration = SAML20FederationConfig.GetConfig();
 
             KeyInfo keyinfo = new KeyInfo();
-            KeyInfoX509Data keyClause = new KeyInfoX509Data(FederationConfig.GetConfig().SigningCertificate.GetCertificate(), X509IncludeOption.EndCertOnly);
-            keyinfo.AddClause(keyClause);
+            foreach(Certificate certificate in FederationConfig.GetConfig().SigningCertificates)
+            {
+                KeyInfoX509Data keyClause = new KeyInfoX509Data(certificate.GetCertificate(), X509IncludeOption.EndCertOnly);
+                keyinfo.AddClause(keyClause);
+            }
 
             Saml20MetadataDocument doc = new Saml20MetadataDocument(configuration, keyinfo, sign);
 
             context.Response.Write(doc.ToXml( context.Response.ContentEncoding ));
         }
-
     }
 }

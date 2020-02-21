@@ -25,11 +25,23 @@ $demoidpcertificate = Import-PfxCertificate '..\certificates\demoidp.pfx' -Passw
 write-host "Installed demoidp's signing certificate $($demoidpcertificate.Thumbprint) in LocalMachine\My and LocalMachine\TrustedPeople. This ensures the certificate is trusted on your machine and browser"
 write-host "This certificate must be configured as the signing certificate for the demoidp"
 
+write-host "Installing demoidp's expired signing certificate"
+$demoidpexpiredcertificate = Import-PfxCertificate '..\certificates\demoidp-expired.pfx' -Password $certpassword -CertStoreLocation Cert:\LocalMachine\My
+$demoidpexpiredcertificate = Import-PfxCertificate '..\certificates\demoidp-expired.pfx' -Password $certpassword -CertStoreLocation Cert:\LocalMachine\TrustedPeople
+write-host "Installed demoidp's expired signing certificate $($demoidpexpiredcertificate.Thumbprint) in LocalMachine\My and LocalMachine\TrustedPeople. This ensures the certificate is trusted on your machine and browser"
+write-host "This certificate is automatically configured as one of the signing certificates for the demoidp"
+
 write-host "Installing serviceprovider's signing certificate"
 $serviceprovidercertificate = Import-PfxCertificate '..\certificates\serviceprovider.pfx' -Password $certpassword -CertStoreLocation Cert:\LocalMachine\My
 $serviceprovidercertificate = Import-PfxCertificate '..\certificates\serviceprovider.pfx' -Password $certpassword -CertStoreLocation Cert:\LocalMachine\TrustedPeople
 write-host "Installed serviceprovider's signing certificate $($serviceprovidercertificate.Thumbprint) in LocalMachine\My and LocalMachine\TrustedPeople. This ensures the certificate is trusted on your machine and browser"
-write-host "This certificate is used by the demo website (service provider) as its signing certificate"
+write-host "This certificate is used by the demo website (service provider) as its current signing certificate"
+
+write-host "Installing serviceprovider's expired signing certificate"
+$serviceproviderexpiredcertificate = Import-PfxCertificate '..\certificates\serviceprovider-expired.pfx' -Password $certpassword -CertStoreLocation Cert:\LocalMachine\My
+$serviceproviderexpiredcertificate = Import-PfxCertificate '..\certificates\serviceprovider-expired.pfx' -Password $certpassword -CertStoreLocation Cert:\LocalMachine\TrustedPeople
+write-host "Installed serviceprovider's expired signing certificate $($serviceproviderexpiredcertificate.Thumbprint) in LocalMachine\My and LocalMachine\TrustedPeople. This ensures the certificate is trusted on your machine and browser"
+write-host "This certificate is used by the demo website (service provider) as one of its signing certificates"
 
 #If you need to redo sslcert binding, the following statements will delete previously creates ones
 #"http delete sslcert ipport=0.0.0.0:20001" | netsh
@@ -47,6 +59,8 @@ write-host "Setting private key access for your identity $username on the demo i
 Set-CertificatePermission $demoidpcertificate.Thumbprint $username
 write-host "Setting private key access for your identity $username on the service provider signing certificate $($serviceprovidercertificate.Thumbprint) in the certificate store"
 Set-CertificatePermission $serviceprovidercertificate.Thumbprint $username
+write-host "Setting private key access for your identity $username on the service provider signing expired certificate $($serviceproviderexpiredcertificate.Thumbprint) in the certificate store"
+Set-CertificatePermission $serviceproviderexpiredcertificate.Thumbprint $username
 
 add-HostEntry "127.0.0.1" "oiosaml-demoidp.dk"
 add-HostEntry "127.0.0.1" "oiosaml-net.dk"
