@@ -40,6 +40,30 @@ namespace dk.nita.saml20.config
             }
         }
 
+        /// <summary>
+        /// Opens the certificate from its store.
+        /// </summary>
+        /// <returns></returns>
+        public X509Certificate2 GetFirstValidCertificate()
+        {
+            var store = new X509Store(storeName, storeLocation);
+            try
+            {
+                store.Open(OpenFlags.ReadOnly);
+                var found = store.Certificates.Find(x509FindType, findValue, true);
+                if (found.Count == 0)
+                {
+                    return null;
+                }
+
+                return found[0];
+            }
+            finally
+            {
+                store.Close();
+            }
+        }
+
         private string SearchDescriptor()
         {
             var msg = $"The certificate was searched for in {storeLocation}/{storeName}, {x509FindType}='{findValue}', validOnly={validOnly}.";
@@ -81,11 +105,5 @@ namespace dk.nita.saml20.config
         /// </summary>
         [XmlAttribute]
         public bool validOnly = false;
-
-        /// <summary>
-        /// Determines if the certificate is the currently active certificate
-        /// </summary>
-        [XmlAttribute]
-        public bool isCurrent = false;
     }
 }

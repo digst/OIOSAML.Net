@@ -59,6 +59,8 @@ write-host "Setting private key access for your identity $username on the demo i
 Set-CertificatePermission $demoidpcertificate.Thumbprint $username
 write-host "Setting private key access for your identity $username on the service provider signing certificate $($serviceprovidercertificate.Thumbprint) in the certificate store"
 Set-CertificatePermission $serviceprovidercertificate.Thumbprint $username
+write-host "Setting private key access for your identity $username on the demo idp signing expired certificate $($demoidpexpiredcertificate.Thumbprint) in the certificate store"
+Set-CertificatePermission $demoidpexpiredcertificate.Thumbprint $username
 write-host "Setting private key access for your identity $username on the service provider signing expired certificate $($serviceproviderexpiredcertificate.Thumbprint) in the certificate store"
 Set-CertificatePermission $serviceproviderexpiredcertificate.Thumbprint $username
 

@@ -539,7 +539,7 @@ namespace dk.nita.saml20
                 var validatedMetaDataShaHashingAlgorithm = SignatureProviderFactory.ValidateShaHashingAlgorithm(metaDataShaHashingAlgorithm);
                 var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(validatedMetaDataShaHashingAlgorithm);
 
-                var cert = FederationConfig.GetConfig().GetCurrentCertificate().GetCertificate();
+                var cert = FederationConfig.GetConfig().GetCurrentCertificate();
                 signatureProvider.SignMetaData(doc, doc.DocumentElement.GetAttribute("ID"), cert);
             }
 

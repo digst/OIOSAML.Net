@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Xml.Serialization;
 using dk.nita.saml20.Session;
 
@@ -22,7 +23,7 @@ namespace dk.nita.saml20.config
         /// </summary>
         public FederationConfig()
         {
-            
+
         }
 
         /// <summary>
@@ -138,38 +139,24 @@ namespace dk.nita.saml20.config
 
 
         /// <summary>
-        /// Determines the single certificate currently configured as the active certificate.
+        /// Determines one valid certificate from the configuration.
         /// </summary>
-        public Certificate GetCurrentCertificate()
+        public X509Certificate2 GetCurrentCertificate()
         {
-            if(SigningCertificates.Count == 0)
+            foreach (var certificate in SigningCertificates)
             {
-                var msg = $"Found no certificate configured as the current in the certificate configuration. Make sure at least one certificate is configured.";
-                throw new ConfigurationErrorsException(msg);
+                var x509Certificate = certificate.GetFirstValidCertificate();
+                if (x509Certificate == null)
+                    continue;
+
+                return x509Certificate;
             }
 
-            if (SigningCertificates.Count == 1)
-            {
-                return SigningCertificates.Single();
-            }
-
-            var currentCertificates = SigningCertificates.Where(x => x.isCurrent);
-            if (currentCertificates.Count() == 0)
-            {
-                var msg = $"Found no certificate configured as the current in the certificate configuration. Make sure at least one certificate is configured as current.";
-                throw new ConfigurationErrorsException(msg);
-            }
-
-            if (currentCertificates.Count() > 1)
-            {
-                var msg = $"Found more than one certificate configured as the current in the certificate configuration. Make sure you don't have duplicate certificates configured.";
-                throw new ConfigurationErrorsException(msg);
-            }
-
-            return currentCertificates.Single();
+            var msg = $"Found no valid certificate configured in the certificate configuration. Make sure at least one valid certificate is configured.";
+            throw new ConfigurationErrorsException(msg);
         }
     }
-  
+
 
     /// <summary>
     /// The Actions configuration element class

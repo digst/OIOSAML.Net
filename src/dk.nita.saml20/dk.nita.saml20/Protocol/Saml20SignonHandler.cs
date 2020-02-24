@@ -43,7 +43,7 @@ namespace dk.nita.saml20.protocol
         /// </summary>
         public Saml20SignonHandler()
         {
-            _certificate = FederationConfig.GetConfig().GetCurrentCertificate().GetCertificate();
+            _certificate = FederationConfig.GetConfig().GetCurrentCertificate();
 
             // Read the proper redirect url from config
             try
@@ -391,7 +391,7 @@ namespace dk.nita.saml20.protocol
 
         private static Saml20EncryptedAssertion GetDecryptedAssertion(XmlElement elem)
         {
-            Saml20EncryptedAssertion decryptedAssertion = new Saml20EncryptedAssertion((RSA)FederationConfig.GetConfig().GetCurrentCertificate().GetCertificate().PrivateKey);
+            Saml20EncryptedAssertion decryptedAssertion = new Saml20EncryptedAssertion((RSA)FederationConfig.GetConfig().GetCurrentCertificate().PrivateKey);
             decryptedAssertion.LoadXml(elem);
             decryptedAssertion.Decrypt();
             return decryptedAssertion;
@@ -832,7 +832,7 @@ namespace dk.nita.saml20.protocol
                 if (string.IsNullOrEmpty(request.ProtocolBinding))
                     request.ProtocolBinding = Saml20Constants.ProtocolBindings.HTTP_Post;
                 XmlDocument req = request.GetXml();
-                var signingCertificate = FederationConfig.GetConfig().GetCurrentCertificate().GetCertificate();
+                var signingCertificate = FederationConfig.GetConfig().GetCurrentCertificate();
                 var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(shaHashingAlgorithm);
                 signatureProvider.SignAssertion(req, request.ID, signingCertificate);
                 builder.Request = req.OuterXml;

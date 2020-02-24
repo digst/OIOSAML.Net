@@ -44,7 +44,7 @@ namespace IdentityProviderDemo.Logic
         }
 
         /// <summary>
-        /// The certificate of the identity provider.
+        /// An example of an expired certificate of the identity provider.
         /// </summary>
         public static X509Certificate2 ExpiredIDPCertificate
         {
@@ -283,7 +283,7 @@ namespace IdentityProviderDemo.Logic
 
             store.Open(OpenFlags.ReadOnly);
 
-            X509Certificate2Collection coll = store.Certificates.Find(X509FindType.FindByThumbprint, "F4FDA1407AC21D9619E2E58B91D8EFE003C35CFD", true);
+            X509Certificate2Collection coll = store.Certificates.Find(X509FindType.FindByThumbprint, "F4FDA1407AC21D9619E2E58B91D8EFE003C35CFD", false);
             if (coll.Count == 1)
             {
                 return coll[0];
