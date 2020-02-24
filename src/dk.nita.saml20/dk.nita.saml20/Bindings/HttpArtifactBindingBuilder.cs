@@ -36,7 +36,7 @@ namespace dk.nita.saml20.Bindings
             Int16 index = (Int16)config.ServiceProvider.SignOnEndpoint.endPointIndex;
             XmlDocument doc = request.GetXml();
 
-            var signingCertificate = FederationConfig.GetConfig().GetCurrentCertificate();
+            var signingCertificate = FederationConfig.GetConfig().GetFirstValidCertificate();
             var shaHashingAlgorithm = SignatureProviderFactory.ValidateShaHashingAlgorithm(idpEndPoint.ShaHashingAlgorithm);
             var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(shaHashingAlgorithm);
             signatureProvider.SignAssertion(doc, request.Request.ID, signingCertificate);
@@ -54,7 +54,7 @@ namespace dk.nita.saml20.Bindings
             SAML20FederationConfig config = SAML20FederationConfig.GetConfig();
             Int16 index = (Int16)config.ServiceProvider.LogoutEndpoint.endPointIndex;
             XmlDocument doc = request.GetXml();
-            var signingCertificate = FederationConfig.GetConfig().GetCurrentCertificate();
+            var signingCertificate = FederationConfig.GetConfig().GetFirstValidCertificate();
             var shaHashingAlgorithm = SignatureProviderFactory.ValidateShaHashingAlgorithm(idpEndPoint.ShaHashingAlgorithm);
             var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(shaHashingAlgorithm);
             signatureProvider.SignAssertion(doc, request.Request.ID, signingCertificate);
@@ -73,7 +73,7 @@ namespace dk.nita.saml20.Bindings
             SAML20FederationConfig config = SAML20FederationConfig.GetConfig();
             Int16 index = (Int16)config.ServiceProvider.LogoutEndpoint.endPointIndex;
             XmlDocument doc = request.GetXml();
-            var signingCertificate = FederationConfig.GetConfig().GetCurrentCertificate();
+            var signingCertificate = FederationConfig.GetConfig().GetFirstValidCertificate();
             var shaHashingAlgorithm = SignatureProviderFactory.ValidateShaHashingAlgorithm(idpEndPoint.ShaHashingAlgorithm);
             var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(shaHashingAlgorithm);
             signatureProvider.SignAssertion(doc, request.Request.ID, signingCertificate);
@@ -91,7 +91,7 @@ namespace dk.nita.saml20.Bindings
             SAML20FederationConfig config = SAML20FederationConfig.GetConfig();
             Int16 index = (Int16)config.ServiceProvider.LogoutEndpoint.endPointIndex;
             XmlDocument doc = response.GetXml();
-            var signingCertificate = FederationConfig.GetConfig().GetCurrentCertificate();
+            var signingCertificate = FederationConfig.GetConfig().GetFirstValidCertificate();
             var shaHashingAlgorithm = SignatureProviderFactory.ValidateShaHashingAlgorithm(idpEndPoint.ShaHashingAlgorithm);
             var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(shaHashingAlgorithm);
             signatureProvider.SignAssertion(doc, response.Response.ID, signingCertificate);
@@ -162,7 +162,7 @@ namespace dk.nita.saml20.Bindings
             if (responseDoc.FirstChild is XmlDeclaration)
                 responseDoc.RemoveChild(responseDoc.FirstChild);
 
-            var signingCertificate = FederationConfig.GetConfig().GetCurrentCertificate();
+            var signingCertificate = FederationConfig.GetConfig().GetFirstValidCertificate();
             var shaHashingAlgorithm = SignatureProviderFactory.ValidateShaHashingAlgorithm(idpEndPoint.ShaHashingAlgorithm);
             var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(shaHashingAlgorithm);
             signatureProvider.SignAssertion(responseDoc, response.ID, signingCertificate);
@@ -202,7 +202,7 @@ namespace dk.nita.saml20.Bindings
             if (doc.FirstChild is XmlDeclaration)
                 doc.RemoveChild(doc.FirstChild);
 
-            var signingCertificate = FederationConfig.GetConfig().GetCurrentCertificate();
+            var signingCertificate = FederationConfig.GetConfig().GetFirstValidCertificate();
             var shaHashingAlgorithm = SignatureProviderFactory.ValidateShaHashingAlgorithm(idpEndPoint.ShaHashingAlgorithm);
             var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(shaHashingAlgorithm);
             signatureProvider.SignAssertion(doc, resolve.ID, signingCertificate);

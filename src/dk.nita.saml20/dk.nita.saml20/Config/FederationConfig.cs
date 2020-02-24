@@ -136,16 +136,15 @@ namespace dk.nita.saml20.config
             set { _actions = value; }
         }
 
-
-
         /// <summary>
-        /// Determines one valid certificate from the configuration.
+        /// Determines the first valid certificate from the configuration
         /// </summary>
-        public X509Certificate2 GetCurrentCertificate()
+        /// <returns></returns>
+        public X509Certificate2 GetFirstValidCertificate()
         {
             foreach (var certificate in SigningCertificates)
             {
-                var x509Certificate = certificate.GetFirstValidCertificate();
+                var x509Certificate = certificate.GetFirstValidX509Certificate();
                 if (x509Certificate == null)
                     continue;
 

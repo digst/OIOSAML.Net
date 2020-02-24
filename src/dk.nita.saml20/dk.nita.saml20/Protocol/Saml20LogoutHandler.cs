@@ -60,7 +60,7 @@ namespace dk.nita.saml20.protocol
             {
                 //Some IdP's are known to fail to set an actual value in the SOAPAction header
                 //so we just check for the existence of the header field.
-                if (Array.Exists(context.Request.Headers.AllKeys, delegate(string s) { return s == SOAPConstants.SOAPAction; }))
+                if (Array.Exists(context.Request.Headers.AllKeys, delegate (string s) { return s == SOAPConstants.SOAPAction; }))
                 {
                     HandleSOAP(context, context.Request.InputStream);
                     return;
@@ -116,7 +116,7 @@ namespace dk.nita.saml20.protocol
         private void HandleArtifact(HttpContext context)
         {
             HttpArtifactBindingBuilder builder = new HttpArtifactBindingBuilder(context);
-            
+
             Stream inputStream = builder.ResolveArtifact();
 
             HandleSOAP(context, inputStream);
@@ -128,7 +128,7 @@ namespace dk.nita.saml20.protocol
 
             HttpArtifactBindingParser parser = new HttpArtifactBindingParser(inputStream);
             HttpArtifactBindingBuilder builder = new HttpArtifactBindingBuilder(context);
-            
+
             SAML20FederationConfig config = SAML20FederationConfig.GetConfig();
 
             IDPEndPoint idp = RetrieveIDPConfiguration(parser.Issuer);
@@ -234,8 +234,8 @@ namespace dk.nita.saml20.protocol
                 response.StatusCode = Saml20Constants.StatusCodes.Success;
                 response.InResponseTo = req.ID;
                 XmlDocument doc = response.GetXml();
-                var signingCertificate = FederationConfig.GetConfig().GetCurrentCertificate();
-                                var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(shaHashingAlgorithm);
+                var signingCertificate = FederationConfig.GetConfig().GetFirstValidCertificate();
+                var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(shaHashingAlgorithm);
                 signatureProvider.SignAssertion(doc, response.ID, signingCertificate);
                 if (doc.FirstChild is XmlDeclaration)
                     doc.RemoveChild(doc.FirstChild);
@@ -285,7 +285,7 @@ namespace dk.nita.saml20.protocol
                 request.SubjectToLogOut.Value = Saml20PrincipalCache.GetSaml20AssertionLite().Subject.Value;
                 request.SessionIndex = Saml20PrincipalCache.GetSaml20AssertionLite().SessionIndex;
                 XmlDocument requestDocument = request.GetXml();
-                var signingCertificate = FederationConfig.GetConfig().GetCurrentCertificate();
+                var signingCertificate = FederationConfig.GetConfig().GetFirstValidCertificate();
                 var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(shaHashingAlgorithm);
                 signatureProvider.SignAssertion(requestDocument, request.ID, signingCertificate);
                 builder.Request = requestDocument.OuterXml;
@@ -302,7 +302,7 @@ namespace dk.nita.saml20.protocol
             if (destination.Binding == SAMLBinding.REDIRECT)
             {
                 HttpRedirectBindingBuilder builder = new HttpRedirectBindingBuilder();
-                builder.signingKey = FederationConfig.GetConfig().GetCurrentCertificate().PrivateKey;
+                builder.signingKey = FederationConfig.GetConfig().GetFirstValidCertificate().PrivateKey;
                 request.Destination = destination.Url;
                 request.Reason = Saml20Constants.Reasons.User;
                 request.SubjectToLogOut.Value = Saml20PrincipalCache.GetSaml20AssertionLite().Subject.Value;
@@ -546,7 +546,7 @@ namespace dk.nita.saml20.protocol
 
             // Check that idp in session and request matches.
             string idpRequest = logoutRequest.Issuer.Value;
-            
+
             // SessionFactory.SessionContext.Current.New is never the first call to Current due to the logic in Application_AuthenticateRequest() ... Saml20Identity.IsInitialized()
             // Hence we need to check on Saml20Identity.IsInitialized() instead of using SessionFactory.SessionContext.Current.New.
             bool isOioSamlSessionActive = Saml20Identity.IsInitialized();
@@ -585,7 +585,7 @@ namespace dk.nita.saml20.protocol
                 HttpRedirectBindingBuilder builder = new HttpRedirectBindingBuilder();
                 builder.RelayState = context.Request.Params["RelayState"];
                 builder.Response = response.GetXml().OuterXml;
-                builder.signingKey = FederationConfig.GetConfig().GetCurrentCertificate().PrivateKey;
+                builder.signingKey = FederationConfig.GetConfig().GetFirstValidCertificate().PrivateKey;
                 builder.ShaHashingAlgorithm = shaHashingAlgorithm;
                 string s = destination.Url + "?" + builder.ToQuery();
                 context.Response.Redirect(s, true);
@@ -598,7 +598,7 @@ namespace dk.nita.saml20.protocol
                 HttpPostBindingBuilder builder = new HttpPostBindingBuilder(destination);
                 builder.Action = SAMLAction.SAMLResponse;
                 XmlDocument responseDocument = response.GetXml();
-                var signingCertificate = FederationConfig.GetConfig().GetCurrentCertificate();
+                var signingCertificate = FederationConfig.GetConfig().GetFirstValidCertificate();
                 var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(shaHashingAlgorithm);
                 signatureProvider.SignAssertion(responseDocument, response.ID, signingCertificate);
                 builder.Response = responseDocument.OuterXml;

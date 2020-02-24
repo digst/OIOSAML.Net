@@ -17,7 +17,6 @@ using dk.nita.saml20.Profiles.DKSaml20.Attributes;
 using dk.nita.saml20.Session;
 using dk.nita.saml20.session;
 using dk.nita.saml20.config;
-using dk.nita.saml20.Identity;
 using dk.nita.saml20.Logging;
 using dk.nita.saml20.Properties;
 using dk.nita.saml20.protocol.pages;
@@ -28,6 +27,7 @@ using dk.nita.saml20.Specification;
 using dk.nita.saml20.Utils;
 using Saml2.Properties;
 using Trace = dk.nita.saml20.Utils.Trace;
+using System.Configuration;
 
 namespace dk.nita.saml20.protocol
 {
@@ -43,7 +43,7 @@ namespace dk.nita.saml20.protocol
         /// </summary>
         public Saml20SignonHandler()
         {
-            _certificate = FederationConfig.GetConfig().GetCurrentCertificate();
+            _certificate = FederationConfig.GetConfig().GetFirstValidCertificate();
 
             // Read the proper redirect url from config
             try
@@ -389,12 +389,65 @@ namespace dk.nita.saml20.protocol
             HandleAssertion(context, decryptedAssertion.Assertion.DocumentElement);
         }
 
+        /// <summary>
+        /// Decrypts an encrypted assertion if any of the configured certificates contains the correct
+        /// private key to use for decrypting. If no configured certificates can be used to decrypt the
+        /// encrypted assertion, the first exception will be rethrown.
+        /// </summary>
+        /// <param name="elem"></param>
+        /// <returns></returns>
         private static Saml20EncryptedAssertion GetDecryptedAssertion(XmlElement elem)
         {
-            Saml20EncryptedAssertion decryptedAssertion = new Saml20EncryptedAssertion((RSA)FederationConfig.GetConfig().GetCurrentCertificate().PrivateKey);
-            decryptedAssertion.LoadXml(elem);
-            decryptedAssertion.Decrypt();
-            return decryptedAssertion;
+            var tryDecryptAssertion = new Func<X509Certificate2, Saml20EncryptedAssertion>((certificate) =>
+            {
+                Saml20EncryptedAssertion decryptedAssertion = new Saml20EncryptedAssertion((RSA)certificate.PrivateKey);
+                decryptedAssertion.LoadXml(elem);
+                decryptedAssertion.Decrypt();
+                return decryptedAssertion;
+            });
+       
+            var allValidX509Certificates = new List<X509Certificate2>();
+            foreach (var certificate in FederationConfig.GetConfig().SigningCertificates)
+            {
+                var x509Certificates = certificate.GetAllValidX509Certificates();
+                if (x509Certificates == null)
+                    continue;
+
+                foreach(var x in x509Certificates)
+                {
+                    allValidX509Certificates.Add(x);
+                }
+            }
+
+            foreach (var certificate in allValidX509Certificates)
+            {
+                try
+                {
+                    return tryDecryptAssertion(certificate);
+                }
+                catch (Exception)
+                {
+                    foreach (var certificate2 in allValidX509Certificates)
+                    {
+                        if (certificate != certificate2)
+                        {
+                            try
+                            {
+                                return tryDecryptAssertion(certificate2);
+                            }
+                            catch (Exception)
+                            {
+                                continue;
+                            }
+                        }
+                    }
+
+                    throw;
+                }
+            }
+
+            var msg = $"Found no valid certificate configured in the certificate configuration. Make sure at least one valid certificate is configured.";
+            throw new ConfigurationErrorsException(msg);
         }
 
         /// <summary>
@@ -774,7 +827,7 @@ namespace dk.nita.saml20.protocol
 
                 Trace.TraceData(TraceEventType.Information, string.Format(Tracing.DemandingProfile, demandedProfile));
             }
-            if(requestContextItems.Count > 0)
+            if (requestContextItems.Count > 0)
             {
                 request.Request.RequestedAuthnContext = new RequestedAuthnContext();
                 request.Request.RequestedAuthnContext.Comparison = AuthnContextComparisonType.minimum;
@@ -832,7 +885,7 @@ namespace dk.nita.saml20.protocol
                 if (string.IsNullOrEmpty(request.ProtocolBinding))
                     request.ProtocolBinding = Saml20Constants.ProtocolBindings.HTTP_Post;
                 XmlDocument req = request.GetXml();
-                var signingCertificate = FederationConfig.GetConfig().GetCurrentCertificate();
+                var signingCertificate = FederationConfig.GetConfig().GetFirstValidCertificate();
                 var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(shaHashingAlgorithm);
                 signatureProvider.SignAssertion(req, request.ID, signingCertificate);
                 builder.Request = req.OuterXml;

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Configuration;
 using System.Security.Cryptography.X509Certificates;
 using System.Xml.Serialization;
@@ -44,7 +45,7 @@ namespace dk.nita.saml20.config
         /// Opens the certificate from its store.
         /// </summary>
         /// <returns></returns>
-        public X509Certificate2 GetFirstValidCertificate()
+        public X509Certificate2 GetFirstValidX509Certificate()
         {
             var store = new X509Store(storeName, storeLocation);
             try
@@ -57,6 +58,30 @@ namespace dk.nita.saml20.config
                 }
 
                 return found[0];
+            }
+            finally
+            {
+                store.Close();
+            }
+        }
+
+        /// <summary>
+        /// Opens the certificate from its store.
+        /// </summary>
+        /// <returns></returns>
+        public X509Certificate2Collection GetAllValidX509Certificates()
+        {
+            var store = new X509Store(storeName, storeLocation);
+            try
+            {
+                store.Open(OpenFlags.ReadOnly);
+                var found = store.Certificates.Find(x509FindType, findValue, true);
+                if (found.Count == 0)
+                {
+                    return null;
+                }
+
+                return found;
             }
             finally
             {
