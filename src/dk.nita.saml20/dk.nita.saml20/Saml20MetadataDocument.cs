@@ -56,19 +56,19 @@ namespace dk.nita.saml20
         /// Initializes a new instance of the <see cref="Saml20MetadataDocument"/> class.
         /// </summary>
         /// <param name="config">The config.</param>
-        /// <param name="keyinfo">key information for the service provider certificate.</param>
+        /// <param name="keyinfos">key information for the service provider certificates.</param>
         /// <param name="sign">if set to <c>true</c> the metadata document will be signed.</param>
-        public Saml20MetadataDocument(SAML20FederationConfig config, KeyInfo keyinfo, bool sign)
+        public Saml20MetadataDocument(SAML20FederationConfig config, IEnumerable<KeyInfo> keyinfos, bool sign)
             : this(sign)
         {
-            ConvertToMetadata(config, keyinfo);
+            ConvertToMetadata(config, keyinfos);
         }
         #endregion
 
         /// <summary>
         /// Takes the Safewhere configuration class and converts it to a SAML2.0 metadata document.
         /// </summary>        
-        private void ConvertToMetadata(SAML20FederationConfig config, KeyInfo keyinfo)
+        private void ConvertToMetadata(SAML20FederationConfig config, IEnumerable<KeyInfo> keyinfos)
         {
             EntityDescriptor entity = CreateDefaultEntity();
             entity.entityID = config.ServiceProvider.ID;
@@ -202,20 +202,26 @@ namespace dk.nita.saml20
 
             entity.Items = new object[] { spDescriptor };
 
-            // Keyinfo
-            KeyDescriptor keySigning = new KeyDescriptor();
-            KeyDescriptor keyEncryption = new KeyDescriptor();
-            spDescriptor.KeyDescriptor = new KeyDescriptor[] { keySigning, keyEncryption };
+            // Keyinfos
+            var KeyDescriptors = new List<KeyDescriptor>();
+            foreach (var keyinfo in keyinfos)
+            {
+                KeyDescriptor keySigning = new KeyDescriptor();
+                KeyDescriptor keyEncryption = new KeyDescriptor();
+                KeyDescriptors.Add(keySigning);
+                KeyDescriptors.Add(keyEncryption);
 
-            keySigning.use = KeyTypes.signing;
-            keySigning.useSpecified = true;
+                keySigning.use = KeyTypes.signing;
+                keySigning.useSpecified = true;
 
-            keyEncryption.use = KeyTypes.encryption;
-            keyEncryption.useSpecified = true;
+                keyEncryption.use = KeyTypes.encryption;
+                keyEncryption.useSpecified = true;
 
-            // Ugly conversion between the .Net framework classes and our classes ... avert your eyes!!
-            keySigning.KeyInfo = Serialization.DeserializeFromXmlString<Schema.XmlDSig.KeyInfo>(keyinfo.GetXml().OuterXml);
-            keyEncryption.KeyInfo = keySigning.KeyInfo;
+                // Ugly conversion between the .Net framework classes and our classes ... avert your eyes!!
+                keySigning.KeyInfo = Serialization.DeserializeFromXmlString<Schema.XmlDSig.KeyInfo>(keyinfo.GetXml().OuterXml);
+                keyEncryption.KeyInfo = keySigning.KeyInfo;
+            }
+            spDescriptor.KeyDescriptor = KeyDescriptors.ToArray();
 
             // apply the <Organization> element
             if (config.ServiceProvider.Organization != null)

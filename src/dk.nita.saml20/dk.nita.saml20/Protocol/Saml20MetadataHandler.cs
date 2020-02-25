@@ -5,6 +5,7 @@ using System.Web;
 using dk.nita.saml20.config;
 using Saml2.Properties;
 using System.Security.Cryptography.Xml;
+using System.Collections.Generic;
 
 namespace dk.nita.saml20.protocol
 {
@@ -74,14 +75,16 @@ namespace dk.nita.saml20.protocol
         {
             SAML20FederationConfig configuration = SAML20FederationConfig.GetConfig();
 
-            KeyInfo keyinfo = new KeyInfo();
+            var keyinfos = new List<KeyInfo>();
             foreach(Certificate certificate in FederationConfig.GetConfig().SigningCertificates)
             {
+                KeyInfo keyinfo = new KeyInfo();
                 KeyInfoX509Data keyClause = new KeyInfoX509Data(certificate.GetCertificate(), X509IncludeOption.EndCertOnly);
                 keyinfo.AddClause(keyClause);
+                keyinfos.Add(keyinfo);
             }
 
-            Saml20MetadataDocument doc = new Saml20MetadataDocument(configuration, keyinfo, sign);
+            Saml20MetadataDocument doc = new Saml20MetadataDocument(configuration, keyinfos, sign);
 
             context.Response.Write(doc.ToXml( context.Response.ContentEncoding ));
         }
