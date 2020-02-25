@@ -16,12 +16,15 @@ using dk.nita.saml20.Bindings.SignatureProviders;
 using dk.nita.saml20.Utils;
 using System.Linq;
 using dk.nita.saml20.Profiles.DKSaml20.Attributes;
+using dk.nita.saml20.Schema.Metadata;
 
 namespace IdentityProviderDemo
 {
     public partial class SignonForm : Page
     {
         private AuthnRequest request;
+
+        protected Dictionary<string, User> Users { get { return UserData.Users; } }
 
         protected override void OnInit(EventArgs e)
         {
@@ -183,7 +186,8 @@ namespace IdentityProviderDemo
             response.Status.StatusCode = new StatusCode();
             response.Status.StatusCode.Value = Saml20Constants.StatusCodes.Success;
 
-            Assertion assertion = CreateAssertion(user, entityId);
+            var nameIdFormat = metadataDocument.Entity.Items.OfType<SPSSODescriptor>().SingleOrDefault()?.NameIDFormat.SingleOrDefault() ?? Saml20Constants.NameIdentifierFormats.Persistent;
+            Assertion assertion = CreateAssertion(user, entityId, nameIdFormat);
             response.Items = new object[] { assertion };
 
             // Serialize the response.
@@ -213,7 +217,7 @@ namespace IdentityProviderDemo
             Context.Response.Cookies.Add(cdc);
         }
 
-        private Assertion CreateAssertion(User user, string receiver)
+        private Assertion CreateAssertion(User user, string receiver, string nameIdFormat)
         {
             Assertion assertion = new Assertion();
 
@@ -232,10 +236,11 @@ namespace IdentityProviderDemo
                 subjectConfirmation.SubjectConfirmationData.Recipient = receiver;
 
                 NameID nameId = new NameID();
-                nameId.Format = Saml20Constants.NameIdentifierFormats.Persistent;
-                nameId.Value = user.ppid;
-
-
+                nameId.Format = nameIdFormat;
+                if (nameIdFormat == Saml20Constants.NameIdentifierFormats.Transient)
+                    nameId.Value = $"https://data.gov.dk/model/core/eid/{user.Profile}/uuid/" + Guid.NewGuid();
+                else
+                    nameId.Value = $"https://data.gov.dk/model/core/eid/{user.Profile}/uuid/{user.uuid}";
 
                 assertion.Subject.Items = new object[] { nameId, subjectConfirmation };
             }

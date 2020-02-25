@@ -31,14 +31,13 @@
         </div>
 
         <div style="border: 1px solid grey; display: block; width: auto; padding: 5px 15px;">
-            <div style="font-weight: bold">Default users are:</div>
+            <div ><span style="font-weight: bold">Default users are:</span> Username <span style="color: gray">(Password)</span></div>
             <ul>
-                <li>Lene - professional</li>
-                <li>Åge - professional</li>
-                <li>Pia - person</li>
+                <% foreach (var user in Users)
+                    { %>
+                <li><%= user.Key %> <span style="color: gray">(<%= user.Value.Password %>)</span> - <%= user.Value.Profile %></li>
+                <% } %>
             </ul>
-            <div style="color: gray">All users have the same password: Test1234</div>
-
 
         </div>
 
