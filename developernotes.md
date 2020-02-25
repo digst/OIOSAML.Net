@@ -26,6 +26,7 @@ The following test cases must be run:
 * IT-SPSES-1
 * IT-SLO-1
 * IT-SLO-2
+    * (Anden service provider findes på https://test-nemlog-in.dk/testportal/ (https://sp1.test-nemlog-in.dk/demo/)
 * IT-SLO-3
 * IT-TIM-1
 * IT-TIM-2
