@@ -1,4 +1,11 @@
+using dk.nita.saml20.identity;
+using dk.nita.saml20.Profiles.BasicPrivilegeProfile;
+using dk.nita.saml20.Profiles.DKSaml20.Attributes;
+using dk.nita.saml20.Schema.BasicPrivilegeProfile;
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using System.Xml;
 
 namespace dk.nita.saml20.Utils
@@ -55,6 +62,29 @@ namespace dk.nita.saml20.Utils
                 return false;
 
             return id.Length >= 16;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="identity"></param>
+        /// <returns></returns>
+        public static IEnumerable<Privilege> GetBasicPrivilegeProfilePrivileges(Saml20Identity identity)
+        {
+            if (!identity.HasAttribute(DKSaml20BasicPrivilegeProfileAttribute.NAME))
+                yield break;
+
+            var profile64 = identity[DKSaml20BasicPrivilegeProfileAttribute.NAME].Single();
+            var basicPrivilegeProfileXml = Encoding.UTF8.GetString(Convert.FromBase64String(profile64.AttributeValue[0]));
+            var basicPrivilegeProfile = Serialization.DeserializeFromXmlString<PrivilegeListType>(basicPrivilegeProfileXml);
+
+            foreach (var privilegeGroup in basicPrivilegeProfile.PrivilegeGroups)
+            {
+                foreach (var privilege in privilegeGroup.Privilege)
+                {
+                    yield return new Privilege(privilegeGroup.Scope, privilege);
+                }
+            }
         }
     }
 }

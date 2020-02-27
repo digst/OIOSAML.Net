@@ -2,13 +2,17 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Security.Principal;
-using System.Threading;
-using System.Web;
-using System.Web.Security;
 using dk.nita.saml20.Session;
 using dk.nita.saml20.config;
 using dk.nita.saml20.Schema.Core;
 using dk.nita.saml20.Identity;
+using dk.nita.saml20.Profiles.DKSaml20.Attributes;
+using System.Text;
+using System.Linq;
+using System.Xml.Serialization;
+using System.IO;
+using dk.nita.saml20.Utils;
+using dk.nita.saml20.Profiles.BasicPrivilegeProfile;
 
 namespace dk.nita.saml20.identity
 {
@@ -24,7 +28,7 @@ namespace dk.nita.saml20.identity
     /// </para>
     /// </summary>
     [Serializable]
-    public class Saml20Identity : GenericIdentity, ISaml20Identity 
+    public class Saml20Identity : GenericIdentity, ISaml20Identity
     {
         private readonly Dictionary<string, List<SamlAttribute>> _attributes;
         private string _persistenPseudonym;
@@ -35,15 +39,15 @@ namespace dk.nita.saml20.identity
         /// <param name="name">The name.</param>
         /// <param name="attributes">The attributes.</param>
         /// <param name="persistentPseudonym">The persistent pseudonym.</param>
-        public Saml20Identity(string name, ICollection<SamlAttribute> attributes, string persistentPseudonym) 
+        public Saml20Identity(string name, ICollection<SamlAttribute> attributes, string persistentPseudonym)
             : base(name, Saml20Constants.ASSERTION)
         {
             _attributes = new Dictionary<string, List<SamlAttribute>>();
 
             foreach (SamlAttribute att in attributes)
             {
-                if (! _attributes.ContainsKey(att.Name))
-                  _attributes.Add(att.Name,new List<SamlAttribute>());
+                if (!_attributes.ContainsKey(att.Name))
+                    _attributes.Add(att.Name, new List<SamlAttribute>());
                 _attributes[att.Name].Add(att);
             }
             _persistenPseudonym = persistentPseudonym;
@@ -90,7 +94,7 @@ namespace dk.nita.saml20.identity
                 subjectIdentifier = point.PersistentPseudonym.GetMapper().MapIdentity(assertion.Subject);
 
             // Create identity
-            var identity = new Saml20Identity(subjectIdentifier, assertion.Attributes, isPersistentPseudonym ? assertion.Subject.Value : null);                        
+            var identity = new Saml20Identity(subjectIdentifier, assertion.Attributes, isPersistentPseudonym ? assertion.Subject.Value : null);
 
             return new GenericPrincipal(identity, new string[] { });
         }
@@ -100,7 +104,7 @@ namespace dk.nita.saml20.identity
         /// not the 'FriendlyName' attribute.
         /// </summary>        
         /// <exception cref="KeyNotFoundException">If the identity instance does not have the requested attribute.</exception>
-        public List<SamlAttribute> this [string attributeName]
+        public List<SamlAttribute> this[string attributeName]
         {
             get { return _attributes[attributeName]; }
         }
@@ -124,6 +128,16 @@ namespace dk.nita.saml20.identity
             get { return _persistenPseudonym; }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        public IEnumerable<Privilege> BasicPrivilegeProfile
+        {
+            get
+            {
+                return Saml20Utils.GetBasicPrivilegeProfilePrivileges(this);
+            }
+        }
 
         internal void AddAttributeFromQuery(string name, SamlAttribute value)
         {
@@ -134,7 +148,7 @@ namespace dk.nita.saml20.identity
                 _attributes[name].Add(value);
 
         }
-                
+
         #region IEnumerable<Attribute> Members
 
         /// <summary>
@@ -163,7 +177,7 @@ namespace dk.nita.saml20.identity
         /// </returns>
         public IEnumerator GetEnumerator()
         {
-            return ((IEnumerable<SamlAttribute>) this).GetEnumerator();
+            return ((IEnumerable<SamlAttribute>)this).GetEnumerator();
         }
 
         #endregion

@@ -171,6 +171,8 @@
     <Compile Include="Logging\AuditLogging.cs" />
     <Compile Include="Logging\IAuditLogger.cs" />
     <Compile Include="Logging\TraceAuditLogger.cs" />
+    <Compile Include="Profiles\BasicPrivilegeProfile\Privilege.cs" />
+    <Compile Include="Profiles\DKSaml20\Attributes\DKSaml20BasicPrivilegeProfileAttribute.cs" />
     <Compile Include="Profiles\DKSaml20\Attributes\DKSaml20LoaAttribute.cs" />
     <Compile Include="Protocol\Saml20CDCIdPReturnPoint.cs" />
     <Compile Include="Protocol\Saml20CDCReader.cs" />
@@ -194,6 +196,8 @@
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
     </Compile>
+    <Compile Include="Schema\BasicPrivilegeProfile\PrivilegeGroupType.cs" />
+    <Compile Include="Schema\BasicPrivilegeProfile\PrivilegeListType.cs" />
     <Compile Include="Schema\Core\Enums.cs" />
     <Compile Include="Schema\Core\Action.cs" />
     <Compile Include="Schema\Core\Advice.cs" />

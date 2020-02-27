@@ -3,6 +3,7 @@
 <%@ Import Namespace="dk.nita.saml20.identity" %>
 <%@ Import Namespace="dk.nita.saml20.config" %>
 <%@ Import Namespace="dk.nita.saml20.Schema.Core" %>
+<%@ Import Namespace="dk.nita.saml20.Profiles.BasicPrivilegeProfile" %>
 
 <asp:Content runat="server" ID="Content1" ContentPlaceHolderID="head">
     <style type="text/css">
@@ -37,6 +38,7 @@
         { %>
     <div>
         Welcome, <%= Saml20Identity.Current.Name + (Saml20Identity.Current.PersistentPseudonym != null ? " (Pseudonym is " + Saml20Identity.Current.PersistentPseudonym + ")" : String.Empty)%><br />
+        <h1>SAML attributes</h1>
         <table style="border: solid 1px;">
             <thead>
                 <tr>
@@ -49,20 +51,47 @@
             <% foreach (SamlAttribute att in Saml20Identity.Current)
                 { %>
             <tr>
-                <td>
+                <td style="vertical-align: top">
                     <%= att.Name %>
                 </td>
-                <td>
+                <td style="word-break: break-word;">
                     <%= att.AttributeValue.Length > 0 ? att.AttributeValue[0] : string.Empty %>
                 </td>
             </tr>
             <%  } %>
         </table>
+
+        <% if (Saml20Identity.Current.BasicPrivilegeProfile.Any())
+            { %>
+        <h1>Basic Privilege Profile</h1>
+        <table style="border: solid 1px;">
+            <thead>
+                <tr>
+                    <th>Scope
+                    </th>
+                    <th>Privilege
+                    </th>
+                </tr>
+            </thead>
+            <% foreach (Privilege att2 in Saml20Identity.Current.BasicPrivilegeProfile)
+                { %>
+            <tr>
+                <td>
+                    <%= att2.Scope %>
+                </td>
+                <td>
+                    <%= att2.Value %>
+                </td>
+            </tr>
+            <%  } %>
+        </table>
+        <% } %>
     </div>
     <% } %>
 
     <div>
-        <asp:Button ID="btnLogoff" runat="server" Enabled="true" Text="Logoff" OnClick="Btn_Logoff_Click" /></div>
+        <asp:Button Style="margin-top: 10px;" ID="btnLogoff" runat="server" Enabled="true" Text="Logoff" OnClick="Btn_Logoff_Click" />
+    </div>
     <br />
     <div>
         Relogin with IdP: 

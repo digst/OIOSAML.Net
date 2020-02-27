@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Security.Principal;
+using dk.nita.saml20.Profiles.BasicPrivilegeProfile;
 using dk.nita.saml20.Schema.Core;
 
 namespace dk.nita.saml20.identity
@@ -27,5 +28,10 @@ namespace dk.nita.saml20.identity
         /// is set up with persistent pseudonyms. Otherwise, returns null.
         /// </summary>
         string PersistentPseudonym { get; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        IEnumerable<Privilege> BasicPrivilegeProfile { get; }
     }
 }
