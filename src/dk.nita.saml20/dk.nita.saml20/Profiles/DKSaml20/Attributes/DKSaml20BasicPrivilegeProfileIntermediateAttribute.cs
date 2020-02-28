@@ -5,7 +5,7 @@ namespace dk.nita.saml20.Profiles.DKSaml20.Attributes
     /// <summary>
     /// 
     /// </summary>
-    public class DKSaml20BasicPrivilegeProfileAttribute : DKSaml20Attribute
+    public class DKSaml20BasicPrivilegeProfileIntermediateAttribute : DKSaml20Attribute
     {
         /// <summary>
         /// Attribute name

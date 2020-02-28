@@ -281,11 +281,22 @@ namespace IdentityProviderDemo
                 List<SamlAttribute> attributes = new List<SamlAttribute>(user.Attributes.Count);
                 foreach (KeyValuePair<string, string> att in user.Attributes)
                 {
-                    SamlAttribute attribute = new SamlAttribute();
-                    attribute.Name = att.Key;
-                    attribute.AttributeValue = new string[] { att.Value };
-                    attribute.NameFormat = SamlAttribute.NAMEFORMAT_BASIC;
-                    attributes.Add(attribute);
+                    var existingAttribute = attributes.FirstOrDefault(x => x.Name == att.Key);
+                    if(existingAttribute != null)
+                    {
+                        var attributesValues = new List<string>();
+                        attributesValues.AddRange(existingAttribute.AttributeValue);
+                        attributesValues.Add(att.Value);
+                        existingAttribute.AttributeValue = attributesValues.ToArray();
+                    }
+                    else
+                    {
+                        SamlAttribute attribute = new SamlAttribute();
+                        attribute.Name = att.Key;
+                        attribute.AttributeValue = new string[] { att.Value };
+                        attribute.NameFormat = SamlAttribute.NAMEFORMAT_BASIC;
+                        attributes.Add(attribute);
+                    }
                 }
 
 

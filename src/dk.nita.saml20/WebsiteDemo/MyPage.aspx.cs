@@ -1,21 +1,14 @@
 using System;
 using System.Web;
 using System.Web.UI;
-using dk.nita.saml20.session;
 using dk.nita.saml20.config;
-using dk.nita.saml20.identity;
 using dk.nita.saml20.Logging;
 using dk.nita.saml20.protocol;
-using dk.nita.saml20.Profiles.DKSaml20.Attributes;
 
 namespace WebsiteDemo
 {
     public partial class WebForm1 : Page
     {
-        protected  void Page_PreInit(object sender, EventArgs e)
-        {
-            
-        }
         protected void Page_Load(object sender, EventArgs e)
         {            
             Title = "My page on SP " + SAML20FederationConfig.GetConfig().ServiceProvider.ID;
@@ -29,7 +22,6 @@ namespace WebsiteDemo
                                       "SP internal user id: " +
                                       (Context.User.Identity.IsAuthenticated ? Context.User.Identity.Name : "(not logged in)"));
             }
-
         }
 
         protected void Btn_Relogin_Click(object sender, EventArgs e)

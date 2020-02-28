@@ -49,16 +49,20 @@
                 </tr>
             </thead>
             <% foreach (SamlAttribute att in Saml20Identity.Current)
-                { %>
+                {
+                    foreach (string attVal in att.AttributeValue)
+                    {
+            %>
             <tr>
                 <td style="vertical-align: top">
                     <%= att.Name %>
                 </td>
                 <td style="word-break: break-word;">
-                    <%= att.AttributeValue.Length > 0 ? att.AttributeValue[0] : string.Empty %>
+                    <%= att.AttributeValue.Length > 0 ? Server.HtmlEncode(attVal) : string.Empty %>
                 </td>
             </tr>
-            <%  } %>
+            <% }
+                } %>
         </table>
 
         <% if (Saml20Identity.Current.BasicPrivilegeProfile.Any())
