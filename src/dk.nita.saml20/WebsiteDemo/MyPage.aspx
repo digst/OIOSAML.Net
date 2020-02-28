@@ -75,6 +75,7 @@
                     </th>
                     <th>Privilege
                     </th>
+                    <th>Constraints</th>
                 </tr>
             </thead>
             <% foreach (Privilege att2 in Saml20Identity.Current.BasicPrivilegeProfile)
@@ -86,6 +87,7 @@
                 <td>
                     <%= att2.Value %>
                 </td>
+                <td><%= (att2.Constraints != null) ? string.Join("<br />", att2.Constraints.Select(x => x.Name + ": " + x.Value)) : ""  %></td>
             </tr>
             <%  } %>
         </table>

@@ -4,6 +4,7 @@ using dk.nita.saml20.Profiles.DKSaml20.Attributes;
 using dk.nita.saml20.Schema.BasicPrivilegeProfile;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Xml;
 
@@ -64,7 +65,7 @@ namespace dk.nita.saml20.Utils
         }
 
         /// <summary>
-        /// 
+        /// Extracts the Basic privilege profile (simple or intermediate) from the saml attributes
         /// </summary>
         /// <param name="identity"></param>
         /// <returns></returns>
@@ -82,7 +83,8 @@ namespace dk.nita.saml20.Utils
                     {
                         foreach (var privilege in privilegeGroup.Privilege)
                         {
-                            yield return new Privilege(privilegeGroup.Scope, privilege);
+                            yield return new Privilege(privilegeGroup.Scope, privilege, privilegeGroup.Constraint.Select(x=>
+                                new Profiles.BasicPrivilegeProfile.Constraint(x.Name, x.Value)));
                         }
                     }
                 }
@@ -93,7 +95,7 @@ namespace dk.nita.saml20.Utils
                 var simpleProfiles = identity[DKSaml20BasicPrivilegeProfileSimpleAttribute.NAME];
                 foreach (var attribute in simpleProfiles)
                 {
-                    foreach(var attributeValue in attribute.AttributeValue)
+                    foreach (var attributeValue in attribute.AttributeValue)
                     {
                         yield return new Privilege(null, attributeValue);
                     }
