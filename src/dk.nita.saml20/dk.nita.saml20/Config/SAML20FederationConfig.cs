@@ -100,17 +100,31 @@ namespace dk.nita.saml20.config
         }
 
         // default to Substantial. Cooresponds to certificate level in the OIOSAML specification.
-        private string _minimumAssuranceLevel = "Substantial";
+        private string _minimumLegacyAssuranceLevel = "3";
 
         /// <summary>
-        /// Gets or sets the minimum assurance level configuration
+        /// Gets or sets the minimum assurance level configuration (spec 2.0)
         /// </summary>
-        [XmlElement(ElementName = "MinimumAssuranceLevel")]
-        public string MinimumAssuranceLevel
+        [XmlElement(ElementName = "MinimumLegacyAssuranceLevel")]
+        public string MinimumLegacyAssuranceLevel
         {
-            get { return _minimumAssuranceLevel; }
-            set { _minimumAssuranceLevel = value; }
+            get { return _minimumLegacyAssuranceLevel; }
+            set { _minimumLegacyAssuranceLevel = value; }
         }
+
+        // default to Substantial. Cooresponds to certificate level in the OIOSAML specification.
+        private string _minimumLevelOfAssurance = "Substantial";
+
+        /// <summary>
+        /// Gets or sets the minimum assurance level configuration (spec 3.0)
+        /// </summary>
+        [XmlElement(ElementName = "MinimumLevelOfAssurance")]
+        public string MinimumLevelOfAssurance
+        {
+            get { return _minimumLevelOfAssurance; }
+            set { _minimumLevelOfAssurance = value; }
+        }
+
 
         private IDPEndpoints _idpEndpoints;
 

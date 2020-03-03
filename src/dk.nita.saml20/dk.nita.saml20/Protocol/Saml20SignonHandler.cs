@@ -551,14 +551,14 @@ namespace dk.nita.saml20.protocol
                 HandleError(context, Resources.AssertionExpired);
                 return;
             }
-
-            // Can be either v2 AssuranceLevel or v3 LOA
-            string minimumconfiguredAssuranceLevel = SAML20FederationConfig.GetConfig().MinimumAssuranceLevel;
-
+     
             // Only check if assertion has the required assurancelevel if it is present.
             string assuranceLevel = GetAssuranceLevel(assertion);
             if (assuranceLevel != null)
             {
+                // Can be either v2 AssuranceLevel or v3 LOA
+                string minimumconfiguredAssuranceLevel = SAML20FederationConfig.GetConfig().MinimumLegacyAssuranceLevel;
+
                 // Assurance level is ok if the string matches the configured minimum assurance level. This is in order to support the value "Test". However, normally the value will be an integer
                 if (assuranceLevel != minimumconfiguredAssuranceLevel)
                 {
@@ -585,6 +585,9 @@ namespace dk.nita.saml20.protocol
             string levelOfAssurance = GetLevelOfAssurance(assertion);
             if (levelOfAssurance != null)
             {
+                // Can be either v2 AssuranceLevel or v3 LOA
+                string minimumconfiguredAssuranceLevel = SAML20FederationConfig.GetConfig().MinimumLevelOfAssurance;
+
                 // Verify demanded assurance level if any
                 if (SessionStore.CurrentSession[SessionConstants.ExpectedLevelOfAssurance] != null)
                 {
