@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace dk.nita.saml20.Profiles.BasicPrivilegeProfile
@@ -29,7 +30,7 @@ namespace dk.nita.saml20.Profiles.BasicPrivilegeProfile
         {
             Scope = string.IsNullOrWhiteSpace(scope) ? null : scope;
             Value = value;
-            Constraints = constraints.ToArray();
+            Constraints = constraints == null ? Array.Empty<Constraint>() : constraints.ToArray();
         }
 
         /// <summary>

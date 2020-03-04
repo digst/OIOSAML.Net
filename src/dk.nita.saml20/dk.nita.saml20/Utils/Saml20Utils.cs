@@ -83,7 +83,7 @@ namespace dk.nita.saml20.Utils
                     {
                         foreach (var privilege in privilegeGroup.Privilege)
                         {
-                            yield return new Privilege(privilegeGroup.Scope, privilege, privilegeGroup.Constraint.Select(x=>
+                            yield return new Privilege(privilegeGroup.Scope, privilege, privilegeGroup.Constraint?.Select(x=>
                                 new Profiles.BasicPrivilegeProfile.Constraint(x.Name, x.Value)));
                         }
                     }
