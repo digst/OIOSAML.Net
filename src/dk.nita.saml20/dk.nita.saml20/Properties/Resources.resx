@@ -522,4 +522,7 @@ AppID={1}</value>
   <data name="DemandingProfileError" xml:space="preserve">
     <value>Received bad profile demand value: "{0}". Valid values are "Professional", "Person".</value>
   </data>
+  <data name="AssuranceLevelMissing" xml:space="preserve">
+    <value>The SAML token must contain an assurance level.</value>
+  </data>
 </root>

@@ -144,6 +144,15 @@ namespace Saml2.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The SAML token must contain an assurance level..
+        /// </summary>
+        internal static string AssuranceLevelMissing {
+            get {
+                return ResourceManager.GetString("AssuranceLevelMissing", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Saml assertion does not have the required assurance level. Assurance level was: {0} and configured minimum assurance level was: {1}..
         /// </summary>
         internal static string AssuranceLevelTooLow {

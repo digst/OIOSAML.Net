@@ -405,7 +405,7 @@ namespace dk.nita.saml20.protocol
                 decryptedAssertion.Decrypt();
                 return decryptedAssertion;
             });
-       
+
             var allValidX509Certificates = new List<X509Certificate2>();
             foreach (var certificate in FederationConfig.GetConfig().SigningCertificates)
             {
@@ -413,7 +413,7 @@ namespace dk.nita.saml20.protocol
                 if (x509Certificates == null)
                     continue;
 
-                foreach(var x in x509Certificates)
+                foreach (var x in x509Certificates)
                 {
                     allValidX509Certificates.Add(x);
                 }
@@ -551,70 +551,61 @@ namespace dk.nita.saml20.protocol
                 HandleError(context, Resources.AssertionExpired);
                 return;
             }
-     
-            // Only check if assertion has the required assurancelevel if it is present.
-            string assuranceLevel = GetAssuranceLevel(assertion);
-            if (assuranceLevel != null)
-            {
-                // Can be either v2 AssuranceLevel or v3 LOA
-                string minimumconfiguredAssuranceLevel = SAML20FederationConfig.GetConfig().MinimumLegacyAssuranceLevel;
-
-                // Assurance level is ok if the string matches the configured minimum assurance level. This is in order to support the value "Test". However, normally the value will be an integer
-                if (assuranceLevel != minimumconfiguredAssuranceLevel)
-                {
-                    // If strings are different it is still ok if the assertion has stronger assurance level than the minimum required.
-                    int assuranceLevelAsInt;
-                    int minimumAssuranceLevelAsInt;
-                    if (!int.TryParse(assuranceLevel, out assuranceLevelAsInt) ||
-                        !int.TryParse(minimumconfiguredAssuranceLevel, out minimumAssuranceLevelAsInt) ||
-                        assuranceLevelAsInt < minimumAssuranceLevelAsInt)
-                    {
-                        string errorMessage = string.Format(Resources.AssuranceLevelTooLow, assuranceLevel,
-                                                            minimumconfiguredAssuranceLevel);
-                        AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST,
-                                              errorMessage + " Assertion: " + elem.OuterXml);
-
-                        HandleError(context,
-                                    string.Format(Resources.AssuranceLevelTooLow, assuranceLevel, minimumconfiguredAssuranceLevel));
-                        return;
-                    }
-                }
-            }
 
             // Only check if assertion has the required level of assurance (OIOSAML 3.0) if it is present.
             string levelOfAssurance = GetLevelOfAssurance(assertion);
-            if (levelOfAssurance != null)
+            if (levelOfAssurance == null)
             {
-                // Can be either v2 AssuranceLevel or v3 LOA
-                string minimumconfiguredAssuranceLevel = SAML20FederationConfig.GetConfig().MinimumLevelOfAssurance;
+                AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST,
+                     Resources.AssuranceLevelMissing + " Assertion: " + elem.OuterXml);
 
-                // Verify demanded assurance level if any
-                if (SessionStore.CurrentSession[SessionConstants.ExpectedLevelOfAssurance] != null)
+                HandleError(context, Resources.AssuranceLevelMissing);
+                return;
+            }
+
+            // Only check if assertion has the required level of assurance (OIOSAML 3.0)
+            string minimumConfiguredAssuranceLevel = SAML20FederationConfig.GetConfig().MinimumLevelOfAssurance;
+
+            // Verify demanded assurance level if any
+            if (SessionStore.CurrentSession[SessionConstants.ExpectedLevelOfAssurance] != null)
+            {
+                var expectedLevelOfAssurance = SessionStore.CurrentSession[SessionConstants.ExpectedLevelOfAssurance].ToString();
+                SessionStore.CurrentSession[SessionConstants.ExpectedLevelOfAssurance] = null;
+                if (!CheckLevelOfAssurance(levelOfAssurance, expectedLevelOfAssurance))
                 {
-                    var expectedLevelOfAssurance = SessionStore.CurrentSession[SessionConstants.ExpectedLevelOfAssurance].ToString();
-                    SessionStore.CurrentSession[SessionConstants.ExpectedLevelOfAssurance] = null;
-                    if (!CheckLevelOfAssurance(levelOfAssurance, expectedLevelOfAssurance))
-                    {
-                        string errorMessage = string.Format(Resources.AssuranceLevelTooLowAccordingToDemand, levelOfAssurance,
-                                                       expectedLevelOfAssurance);
-                        AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST,
-                                              errorMessage + " Assertion: " + elem.OuterXml);
+                    var loaErrorMessage = string.Format(Resources.AssuranceLevelTooLowAccordingToDemand, levelOfAssurance,
+                                                   expectedLevelOfAssurance);
+                    AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST,
+                          loaErrorMessage + " Assertion: " + elem.OuterXml);
 
-                        HandleError(context, errorMessage);
-                        return;
-                    }
+                    HandleError(context, loaErrorMessage);
+                    return;
                 }
-                else
+            }
+            else
+            {
+                // Verify minimum configured assurance level if no demand are present
+                if (!CheckLevelOfAssurance(levelOfAssurance, minimumConfiguredAssuranceLevel))
                 {
-                    // Verify minimum configured assurance level if no demand are present
-                    if (!CheckLevelOfAssurance(levelOfAssurance, minimumconfiguredAssuranceLevel))
-                    {
-                        string errorMessage = string.Format(Resources.AssuranceLevelTooLow, levelOfAssurance,
-                                                           minimumconfiguredAssuranceLevel);
-                        AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST,
-                                              errorMessage + " Assertion: " + elem.OuterXml);
 
-                        HandleError(context, errorMessage);
+                    // Verify legacy assurance level if LOA did not validate
+                    string assuranceLevel = GetAssuranceLevel(assertion);
+                    string minimumConfiguredLegacyAssuranceLevel = SAML20FederationConfig.GetConfig().MinimumLegacyAssuranceLevel;
+
+                    int assuranceLevelAsInt;
+                    int minimumAssuranceLevelAsInt;
+                    if ((assuranceLevel == null) || (!int.TryParse(assuranceLevel, out assuranceLevelAsInt) ||
+                        !int.TryParse(minimumConfiguredLegacyAssuranceLevel, out minimumAssuranceLevelAsInt) ||
+                        assuranceLevelAsInt < minimumAssuranceLevelAsInt))
+                    {
+                        var loaErrorMessage = string.Format(Resources.AssuranceLevelTooLow, levelOfAssurance,
+                                            minimumConfiguredAssuranceLevel);
+
+
+                        AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST,
+                              loaErrorMessage + " Assertion: " + elem.OuterXml);
+
+                        HandleError(context, loaErrorMessage);
                         return;
                     }
                 }
