@@ -27,7 +27,7 @@ using dk.nita.saml20.Schema.Protocol;
 using dk.nita.saml20.Specification;
 using dk.nita.saml20.Utils;
 using Saml2.Properties;
-using Trace=dk.nita.saml20.Utils.Trace;
+using Trace = dk.nita.saml20.Utils.Trace;
 
 namespace dk.nita.saml20.protocol
 {
@@ -36,7 +36,7 @@ namespace dk.nita.saml20.protocol
     /// </summary>
     public class Saml20SignonHandler : Saml20AbstractEndpointHandler
     {
-        private readonly X509Certificate2  _certificate;
+        private readonly X509Certificate2 _certificate;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Saml20SignonHandler"/> class.
@@ -51,7 +51,7 @@ namespace dk.nita.saml20.protocol
                 RedirectUrl = SAML20FederationConfig.GetConfig().ServiceProvider.SignOnEndpoint.RedirectUrl;
                 ErrorBehaviour = SAML20FederationConfig.GetConfig().ServiceProvider.SignOnEndpoint.ErrorBehaviour.ToString();
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 if (Trace.ShouldTrace(TraceEventType.Error))
                     Trace.TraceData(TraceEventType.Error, e.ToString());
@@ -70,7 +70,7 @@ namespace dk.nita.saml20.protocol
 
             //Some IdP's are known to fail to set an actual value in the SOAPAction header
             //so we just check for the existence of the header field.
-            if (Array.Exists(context.Request.Headers.AllKeys, delegate(string s) { return s == SOAPConstants.SOAPAction; }))
+            if (Array.Exists(context.Request.Headers.AllKeys, delegate (string s) { return s == SOAPConstants.SOAPAction; }))
             {
                 SessionStore.AssertSessionExists();
 
@@ -111,7 +111,7 @@ namespace dk.nita.saml20.protocol
                 }
             }
         }
-                
+
         #endregion
 
         private void HandleArtifact(HttpContext context)
@@ -140,7 +140,8 @@ namespace dk.nita.saml20.protocol
                     AuditLogging.logEntry(Direction.IN, Operation.ARTIFACTRESOLVE, "Could not verify signature", parser.SamlMessage);
                 }
                 builder.RespondToArtifactResolve(idp, parser.ArtifactResolve);
-            }else if(parser.IsArtifactResponse())
+            }
+            else if (parser.IsArtifactResponse())
             {
                 Trace.TraceData(TraceEventType.Information, Tracing.ArtifactResponseIn);
 
@@ -151,28 +152,31 @@ namespace dk.nita.saml20.protocol
                     AuditLogging.logEntry(Direction.IN, Operation.ARTIFACTRESOLVE, string.Format("Illegal status for ArtifactResponse {0} expected 'Success', msg: {1}", status.StatusCode.Value, parser.SamlMessage));
                     return;
                 }
-                if(parser.ArtifactResponse.Any.LocalName == Response.ELEMENT_NAME)
+                if (parser.ArtifactResponse.Any.LocalName == Response.ELEMENT_NAME)
                 {
                     bool isEncrypted;
                     XmlElement assertion = GetAssertion(parser.ArtifactResponse.Any, out isEncrypted);
                     if (assertion == null)
                         HandleError(context, "Missing assertion");
-                    if(isEncrypted)
+                    if (isEncrypted)
                     {
                         HandleEncryptedAssertion(context, assertion);
-                    }else
+                    }
+                    else
                     {
                         HandleAssertion(context, assertion);
                     }
 
-                }else
+                }
+                else
                 {
                     AuditLogging.logEntry(Direction.IN, Operation.ARTIFACTRESOLVE, string.Format("Unsupported payload message in ArtifactResponse: {0}, msg: {1}", parser.ArtifactResponse.Any.LocalName, parser.SamlMessage));
                     HandleError(context,
                                 string.Format("Unsupported payload message in ArtifactResponse: {0}",
                                               parser.ArtifactResponse.Any.LocalName));
                 }
-            }else
+            }
+            else
             {
                 Status s = parser.GetStatus();
                 if (s != null)
@@ -199,7 +203,7 @@ namespace dk.nita.saml20.protocol
             // If PreventOpenRedirectAttack has been enabled ... the return URL is only set if the URL is local.
             if (!string.IsNullOrEmpty(returnUrl) && (!FederationConfig.GetConfig().PreventOpenRedirectAttack || IsLocalUrl(returnUrl)))
                 SessionStore.CurrentSession[SessionConstants.RedirectUrl] = returnUrl;
-            
+
             IDPEndPoint idpEndpoint = RetrieveIDP(context);
 
             if (idpEndpoint == null)
@@ -211,7 +215,7 @@ namespace dk.nita.saml20.protocol
             }
 
             Saml20AuthnRequest authnRequest = Saml20AuthnRequest.GetDefault();
-            TransferClient(idpEndpoint, authnRequest, context);            
+            TransferClient(idpEndpoint, authnRequest, context);
         }
 
         /// <summary>
@@ -244,7 +248,7 @@ namespace dk.nita.saml20.protocol
 
         internal static XmlElement GetAssertion(XmlElement el, out bool isEncrypted)
         {
-            
+
             XmlNodeList encryptedList =
                 el.GetElementsByTagName(EncryptedAssertion.ELEMENT_NAME, Saml20Constants.ASSERTION);
 
@@ -283,13 +287,13 @@ namespace dk.nita.saml20.protocol
                 XmlAttribute inResponseToAttribute =
                     doc.DocumentElement.Attributes["InResponseTo"];
 
-                if(inResponseToAttribute == null)
+                if (inResponseToAttribute == null)
                     throw new Saml20Exception("Received a response message that did not contain an InResponseTo attribute");
 
                 string inResponseTo = inResponseToAttribute.Value;
 
                 CheckReplayAttack(context, inResponseTo);
-                
+
                 Status status = GetStatusElement(doc);
 
                 if (status.StatusCode.Value != Saml20Constants.StatusCodes.Success)
@@ -302,7 +306,7 @@ namespace dk.nita.saml20.protocol
                 }
 
                 // Determine whether the assertion should be decrypted before being validated.
-            
+
                 bool isEncrypted;
                 XmlElement assertion = GetAssertion(doc.DocumentElement, out isEncrypted);
                 if (isEncrypted)
@@ -345,15 +349,15 @@ namespace dk.nita.saml20.protocol
 
         private static void CheckReplayAttack(HttpContext context, string inResponseTo)
         {
+            if (string.IsNullOrEmpty(inResponseTo))
+                throw new Saml20Exception("Empty InResponseTo from IdP is not allowed.");
+
             var expectedInResponseToSessionState = SessionStore.CurrentSession[SessionConstants.ExpectedInResponseTo];
             SessionStore.CurrentSession[SessionConstants.ExpectedInResponseTo] = null; // Ensure that no more responses can be received.
 
             string expectedInResponseTo = expectedInResponseToSessionState?.ToString();
             if (string.IsNullOrEmpty(expectedInResponseTo))
-                throw new Saml20Exception("No protocol message id is expected.");
-
-            if ( string.IsNullOrEmpty(inResponseTo))
-                throw new Saml20Exception("Empty protocol message id is not allowed.");
+                throw new Saml20Exception("Expected InResponseTo not found in current session.");
 
             if (inResponseTo != expectedInResponseTo)
             {
@@ -406,7 +410,7 @@ namespace dk.nita.saml20.protocol
             XmlNodeList list = assertion.GetElementsByTagName("Issuer", Saml20Constants.ASSERTION);
             if (list.Count > 0)
             {
-                XmlElement issuer = (XmlElement) list[0];
+                XmlElement issuer = (XmlElement)list[0];
                 result = issuer.InnerText;
             }
 
@@ -442,7 +446,7 @@ namespace dk.nita.saml20.protocol
             Trace.TraceMethodCalled(GetType(), "HandleAssertion");
 
             string issuer = GetIssuer(elem);
-            
+
             IDPEndPoint endp = RetrieveIDPConfiguration(issuer);
 
             AuditLogging.IdpId = endp.Id;
@@ -455,9 +459,9 @@ namespace dk.nita.saml20.protocol
             {
                 quirksMode = endp.QuirksMode;
             }
-            
+
             Saml20Assertion assertion = new Saml20Assertion(elem, null, quirksMode);
-                        
+
             if (endp == null || endp.metadata == null)
             {
                 AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST,
@@ -541,13 +545,13 @@ namespace dk.nita.saml20.protocol
             List<AsymmetricAlgorithm> result = new List<AsymmetricAlgorithm>(keys.Count);
             foreach (KeyDescriptor keyDescriptor in keys)
             {
-                KeyInfo ki = (KeyInfo) keyDescriptor.KeyInfo;
-                    
+                KeyInfo ki = (KeyInfo)keyDescriptor.KeyInfo;
+
                 foreach (KeyInfoClause clause in ki)
                 {
-                    if(clause is KeyInfoX509Data)
+                    if (clause is KeyInfoX509Data)
                     {
-                        X509Certificate2 cert = XmlSignatureUtils.GetCertificateFromKeyInfo((KeyInfoX509Data) clause);
+                        X509Certificate2 cert = XmlSignatureUtils.GetCertificateFromKeyInfo((KeyInfoX509Data)clause);
 
                         string failureReason;
                         if (!IsSatisfiedByAllSpecifications(ep, cert, out failureReason))
@@ -560,7 +564,7 @@ namespace dk.nita.saml20.protocol
                     AsymmetricAlgorithm key = XmlSignatureUtils.ExtractKey(clause);
                     result.Add(key);
                 }
-                
+
             }
 
             validationFailureReasons = failures;
@@ -569,7 +573,7 @@ namespace dk.nita.saml20.protocol
 
         private static bool IsSatisfiedByAllSpecifications(IDPEndPoint ep, X509Certificate2 cert, out string failureReason)
         {
-            foreach(ICertificateSpecification spec in SpecificationFactory.GetCertificateSpecifications(ep))
+            foreach (ICertificateSpecification spec in SpecificationFactory.GetCertificateSpecifications(ep))
             {
                 string r;
                 if (!spec.IsSatisfiedBy(cert, out r))
@@ -587,12 +591,13 @@ namespace dk.nita.saml20.protocol
 
         private void CheckConditions(HttpContext context, Saml20Assertion assertion)
         {
-            if(assertion.IsOneTimeUse)
+            if (assertion.IsOneTimeUse)
             {
                 if (context.Cache[assertion.Id] != null)
                 {
                     HandleError(context, Resources.OneTimeUseReplay);
-                }else
+                }
+                else
                 {
                     context.Cache.Insert(assertion.Id, string.Empty, null, assertion.NotOnOrAfter, Cache.NoSlidingExpiration);
                 }
@@ -605,23 +610,23 @@ namespace dk.nita.saml20.protocol
 
             // The assertion is what keeps the session alive. If it is ever removed ... the session will appear as removed in the SessionStoreProvider because Saml20AssertionLite is the only thing kept in session store when login flow is completed..
             SessionStore.CurrentSession[SessionConstants.Saml20AssertionLite] = Saml20AssertionLite.ToLite(assertion);
-            
-            if(Trace.ShouldTrace(TraceEventType.Information))
+
+            if (Trace.ShouldTrace(TraceEventType.Information))
             {
                 Trace.TraceData(TraceEventType.Information, string.Format(Tracing.Login, assertion.Subject.Value, assertion.SessionIndex, assertion.Subject.Format));
             }
 
             string assuranceLevel = GetAssuranceLevel(assertion) ?? "(Unknown)";
-            
+
             AuditLogging.logEntry(Direction.IN, Operation.LOGIN, string.Format("Subject: {0} NameIDFormat: {1}  Level of authentication: {2}  Session timeout in minutes: {3}", assertion.Subject.Value, assertion.Subject.Format, assuranceLevel, FederationConfig.GetConfig().SessionTimeout));
 
 
-            foreach(IAction action in Actions.Actions.GetActions())
+            foreach (IAction action in Actions.Actions.GetActions())
             {
                 Trace.TraceMethodCalled(action.GetType(), "LoginAction()");
 
                 action.LoginAction(this, context, assertion);
-                
+
                 Trace.TraceMethodDone(action.GetType(), "LoginAction()");
             }
         }
@@ -649,11 +654,11 @@ namespace dk.nita.saml20.protocol
             AuditLogging.IdpId = idpEndpoint.Id;
 
             // Determine which endpoint to use from the configuration file or the endpoint metadata.
-            IDPEndPointElement destination = 
+            IDPEndPointElement destination =
                 DetermineEndpointConfiguration(SAMLBinding.REDIRECT, idpEndpoint.SSOEndpoint, idpEndpoint.metadata.SSOEndpoints());
 
- 
-    
+
+
             request.Destination = destination.Url;
 
             bool isPassive;
@@ -691,7 +696,7 @@ namespace dk.nita.saml20.protocol
             if (destination.Binding == SAMLBinding.REDIRECT)
             {
                 Trace.TraceData(TraceEventType.Information, string.Format(Tracing.SendAuthnRequest, Saml20Constants.ProtocolBindings.HTTP_Redirect, idpEndpoint.Id));
-                
+
                 HttpRedirectBindingBuilder builder = new HttpRedirectBindingBuilder();
                 builder.signingKey = _certificate.PrivateKey;
                 builder.Request = request.GetXml().OuterXml;
@@ -723,12 +728,12 @@ namespace dk.nita.saml20.protocol
                 return;
             }
 
-            if(destination.Binding == SAMLBinding.ARTIFACT)
+            if (destination.Binding == SAMLBinding.ARTIFACT)
             {
                 Trace.TraceData(TraceEventType.Information, string.Format(Tracing.SendAuthnRequest, Saml20Constants.ProtocolBindings.HTTP_Artifact, idpEndpoint.Id));
 
                 HttpArtifactBindingBuilder builder = new HttpArtifactBindingBuilder(context);
-                
+
                 //Honor the ForceProtocolBinding and only set this if it's not already set
                 if (string.IsNullOrEmpty(request.ProtocolBinding))
                     request.ProtocolBinding = Saml20Constants.ProtocolBindings.HTTP_Artifact;
