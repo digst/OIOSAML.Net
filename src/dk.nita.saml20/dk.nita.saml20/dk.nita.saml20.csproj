@@ -184,7 +184,6 @@
     <Compile Include="Config\AudienceUris.cs" />
     <Compile Include="Config\Certificate.cs" />
     <Compile Include="Config\FederationConfig.cs" />
-    <Compile Include="Identity\IPersistentPseudonymMapper.cs" />
     <Compile Include="Identity\ISaml20Identity.cs" />
     <Compile Include="Identity\Saml20Identity.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

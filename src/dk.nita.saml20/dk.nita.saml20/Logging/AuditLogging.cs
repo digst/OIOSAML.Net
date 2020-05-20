@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Web;
 using System.Xml;
-using dk.nita.saml20.identity;
 using dk.nita.saml20.config;
 using dk.nita.saml20.Utils;
-using dk.nita.saml20.session;
 using dk.nita.saml20.Session;
-using dk.nita.saml20.Profiles.DKSaml20.Attributes;
 
 namespace dk.nita.saml20.Logging
 {
@@ -58,25 +55,6 @@ namespace dk.nita.saml20.Logging
         {
             get { return HttpContext.Current.Items["AuditLogging:IdpId"] as string; }
             set { HttpContext.Current.Items["AuditLogging:IdpId"] = value; }
-        }
-
-        ///<summary>
-        /// Call from SP when using persistent psuedonyme profile
-        ///</summary>
-        ///<param name="nameid"></param>
-        ///<param name="localuserid"></param>
-        public static void LogPersistentPseudonymAuthenticated(string nameid, string localuserid)
-        {
-            string currentAuthLevel = "Unknown";
-            if (Saml20Identity.IsInitialized() && Saml20Identity.Current != null)
-            {
-                if (Saml20Identity.Current[DKSaml20LoaAttribute.NAME].Count > 0)
-                    currentAuthLevel = Saml20Identity.Current[DKSaml20LoaAttribute.NAME][0].AttributeValue[0];
-                else
-                    currentAuthLevel = Saml20Identity.Current[DKSaml20AssuranceLevelAttribute.NAME][0].AttributeValue[0];
-            }
-
-            logEntry(Direction.UNDEFINED, Operation.LOGIN_PERSISTENT_PSEUDONYME, string.Format("Authenticated nameid: {0} as local user id: {1}, auth.level: {2}, session timeout in minutes: {3}", nameid, localuserid, currentAuthLevel, FederationConfig.GetConfig().SessionTimeout));
         }
 
         ///<summary>
@@ -175,11 +153,7 @@ namespace dk.nita.saml20.Logging
         CRLCHECK,
         ///<summary>
         ///</summary>
-        LOGIN_SESSION,
-        ///<summary>
-        ///</summary>
-        LOGIN_PERSISTENT_PSEUDONYME
-
+        LOGIN_SESSION
     }
 
     ///<summary>
