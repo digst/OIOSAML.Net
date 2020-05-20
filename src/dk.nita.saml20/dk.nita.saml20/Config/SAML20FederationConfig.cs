@@ -6,7 +6,6 @@ using System.IO;
 using System.Text;
 using System.Xml;
 using System.Xml.Serialization;
-using dk.nita.saml20.identity;
 using dk.nita.saml20.Schema.Metadata;
 using dk.nita.saml20.Utils;
 using Saml2.Properties;
@@ -1022,12 +1021,6 @@ namespace dk.nita.saml20.config
         [XmlElement(ElementName = "CDC")]
         public CDCElement CDC;
 
-        /// <summary>
-        /// Persistent pseudonym
-        /// </summary>
-        [XmlElement(ElementName = "PersistentPseudonym")]
-        public PersistentPseudonymMapper PersistentPseudonym;
-
         // Default value is SHA256
         private string _shaHashingAlgorithm = config.ShaHashingAlgorithm.SHA256.ToString();
 
@@ -1152,38 +1145,6 @@ namespace dk.nita.saml20.config
         [XmlAttribute(AttributeName = "value")]
         public string Value;
 
-    }
-
-    /// <summary>
-    /// The persistent pseudonym mapper configuration element
-    /// </summary>
-    [Serializable]
-    [XmlType(Namespace = ConfigurationConstants.NamespaceUri)]
-    public class PersistentPseudonymMapper
-    {
-        private IPersistentPseudonymMapper _mapper = null;
-
-        /// <summary>
-        /// Mapper to use
-        /// </summary>
-        [XmlAttribute("mapper")]
-        public string Mapper;
-
-        ///<summary>
-        /// Returns the runtime-class configured pseudonym mapper (if any is present) for a given IdP.
-        ///</summary>
-        ///<returns></returns>
-        public IPersistentPseudonymMapper GetMapper()
-        {
-            if (String.IsNullOrEmpty(Mapper))
-                return null;
-
-            if (_mapper != null)
-                return _mapper;
-
-            _mapper = (IPersistentPseudonymMapper)Activator.CreateInstance(Type.GetType(Mapper), true);
-            return _mapper;
-        }
     }
 
     /// <summary>

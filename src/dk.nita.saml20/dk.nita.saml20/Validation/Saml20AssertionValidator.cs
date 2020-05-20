@@ -3,8 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using dk.nita.saml20.Schema.Core;
 using dk.nita.saml20.Utils;
-using dk.nita.saml20.Validation;
-using Trace=dk.nita.saml20.Utils.Trace;
+using Trace = dk.nita.saml20.Utils.Trace;
 
 namespace dk.nita.saml20.Validation
 {
