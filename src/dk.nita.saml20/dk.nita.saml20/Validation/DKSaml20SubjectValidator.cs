@@ -24,7 +24,7 @@ namespace dk.nita.saml20.Validation
         public void ValidateSubject(Subject subject)
         {
             if (subject.Items == null || subject.Items.Length == 0)
-                throw new DKSaml20FormatException("The DK-SAML 2.0 Profile requires at least one \"SubjectConfirmation\" element within the \"Subject\" element.");
+                throw new DKSaml20FormatException("The SAML profile requires at least one \"SubjectConfirmation\" element within the \"Subject\" element.");
 
             bool subjectConfirmationPresent = false;
             foreach (object item in subject.Items)
@@ -39,7 +39,7 @@ namespace dk.nita.saml20.Validation
                 }
             }
             if (!subjectConfirmationPresent)
-                throw new DKSaml20FormatException("The DK-SAML 2.0 Profile requires that a bearer \"SubjectConfirmation\" element is present.");
+                throw new DKSaml20FormatException("The SAML profile requires that a bearer \"SubjectConfirmation\" element is present.");
         }
     }
 }
