@@ -349,13 +349,15 @@ namespace dk.nita.saml20.protocol
 
         private static void CheckReplayAttack(HttpContext context, string inResponseTo)
         {
-            var expectedInResponseToSessionState = SessionStore.CurrentSession[SessionConstants.ExpectedInResponseTo];
+            if (string.IsNullOrEmpty(inResponseTo))
+                throw new Saml20Exception("Empty InResponseTo from IdP is not allowed.");
 
+            var expectedInResponseToSessionState = SessionStore.CurrentSession[SessionConstants.ExpectedInResponseTo];
             SessionStore.CurrentSession[SessionConstants.ExpectedInResponseTo] = null; // Ensure that no more responses can be received.
 
-            string expectedInResponseTo = expectedInResponseToSessionState.ToString();
-            if (string.IsNullOrEmpty(expectedInResponseTo) || string.IsNullOrEmpty(inResponseTo))
-                throw new Saml20Exception("Empty protocol message id is not allowed.");
+            string expectedInResponseTo = expectedInResponseToSessionState?.ToString();
+            if (string.IsNullOrEmpty(expectedInResponseTo))
+                throw new Saml20Exception("Expected InResponseTo not found in current session.");
 
             if (inResponseTo != expectedInResponseTo)
             {
