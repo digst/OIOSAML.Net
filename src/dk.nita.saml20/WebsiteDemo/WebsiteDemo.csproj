@@ -238,7 +238,7 @@
   <Import Project="$(VSToolsPath)\WebApplications\Microsoft.WebApplication.targets" Condition="'$(VSToolsPath)' != ''" />
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v10.0\WebApplications\Microsoft.WebApplication.targets" Condition="false" />
   <PropertyGroup>
-    <PreBuildEvent>:: Add HTTPS binding on any domain besides default localhost.
+    <PreBuildEvent>:: Add HTTPS binding on any domain, such as oiosaml-net.dk.
 "%25programfiles%25\IIS Express\appcmd.exe" set site "$(ProjectName)" /-bindings.[protocol='https',bindingInformation='*:20002:'] /apphostconfig:"$(SolutionDir).vs\$(SolutionName)\config\applicationhost.config"
 "%25programfiles%25\IIS Express\appcmd.exe" set site "$(ProjectName)" /+bindings.[protocol='https',bindingInformation='*:20002:'] /apphostconfig:"$(SolutionDir).vs\$(SolutionName)\config\applicationhost.config"</PreBuildEvent>
   </PropertyGroup>
