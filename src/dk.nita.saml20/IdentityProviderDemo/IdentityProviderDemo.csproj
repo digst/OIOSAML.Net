@@ -265,8 +265,8 @@
   <Import Project="$(VSToolsPath)\WebApplications\Microsoft.WebApplication.targets" Condition="'$(VSToolsPath)' != ''" />
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v10.0\WebApplications\Microsoft.WebApplication.targets" Condition="false" />
   <PropertyGroup>
-    <PreBuildEvent>::Add https binding to *, allowing access on custom domain name
-"%25programfiles%25\IIS Express\appcmd.exe" set site "IdentityProviderDemo" /-bindings.[protocol='https',bindingInformation='*:20001:'] /apphostconfig:"$(SolutionDir).vs\dk.nita.saml20\config\applicationhost.config"
-"%25programfiles%25\IIS Express\appcmd.exe" set site "IdentityProviderDemo" /+bindings.[protocol='https',bindingInformation='*:20001:'] /apphostconfig:"$(SolutionDir).vs\dk.nita.saml20\config\applicationhost.config"</PreBuildEvent>
+    <PreBuildEvent>:: Add HTTPS binding on any domain besides default localhost.
+"%25programfiles%25\IIS Express\appcmd.exe" set site "$(ProjectName)" /-bindings.[protocol='https',bindingInformation='*:20001:'] /apphostconfig:"$(SolutionDir).vs\$(SolutionName)\config\applicationhost.config"
+"%25programfiles%25\IIS Express\appcmd.exe" set site "$(ProjectName)" /+bindings.[protocol='https',bindingInformation='*:20001:'] /apphostconfig:"$(SolutionDir).vs\$(SolutionName)\config\applicationhost.config"</PreBuildEvent>
   </PropertyGroup>
 </Project>
