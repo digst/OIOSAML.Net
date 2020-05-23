@@ -1,14 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.IO;
-using System.Runtime.Serialization.Formatters.Binary;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Xml;
+using System.Xml.Serialization;
 using dk.nita.saml20;
-using dk.nita.saml20.Schema.Metadata;
-using dk.nita.saml20.Utils;
 
 namespace IdentityProviderDemo.Logic
 {
@@ -24,7 +21,7 @@ namespace IdentityProviderDemo.Logic
 
         private static bool _configLoaded = false;
         private static bool _metadataLoaded = false;
-        private const string _configFileName = "idpConfig.obj";
+        private const string _configFileName = "idpConfig.xml";
         private const string _spMetadataDir = "spmetadata";
         private static StoreName _storeName;
         private static StoreLocation _storeLocation;
@@ -240,16 +237,14 @@ namespace IdentityProviderDemo.Logic
                 if (!File.Exists(path))
                     return;
 
-                FileStream fs = File.OpenRead(path);
-
-                BinaryFormatter bf = new BinaryFormatter();
-
-                FileConfig conf = (FileConfig)bf.Deserialize(fs);
-
-                fs.Close();
+                FileConfig conf;
+                using (FileStream fs = File.OpenRead(path))
+                {
+                    XmlSerializer xs = new XmlSerializer(typeof(FileConfig));
+                    conf = (FileConfig)xs.Deserialize(fs);
+                }
 
                 _serverBaseUrl = conf.BaseUrl;
-
                 LoadCertificate(conf);
             }
         }
@@ -304,13 +299,12 @@ namespace IdentityProviderDemo.Logic
                 conf.certLocation = _storeLocation.ToString();
                 conf.certStore = _storeName.ToString();
             }
-            FileStream fs = File.Create(path);
 
-            BinaryFormatter bf = new BinaryFormatter();
-
-            bf.Serialize(fs, conf);
-
-            fs.Close();
+            using (FileStream fs = File.Create(path))
+            {
+                XmlSerializer xs = new XmlSerializer(typeof(FileConfig));
+                xs.Serialize(fs, conf);
+            }
         }
 
         public static void SetCertificate(X509Certificate2 certificate, StoreName name, StoreLocation location)
