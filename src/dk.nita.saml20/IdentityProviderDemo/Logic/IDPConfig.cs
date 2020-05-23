@@ -1,14 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.IO;
-using System.Runtime.Serialization.Formatters.Binary;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Xml;
+using System.Xml.Serialization;
 using dk.nita.saml20;
-using dk.nita.saml20.Schema.Metadata;
-using dk.nita.saml20.Utils;
 
 namespace IdentityProviderDemo.Logic
 {
@@ -16,7 +13,7 @@ namespace IdentityProviderDemo.Logic
     /// Contains the settings for the identity provider.
     /// </summary>
     public class IDPConfig
-    {        
+    {
         static IDPConfig()
         {
             _metadataDocs = new Dictionary<string, Saml20MetadataDocument>();
@@ -24,7 +21,7 @@ namespace IdentityProviderDemo.Logic
 
         private static bool _configLoaded = false;
         private static bool _metadataLoaded = false;
-        private const string _configFileName = "idpConfig.obj";
+        private const string _configFileName = "idpConfig.xml";
         private const string _spMetadataDir = "spmetadata";
         private static StoreName _storeName;
         private static StoreLocation _storeLocation;
@@ -36,8 +33,8 @@ namespace IdentityProviderDemo.Logic
         /// </summary>
         public static X509Certificate2 IDPCertificate
         {
-            get 
-            { 
+            get
+            {
                 LoadConfig();
                 return _idpCertificate;
             }
@@ -98,7 +95,7 @@ namespace IdentityProviderDemo.Logic
             string filename = GetFilename(entityID);
             string path = Path.Combine(SPMetadataDir, filename);
 
-            if(File.Exists(path))
+            if (File.Exists(path))
                 File.Delete(path);
         }
 
@@ -125,7 +122,8 @@ namespace IdentityProviderDemo.Logic
 
                         _metadataDocs.Add(metadata.EntityId, metadata);
 
-                    }catch
+                    }
+                    catch
                     {
                         //If for some reason there is a file in the directory which does not contain 
                         //valid data we just continue to the next file
@@ -205,49 +203,47 @@ namespace IdentityProviderDemo.Logic
 
         private static string GetFilename(string entityID)
         {
-            byte[] hash; 
-            System.Security.Cryptography.MD5CryptoServiceProvider md5 = new System.Security.Cryptography.MD5CryptoServiceProvider(); 
-            hash = md5.ComputeHash(Encoding.UTF8.GetBytes(entityID)); 
-            
+            byte[] hash;
+            System.Security.Cryptography.MD5CryptoServiceProvider md5 = new System.Security.Cryptography.MD5CryptoServiceProvider();
+            hash = md5.ComputeHash(Encoding.UTF8.GetBytes(entityID));
+
             // convert hash value to hex string 
-            StringBuilder sb = new StringBuilder(); 
-            foreach ( byte b in hash) 
-            { 
+            StringBuilder sb = new StringBuilder();
+            foreach (byte b in hash)
+            {
                 // convert each byte to a Hexadecimalstring 
-                sb.Append(b.ToString("x2")); 
-            } 
+                sb.Append(b.ToString("x2"));
+            }
 
             return sb.ToString();
         }
 
         private static void LoadConfig()
         {
-            if(!_configLoaded)
+            if (!_configLoaded)
             {
                 _configLoaded = true;
                 string path = Path.Combine(ConfigHelper.GetIdpDataDirectory(), _configFileName);
                 if (!File.Exists(path))
                     return;
 
-                FileStream fs = File.OpenRead(path);
-
-                BinaryFormatter bf = new BinaryFormatter();
-
-                FileConfig conf = (FileConfig) bf.Deserialize(fs);
-
-                fs.Close();
+                FileConfig conf;
+                using (FileStream fs = File.OpenRead(path))
+                {
+                    XmlSerializer xs = new XmlSerializer(typeof(FileConfig));
+                    conf = (FileConfig)xs.Deserialize(fs);
+                }
 
                 _serverBaseUrl = conf.BaseUrl;
-
                 LoadCertificate(conf);
             }
         }
 
         private static void LoadCertificate(FileConfig conf)
         {
-            if(!string.IsNullOrEmpty(conf.certThumbPrint))
+            if (!string.IsNullOrEmpty(conf.certThumbPrint))
             {
-                _storeLocation = (StoreLocation) Enum.Parse(typeof (StoreLocation), conf.certLocation);
+                _storeLocation = (StoreLocation)Enum.Parse(typeof(StoreLocation), conf.certLocation);
                 _storeName = (StoreName)Enum.Parse(typeof(StoreName), conf.certStore);
 
                 X509Store store = new X509Store(_storeName, _storeLocation);
@@ -255,7 +251,7 @@ namespace IdentityProviderDemo.Logic
                 store.Open(OpenFlags.ReadOnly);
 
                 X509Certificate2Collection coll = store.Certificates.Find(X509FindType.FindByThumbprint, conf.certThumbPrint, true);
-                if(coll.Count == 1)
+                if (coll.Count == 1)
                 {
                     _idpCertificate = coll[0];
                 }
@@ -268,19 +264,18 @@ namespace IdentityProviderDemo.Logic
 
             FileConfig conf = new FileConfig();
             conf.BaseUrl = ServerBaseUrl;
-            if(IDPCertificate != null)
+            if (IDPCertificate != null)
             {
                 conf.certThumbPrint = IDPCertificate.Thumbprint;
                 conf.certLocation = _storeLocation.ToString();
                 conf.certStore = _storeName.ToString();
             }
-            FileStream fs = File.Create(path);
 
-            BinaryFormatter bf = new BinaryFormatter();
-
-            bf.Serialize(fs, conf);
-
-            fs.Close();
+            using (FileStream fs = File.Create(path))
+            {
+                XmlSerializer xs = new XmlSerializer(typeof(FileConfig));
+                xs.Serialize(fs, conf);
+            }
         }
 
         public static void SetCertificate(X509Certificate2 certificate, StoreName name, StoreLocation location)
@@ -288,14 +283,14 @@ namespace IdentityProviderDemo.Logic
             _idpCertificate = certificate;
             _storeName = name;
             _storeLocation = location;
-            
+
             SaveConfig();
         }
 
         public static void ClearCertificate()
         {
             _idpCertificate = null;
-            
+
             SaveConfig();
         }
     }
