@@ -523,6 +523,20 @@ namespace dk.nita.saml20.protocol
                     return;
                 }
 
+                if (logoutRequest.NotOnOrAfter.HasValue)
+                {
+                    var allowedClockSkewTime = DateTime.UtcNow.AddMinutes(FederationConfig.GetConfig().AllowedClockSkewMinutes);
+
+                    if (logoutRequest.NotOnOrAfter >= allowedClockSkewTime)
+                    {
+                        var errormessage =
+                            $"Logout request NotOnOrAfter ({logoutRequest.NotOnOrAfter}) is after allowed time ({allowedClockSkewTime})";
+                        AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, errormessage);
+                        HandleError(context, errormessage);
+                        return;
+                    }
+                }
+                
                 Saml20MetadataDocument metadata = endpoint.metadata;
 
                 // handle a logout-request
