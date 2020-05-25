@@ -28,65 +28,6 @@ namespace dk.nita.test.Saml20
             return new Saml20Assertion(encAss.Assertion.DocumentElement, null, false);
         }
 
-        [Test]
-        [ExpectedException(typeof(Saml20Exception), ExpectedMessage = "Assertion is no longer valid.")]
-        public void DecryptFOBSAssertion_01()
-        {
-            DecryptFOBSAssertion(@"Saml20\Assertions\fobs-assertion2");
-        }
-
-        /// <summary>
-        /// Decrypts an assertion we received from "fælles-offentlige brugerstyring".
-        /// </summary>        
-        private static void DecryptFOBSAssertion(string file)
-        {
-            string assertionBase64 = File.ReadAllText(file);
-            byte[] assertionBytes = Convert.FromBase64String(assertionBase64);
-
-            XmlDocument doc = new XmlDocument();
-            doc.PreserveWhitespace = true;
-            doc.Load( new MemoryStream(assertionBytes) );
-
-            XmlNodeList encryptedList =
-                doc.GetElementsByTagName(EncryptedAssertion.ELEMENT_NAME, Saml20Constants.ASSERTION);
-
-            Assert.That(encryptedList.Count == 1);
-
-            // Do some mock configuration.
-            FederationConfig config = FederationConfig.GetConfig();
-            config.AllowedAudienceUris.Audiences.Add("https://saml.safewhere.net");
-
-            SAML20FederationConfig descr = SAML20FederationConfig.GetConfig();
-            descr.Endpoints.MetadataLocation = @"Saml20\Protocol\MetadataDocs\FOBS"; // Set it manually.     
-            Assert.That(Directory.Exists(descr.Endpoints.MetadataLocation));
-
-            X509Certificate2 cert = new X509Certificate2(@"Saml20\Certificates\SafewhereTest_SFS.pfx", "test1234");
-            Saml20EncryptedAssertion encass = 
-                new Saml20EncryptedAssertion((RSA) cert.PrivateKey);
-
-            encass.LoadXml((XmlElement) encryptedList[0]);
-            encass.Decrypt();
-
-            // Retrieve metadata                       
-            Saml20Assertion assertion = new Saml20Assertion(encass.Assertion.DocumentElement, null, false);
-
-            IDPEndPoint endp = descr.FindEndPoint(assertion.Issuer);
-            Assert.IsNotNull(endp, "Endpoint not found");
-            Assert.IsNotNull(endp.metadata, "Metadata not found");
-
-            try
-            {
-                assertion.CheckValid(AssertionUtil.GetTrustedSigners(assertion.Issuer));
-                Assert.Fail("Verification should fail. Token does not include its signing key.");
-            } catch(InvalidOperationException)
-            {}
-
-            Assert.IsNull(assertion.SigningKey, "Signing key is already present on assertion. Modify test.");
-            IEnumerable<string> validationFailures;
-            Assert.That(assertion.CheckSignature(Saml20SignonHandler.GetTrustedSigners(endp.metadata.GetKeys(KeyTypes.signing), endp, out validationFailures)));
-            Assert.IsNotNull(assertion.SigningKey, "Signing key was not set on assertion instance.");             
-        }
-
         /// <summary>
         /// Loads an encrypted assertion, retrieves the symmetric key used for its encryption and decrypts it.
         /// </summary>
