@@ -383,7 +383,7 @@ namespace dk.nita.test.Saml20
             Assertion saml20Assertion = AssertionUtil.GetBasicAssertion();
 
             new XmlSerializer(typeof(Assertion));
-
+            
             CreateSaml20Token(saml20Assertion);
         }
 
@@ -598,7 +598,7 @@ namespace dk.nita.test.Saml20
             // Test with NotBefore that pre-dates now 
             saml20Assertion.Conditions.NotBefore = DateTime.UtcNow.AddDays(-1);
             saml20Assertion.Conditions.NotOnOrAfter = null;
-            CreateSaml20Token(saml20Assertion);
+            CreateSaml20Token(saml20Assertion, DateTime.UtcNow.AddMinutes(1));
         }
 
         /// <summary>
@@ -611,14 +611,14 @@ namespace dk.nita.test.Saml20
             // Test with NotBefore that pre-dates now 
             saml20Assertion.Conditions.NotBefore = DateTime.UtcNow;
             saml20Assertion.Conditions.NotOnOrAfter = null;
-            CreateSaml20Token(saml20Assertion);
+            CreateSaml20Token(saml20Assertion, DateTime.UtcNow.AddMinutes(1));
         }
 
         /// <summary>
         /// Test validity of assertion when condition has an invalid NotBefore time restriction
         /// </summary>
         [Test]
-        [ExpectedException(typeof(Saml20FormatException), ExpectedMessage = "Conditions.NotBefore must not be in the future")]
+        [ExpectedException(typeof(Saml20FormatException), ExpectedMessage = "Conditions.NotBefore is not within expected range")]
         public void TimeRestriction_NotBefore_Invalid()
         {
             // Test with NotBefore that post-dates now 
@@ -627,7 +627,7 @@ namespace dk.nita.test.Saml20
             saml20Assertion.Conditions.NotOnOrAfter = null;
 
             Saml20AssertionValidator validator = new Saml20AssertionValidator(AssertionUtil.GetAudiences(), false);
-            validator.ValidateTimeRestrictions(saml20Assertion, new TimeSpan());
+            validator.ValidateTimeRestrictions(saml20Assertion, new TimeSpan(), DateTime.UtcNow);
         }
 
         /// <summary>
@@ -647,7 +647,7 @@ namespace dk.nita.test.Saml20
         /// Test validity of assertion when condition has an invalid NotOnOrAfter time restriction
         /// </summary>
         [Test]
-        [ExpectedException(typeof(Saml20FormatException), ExpectedMessage = "Conditions.NotOnOrAfter must not be in the past")]
+        [ExpectedException(typeof(Saml20FormatException), ExpectedMessage = "Conditions.NotOnOrAfter is not within expected range")]
         public void TimeRestriction_NotOnOrAfter_Invalid_Yesterday()
         {
             Assertion saml20Assertion = AssertionUtil.GetBasicAssertion();
@@ -656,14 +656,14 @@ namespace dk.nita.test.Saml20
             saml20Assertion.Conditions.NotOnOrAfter = DateTime.UtcNow.AddDays(-1);
 
             Saml20AssertionValidator validator = new Saml20AssertionValidator(AssertionUtil.GetAudiences(), false);
-            validator.ValidateTimeRestrictions(saml20Assertion, new TimeSpan());
+            validator.ValidateTimeRestrictions(saml20Assertion, new TimeSpan(), DateTime.UtcNow);
         }
 
         /// <summary>
         /// Test validity of assertion when condition has an invalid NotOnOrAfter time restriction
         /// </summary>
         [Test]
-        [ExpectedException(typeof(Saml20FormatException), ExpectedMessage = "Conditions.NotOnOrAfter must not be in the past")]
+        [ExpectedException(typeof(Saml20FormatException), ExpectedMessage = "Conditions.NotOnOrAfter is not within expected range")]
         public void TimeRestriction_NotOnOrAfter_Invalid_Now()
         {
             Assertion saml20Assertion = AssertionUtil.GetBasicAssertion();
@@ -672,7 +672,7 @@ namespace dk.nita.test.Saml20
             saml20Assertion.Conditions.NotOnOrAfter = DateTime.UtcNow;
 
             Saml20AssertionValidator validator = new Saml20AssertionValidator(AssertionUtil.GetAudiences(), false);
-            validator.ValidateTimeRestrictions(saml20Assertion, new TimeSpan());
+            validator.ValidateTimeRestrictions(saml20Assertion, new TimeSpan(), DateTime.UtcNow);
         }
 
         /// <summary>
@@ -684,7 +684,7 @@ namespace dk.nita.test.Saml20
             Assertion saml20Assertion = AssertionUtil.GetBasicAssertion();
             saml20Assertion.Conditions.NotBefore = DateTime.UtcNow.AddDays(-1);
             saml20Assertion.Conditions.NotOnOrAfter = DateTime.UtcNow.AddDays(1);
-            CreateSaml20Token(saml20Assertion);
+            CreateSaml20Token(saml20Assertion, DateTime.UtcNow);
         }
 
         /// <summary>
@@ -1084,7 +1084,7 @@ namespace dk.nita.test.Saml20
             saml20Assertion.Items = statements.ToArray();
 
             Saml20AssertionValidator validator = new Saml20AssertionValidator(AssertionUtil.GetAudiences(), false);
-            validator.ValidateTimeRestrictions(saml20Assertion, new TimeSpan(0, 0, 0));
+            validator.ValidateTimeRestrictions(saml20Assertion, new TimeSpan(0, 0, 0), DateTime.UtcNow);
         }
 
         /// <summary>
@@ -1470,11 +1470,13 @@ namespace dk.nita.test.Saml20
 
         #region Utility methods
 
-        private static void CreateSaml20Token(Assertion saml20Assertion)
+        private static void CreateSaml20Token(Assertion saml20Assertion, DateTime? currentUtcTime = null)
         {
             XmlDocument doc = AssertionUtil.ConvertAssertion(saml20Assertion);
-            new Saml20Assertion(doc.DocumentElement, null, false);
+            var assertion = new Saml20Assertion(doc.DocumentElement, null, false);
+            assertion.Validate(currentUtcTime ?? DateTime.MinValue);
         }
+
 
         #endregion
 

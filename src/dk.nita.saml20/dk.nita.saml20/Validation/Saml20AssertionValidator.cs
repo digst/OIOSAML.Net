@@ -95,30 +95,29 @@ namespace dk.nita.saml20.Validation
             return TimeRestrictionValidation.NotOnOrAfterValid(notOnOrAfter.Value, now, allowedClockSkew);
         }
 
-        public void ValidateTimeRestrictions(Assertion assertion, TimeSpan allowedClockSkew)
+        public void ValidateTimeRestrictions(Assertion assertion, TimeSpan allowedClockSkew, DateTime currentUtcTime)
         {
             // Conditions are not required
             if (assertion.Conditions == null)
                 return;
 
             Conditions conditions = assertion.Conditions;
-            DateTime now = DateTime.UtcNow;
             // Negative allowed clock skew does not make sense - we are trying to relax the restriction interval, not restrict it any further
             if (allowedClockSkew < TimeSpan.Zero)
                 allowedClockSkew = allowedClockSkew.Negate();
             
             // NotBefore must not be in the future
-            if (!ValidateNotBefore(conditions.NotBefore, now, allowedClockSkew))
-                throw new Saml20FormatException("Conditions.NotBefore must not be in the future");
+            if (!ValidateNotBefore(conditions.NotBefore, currentUtcTime, allowedClockSkew))
+                throw new Saml20FormatException("Conditions.NotBefore is not within expected range");
 
             // NotOnOrAfter must not be in the past
-            if (!ValidateNotOnOrAfter(conditions.NotOnOrAfter, now, allowedClockSkew))
-                throw new Saml20FormatException("Conditions.NotOnOrAfter must not be in the past");
+            if (!ValidateNotOnOrAfter(conditions.NotOnOrAfter, currentUtcTime, allowedClockSkew))
+                throw new Saml20FormatException("Conditions.NotOnOrAfter is not within expected range");
 
             foreach (AuthnStatement statement in assertion.GetAuthnStatements())
             {                
                 if (statement.SessionNotOnOrAfter != null
-                    && statement.SessionNotOnOrAfter <= now)
+                    && statement.SessionNotOnOrAfter <= currentUtcTime)
                     throw new Saml20FormatException("AuthnStatement attribute SessionNotOnOrAfter MUST be in the future");
 
                 // TODO: Consider validating that authnStatement.AuthnInstant is in the past
@@ -135,11 +134,11 @@ namespace dk.nita.saml20.Validation
                     if (subjectConfirmation.SubjectConfirmationData == null)
                         continue;
 
-                    if (!ValidateNotBefore(subjectConfirmation.SubjectConfirmationData.NotBefore, now, allowedClockSkew))
-                        throw new Saml20FormatException("SubjectConfirmationData.NotBefore must not be in the future");
+                    if (!ValidateNotBefore(subjectConfirmation.SubjectConfirmationData.NotBefore, currentUtcTime, allowedClockSkew))
+                        throw new Saml20FormatException("SubjectConfirmationData.NotBefore is not within expected range");
 
-                    if (!ValidateNotOnOrAfter(subjectConfirmation.SubjectConfirmationData.NotOnOrAfter, now, allowedClockSkew))
-                        throw new Saml20FormatException("SubjectConfirmationData.NotOnOrAfter must not be in the past");
+                    if (!ValidateNotOnOrAfter(subjectConfirmation.SubjectConfirmationData.NotOnOrAfter, currentUtcTime, allowedClockSkew))
+                        throw new Saml20FormatException("SubjectConfirmationData.NotOnOrAfter is not within expected range");
                 }
                 
             }
@@ -225,7 +224,7 @@ namespace dk.nita.saml20.Validation
 
             bool oneTimeUseSeen = false;
             bool proxyRestrictionsSeen = false;
-            
+
             ValidateConditionsInterval(assertion.Conditions);
 
             foreach (ConditionAbstract cat in assertion.Conditions.Items)
