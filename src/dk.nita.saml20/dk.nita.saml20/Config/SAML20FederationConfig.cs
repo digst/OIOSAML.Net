@@ -1028,9 +1028,9 @@ namespace dk.nita.saml20.config
         /// Get a URL that redirects the user to the login-page for this IDPEndPoint
         /// </summary>
         /// <returns></returns>
-        public string GetIDPLoginUrl(bool forceAuthn, bool isPassive, string desiredLoa, string desiredProfile)
+        public string GetIDPLoginUrl(bool forceAuthn, bool isPassive, string desiredNSIS, string desiredProfile)
         {
-            return IDPSelectionUtil.GetIDPLoginUrl(Id, forceAuthn, isPassive, desiredLoa, desiredProfile);
+            return IDPSelectionUtil.GetIDPLoginUrl(Id, forceAuthn, isPassive, desiredNSIS, desiredProfile);
         }
     }
 
