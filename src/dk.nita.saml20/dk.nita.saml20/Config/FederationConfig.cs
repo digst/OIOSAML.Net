@@ -170,9 +170,9 @@ namespace dk.nita.saml20.config
 
 
     /// <summary>
-        /// The Actions configuration element class
-        /// </summary>
-        [Serializable]
+    /// The Actions configuration element class
+    /// </summary>
+    [Serializable]
     public class ActionsConfig
     {
         private ActionConfigAbstract[] _actionList;
