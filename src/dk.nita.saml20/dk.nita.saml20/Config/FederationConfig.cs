@@ -28,7 +28,7 @@ namespace dk.nita.saml20.config
         /// <summary>
         /// Certificate used to sign exchanged saml tokens
         /// </summary>
-        [XmlElement] 
+        [XmlElement]
         public Certificate SigningCertificate;
 
         // default to 30 minutes
@@ -82,7 +82,7 @@ namespace dk.nita.saml20.config
             get { return _preventOpenRedirectAttack; }
             set { _preventOpenRedirectAttack = value; }
         }
-        
+
         /// <summary>
         /// The list of audience uris that are allowed by a receiver
         /// </summary>
@@ -122,13 +122,25 @@ namespace dk.nita.saml20.config
         {
             get
             {
-                if(_actions == null)
+                if (_actions == null)
                 {
                     _actions = new ActionsConfig();
                 }
                 return _actions;
             }
             set { _actions = value; }
+        }
+
+        private int _allowedClockSkewMinutes = 5;
+
+        /// <summary>
+        /// Clock skew in minutes to validate NotBefore, NotOnOrAfter, and validUntil 
+        /// </summary>
+        [XmlElement(ElementName = "AllowedClockSkewMinutes")]
+        public int AllowedClockSkewMinutes
+        {
+            get { return _allowedClockSkewMinutes; }
+            set => _allowedClockSkewMinutes = value;
         }
     }
 
@@ -149,7 +161,7 @@ namespace dk.nita.saml20.config
         [XmlElement("clear", typeof(ActionConfigClear))]
         public ActionConfigAbstract[] ActionList
         {
-            get { return _actionList ?? new ActionConfigAbstract[]{}; }
+            get { return _actionList ?? new ActionConfigAbstract[] { }; }
             set { _actionList = value; }
         }
     }
@@ -171,7 +183,7 @@ namespace dk.nita.saml20.config
         {
             get { return _name; }
             set { _name = value; }
-        } 
+        }
     }
 
     /// <summary>
@@ -200,7 +212,7 @@ namespace dk.nita.saml20.config
     [Serializable]
     public class ActionConfigClear : ActionConfigAbstract
     {
-        
+
     }
 
     /// <summary>
@@ -209,7 +221,7 @@ namespace dk.nita.saml20.config
     [Serializable]
     public class ActionConfigRemove : ActionConfigAbstract
     {
-        
+
     }
 
 }
