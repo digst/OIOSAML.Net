@@ -35,6 +35,8 @@ namespace dk.nita.saml20
 
         private AssertionProfile profile;
 
+        private int _allowedClockSkewMinutes;
+
         /// <summary>
         /// An list of the unencrypted attributes in the assertion. This list is lazy initialized, ie. it will only be retrieved
         /// from the <code>_samlAssertion</code> field when it is requested through the <code>Attributes</code> property.
@@ -64,6 +66,8 @@ namespace dk.nita.saml20
                 if (_assertionValidator == null)
                 {
                     FederationConfig config = FederationConfig.GetConfig();
+                    _allowedClockSkewMinutes = config.AllowedClockSkewMinutes;
+
                     if (config == null || config.AllowedAudienceUris == null)
                     {
                         if (profile == AssertionProfile.DKSaml)
@@ -488,8 +492,11 @@ namespace dk.nita.saml20
                     throw new Saml20Exception("Assertion signature could not be verified.");
             
             // Validate the saml20Assertion.      
-            if(_autoValidate)
+            if (_autoValidate)
+            {
                 AssertionValidator.ValidateAssertion(Assertion);
+                AssertionValidator.ValidateTimeRestrictions(Assertion, TimeSpan.FromMinutes(_allowedClockSkewMinutes));
+            }
         }
 
         /// <summary>

@@ -154,6 +154,18 @@ namespace dk.nita.saml20.config
             var msg = $"Found no valid certificate configured in the certificate configuration. Make sure at least one valid certificate is configured.";
             throw new ConfigurationErrorsException(msg);
         }
+
+        private int _allowedClockSkewMinutes = 5;
+
+        /// <summary>
+        /// Clock skew in minutes to validate NotBefore, NotOnOrAfter, and validUntil 
+        /// </summary>
+        [XmlElement(ElementName = "AllowedClockSkewMinutes")]
+        public int AllowedClockSkewMinutes
+        {
+            get { return _allowedClockSkewMinutes; }
+            set => _allowedClockSkewMinutes = value;
+        }
     }
 
 
