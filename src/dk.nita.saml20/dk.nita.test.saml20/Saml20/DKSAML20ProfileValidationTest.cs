@@ -56,7 +56,8 @@ namespace dk.nita.test.Saml20
             saml20Assertion.Items = statements.ToArray();
 
             XmlDocument doc = AssertionUtil.ConvertAssertion(saml20Assertion);
-            new Saml20Assertion(doc.DocumentElement, null, false);
+            var assertion = new Saml20Assertion(doc.DocumentElement, null, false);
+            assertion.Validate(DateTime.MinValue);
         }
 
         /// <summary>
@@ -79,7 +80,8 @@ namespace dk.nita.test.Saml20
 
             saml20Assertion.Items = statements.ToArray();
 
-            new Saml20Assertion(AssertionUtil.ConvertAssertion(saml20Assertion).DocumentElement, null, false);
+            var assertion = new Saml20Assertion(AssertionUtil.ConvertAssertion(saml20Assertion).DocumentElement, null, false);
+            assertion.Validate(DateTime.MinValue);
         }
 
         /// <summary>
