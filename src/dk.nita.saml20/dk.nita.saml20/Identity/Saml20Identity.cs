@@ -3,14 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Security.Principal;
 using dk.nita.saml20.Session;
-using dk.nita.saml20.config;
 using dk.nita.saml20.Schema.Core;
 using dk.nita.saml20.Identity;
-using dk.nita.saml20.Profiles.DKSaml20.Attributes;
-using System.Text;
-using System.Linq;
-using System.Xml.Serialization;
-using System.IO;
 using dk.nita.saml20.Utils;
 using dk.nita.saml20.Profiles.BasicPrivilegeProfile;
 
@@ -31,15 +25,13 @@ namespace dk.nita.saml20.identity
     public class Saml20Identity : GenericIdentity, ISaml20Identity
     {
         private readonly Dictionary<string, List<SamlAttribute>> _attributes;
-        private string _persistenPseudonym;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Saml20Identity"/> class.
         /// </summary>
         /// <param name="name">The name.</param>
         /// <param name="attributes">The attributes.</param>
-        /// <param name="persistentPseudonym">The persistent pseudonym.</param>
-        public Saml20Identity(string name, ICollection<SamlAttribute> attributes, string persistentPseudonym)
+        public Saml20Identity(string name, ICollection<SamlAttribute> attributes)
             : base(name, Saml20Constants.ASSERTION)
         {
             _attributes = new Dictionary<string, List<SamlAttribute>>();
@@ -50,7 +42,6 @@ namespace dk.nita.saml20.identity
                     _attributes.Add(att.Name, new List<SamlAttribute>());
                 _attributes[att.Name].Add(att);
             }
-            _persistenPseudonym = persistentPseudonym;
         }
 
         /// <summary>
@@ -84,17 +75,10 @@ namespace dk.nita.saml20.identity
         /// </summary>
         internal static IPrincipal InitSaml20Identity(Saml20AssertionLite assertion)
         {
-            // Find IDPEndPoint
-            IDPEndPoint point = SAML20FederationConfig.GetConfig().FindEndPoint(assertion.Issuer);
-
-            bool isPersistentPseudonym = assertion.Subject.Format == Saml20Constants.NameIdentifierFormats.Persistent;
-            // Protocol-level support for persistent pseudonyms: If a mapper has been configured, use it here before constructing the principal.
             string subjectIdentifier = assertion.Subject.Value;
-            if (isPersistentPseudonym && point.PersistentPseudonym != null)
-                subjectIdentifier = point.PersistentPseudonym.GetMapper().MapIdentity(assertion.Subject);
 
             // Create identity
-            var identity = new Saml20Identity(subjectIdentifier, assertion.Attributes, isPersistentPseudonym ? assertion.Subject.Value : null);
+            var identity = new Saml20Identity(subjectIdentifier, assertion.Attributes);
 
             return new GenericPrincipal(identity, new string[] { });
         }
@@ -116,16 +100,6 @@ namespace dk.nita.saml20.identity
         public bool HasAttribute(string attributeName)
         {
             return _attributes.ContainsKey(attributeName);
-        }
-
-        /// <summary>
-        /// Returns the value of the persistent pseudonym issued by the IdP if the Service Provider connection
-        /// is set up with persistent pseudonyms. Otherwise, returns null.
-        /// </summary>
-        /// <value></value>
-        public string PersistentPseudonym
-        {
-            get { return _persistenPseudonym; }
         }
 
         /// <summary>

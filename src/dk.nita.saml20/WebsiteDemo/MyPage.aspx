@@ -37,7 +37,7 @@
     <% if (Saml20Identity.IsInitialized())
         { %>
     <div>
-        Welcome, <%= Saml20Identity.Current.Name + (Saml20Identity.Current.PersistentPseudonym != null ? " (Pseudonym is " + Saml20Identity.Current.PersistentPseudonym + ")" : String.Empty)%><br />
+        Welcome, <%= Saml20Identity.Current.Name %><br />
         <h1>SAML attributes</h1>
         <table style="border: solid 1px;">
             <thead>
