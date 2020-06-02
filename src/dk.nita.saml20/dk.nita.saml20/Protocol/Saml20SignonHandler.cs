@@ -514,6 +514,7 @@ namespace dk.nita.saml20.protocol
             }
 
             Saml20Assertion assertion = new Saml20Assertion(elem, null, quirksMode);
+            assertion.Validate(DateTime.UtcNow);
 
             if (endp == null || endp.metadata == null)
             {

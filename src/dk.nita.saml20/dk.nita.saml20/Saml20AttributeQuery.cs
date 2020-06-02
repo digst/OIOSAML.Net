@@ -219,6 +219,7 @@ namespace dk.nita.saml20
             Saml20Assertion assertion =
                     new Saml20Assertion(xmlAssertion, null,
                                         AssertionProfile.Core, endPoint.QuirksMode);
+            assertion.Validate(DateTime.UtcNow);
 
             if (Trace.ShouldTrace(TraceEventType.Information))
             {

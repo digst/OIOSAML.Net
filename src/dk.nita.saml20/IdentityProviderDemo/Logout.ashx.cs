@@ -142,6 +142,7 @@ namespace IdentityProviderDemo
             request.SubjectToLogOut = new NameID();
             request.SubjectToLogOut.Format = Saml20Constants.NameIdentifierFormats.Unspecified;
             request.SubjectToLogOut.Value = user.Username;
+            request.NotOnOrAfter = DateTime.UtcNow.AddMinutes(5);
 
             Saml20MetadataDocument metadata = GetMetadata(entityID);
             

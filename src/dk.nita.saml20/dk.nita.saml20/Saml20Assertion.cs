@@ -33,6 +33,8 @@ namespace dk.nita.saml20
 
         private AssertionProfile profile;
 
+        private int _allowedClockSkewMinutes;
+
         /// <summary>
         /// An list of the unencrypted attributes in the assertion. This list is lazy initialized, ie. it will only be retrieved
         /// from the <code>_samlAssertion</code> field when it is requested through the <code>Attributes</code> property.
@@ -49,7 +51,6 @@ namespace dk.nita.saml20
         private AsymmetricAlgorithm _signingKey;
 
         private bool _quirksMode = false;
-        private readonly bool _autoValidate = true;
 
         #endregion
 
@@ -62,6 +63,8 @@ namespace dk.nita.saml20
                 if (_assertionValidator == null)
                 {
                     FederationConfig config = FederationConfig.GetConfig();
+                    _allowedClockSkewMinutes = config.AllowedClockSkewMinutes;
+
                     if (config == null || config.AllowedAudienceUris == null)
                     {
                         if (profile == AssertionProfile.DKSaml)
@@ -329,22 +332,6 @@ namespace dk.nita.saml20
             LoadXml(assertion, trustedSigners);
         }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="Saml20Assertion"/> class.
-        /// </summary>
-        /// <param name="assertion">The assertion.</param>
-        /// <param name="trustedSigners">If <code>null</code>, the signature of the given assertion is not verified.</param>
-        /// <param name="profile">Determines the type of validation to perform on the token</param>
-        /// <param name="quirksMode">if set to <c>true</c> quirks mode is enabled.</param>
-        /// <param name="autoValidate">Turn automatic validation on or off</param>
-        public Saml20Assertion(XmlElement assertion, IEnumerable<AsymmetricAlgorithm> trustedSigners, AssertionProfile profile, bool quirksMode, bool autoValidate)
-        {
-            this.profile = profile;
-            _quirksMode = quirksMode;
-            _autoValidate = autoValidate;
-            LoadXml(assertion, trustedSigners);
-        }
-
         #endregion
 
         /// <summary>
@@ -399,7 +386,7 @@ namespace dk.nita.saml20
         /// </summary>        
         public bool IsExpired()
         {
-            return DateTime.Now.ToUniversalTime() > NotOnOrAfter;
+            return DateTime.UtcNow > NotOnOrAfter.AddMinutes(_allowedClockSkewMinutes);
         }
 
         /// <summary>
@@ -484,10 +471,17 @@ namespace dk.nita.saml20
             if (trustedSigners != null)
                 if (!CheckSignature(trustedSigners))
                     throw new Saml20Exception("Assertion signature could not be verified.");
-            
+        }
+
+        /// <summary>
+        /// Validates the assertion
+        /// </summary>
+        /// <param name="currentUtcTime"></param>
+        public void Validate(DateTime currentUtcTime)
+        {
             // Validate the saml20Assertion.      
-            if(_autoValidate)
-                AssertionValidator.ValidateAssertion(Assertion);
+            AssertionValidator.ValidateAssertion(Assertion);
+            AssertionValidator.ValidateTimeRestrictions(Assertion, TimeSpan.FromMinutes(_allowedClockSkewMinutes), currentUtcTime);
         }
 
         /// <summary>

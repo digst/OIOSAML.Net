@@ -80,14 +80,14 @@ namespace dk.nita.test.Saml20
                 SubjectConfirmation subjectConfirmation = new SubjectConfirmation();
                 subjectConfirmation.Method = SubjectConfirmation.BEARER_METHOD;
                 subjectConfirmation.SubjectConfirmationData = new SubjectConfirmationData();
-                subjectConfirmation.SubjectConfirmationData.NotOnOrAfter = new DateTime(2008, 12, 31, 12, 0, 0, 0);
+                subjectConfirmation.SubjectConfirmationData.NotOnOrAfter = DateTime.UtcNow.AddMinutes(1);
                 subjectConfirmation.SubjectConfirmationData.Recipient = "http://borger.dk";
                 assertion.Subject.Items = new object[] { subjectConfirmation };
             }
 
             {
                 assertion.Conditions = new Conditions();
-                assertion.Conditions.NotOnOrAfter = new DateTime(2008, 12, 31, 12, 0, 0, 0);
+                assertion.Conditions.NotOnOrAfter = DateTime.UtcNow.AddMinutes(1);
                 AudienceRestriction audienceRestriction = new AudienceRestriction();
                 audienceRestriction.Audience = GetAudiences();
                 assertion.Conditions.Items = new List<ConditionAbstract>(new ConditionAbstract[] { audienceRestriction });
@@ -168,7 +168,8 @@ namespace dk.nita.test.Saml20
             fs.Close();
 
             Saml20Assertion assertion = new Saml20Assertion(document.DocumentElement, null, false);
-            
+            assertion.Validate(DateTime.MinValue);
+
             List<AsymmetricAlgorithm> result = new List<AsymmetricAlgorithm>(1);
             foreach (KeyInfoClause clause in assertion.GetSignatureKeys())
             {
@@ -194,6 +195,7 @@ namespace dk.nita.test.Saml20
             fs.Close();
 
             Saml20Assertion assertion = new Saml20Assertion(document.DocumentElement, null, false);
+            assertion.Validate(DateTime.MinValue);
             return assertion;
         }
 
