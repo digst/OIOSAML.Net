@@ -45,16 +45,16 @@ namespace dk.nita.saml20.Utils
         /// <param name="idpId">Id of IDP that an authentication URL is needed for</param>
         /// <param name="forceAuthn">Specifies wether or not the user is forced to login even if the user is already logged in. True means that the user must login into the federation again even if the user was already logged in.</param>
         /// <param name="isPassive">Specifies wether or not the user must be promthed with a login screen at IdP if user is not already logged into the federation. True means that the user must not be promthed with a login screen.</param>
-        /// <param name="desiredLoa">Specifies the desired level of assurance.</param>
+        /// <param name="desiredNSISLevel">Specifies the desired level of assurance.</param>
         /// <param name="desiredProfile">Specifies the desired type of profile (Person or Professional)</param>
         /// <returns>A URL that can be used for logging in at the IDP</returns>
-        public static string GetIDPLoginUrl(string idpId, bool forceAuthn, bool isPassive, string desiredLoa, string desiredProfile)
+        public static string GetIDPLoginUrl(string idpId, bool forceAuthn, bool isPassive, string desiredNSISLevel, string desiredProfile)
         {
             return string.Format("{0}?{1}={2}&{3}={4}&{5}={6}&{7}={8}&{9}={10}", SAML20FederationConfig.GetConfig().ServiceProvider.SignOnEndpoint.localPath,
                 Saml20SignonHandler.IDPChoiceParameterName, HttpUtility.UrlEncode(idpId),
                 Saml20SignonHandler.IDPForceAuthn, forceAuthn.ToString(),
                 Saml20SignonHandler.IDPIsPassive, isPassive.ToString(),
-                Saml20SignonHandler.LevelOfAssurance, desiredLoa,
+                Saml20SignonHandler.NSISLevel, desiredNSISLevel,
                 Saml20SignonHandler.Profile, desiredProfile);
         }
     }

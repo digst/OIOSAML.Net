@@ -34,7 +34,7 @@ namespace dk.nita.saml20.protocol
         /// <summary>
         /// Parameter name for level of assurance
         /// </summary>
-        public const string LevelOfAssurance = "levelOfAssurance";
+        public const string NSISLevel = "levelOfAssurance";
         /// <summary>
         /// Parameter name for profile type (Person/Professional)
         /// </summary>

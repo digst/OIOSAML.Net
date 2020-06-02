@@ -42,10 +42,10 @@ namespace dk.nita.saml20.protocol.pages
                     bool isPassive;
                     bool.TryParse(isPassiveAsString, out isPassive);
 
-                    string desiredLoa = HttpContext.Current.Request.Params[Saml20SignonHandler.LevelOfAssurance];
+                    string desiredNSISLevel = HttpContext.Current.Request.Params[Saml20SignonHandler.NSISLevel];
                     string desiredProfile = HttpContext.Current.Request[Saml20SignonHandler.Profile];
 
-                    link.NavigateUrl = endPoint.GetIDPLoginUrl(forceAuthn, isPassive, desiredLoa, desiredProfile);
+                    link.NavigateUrl = endPoint.GetIDPLoginUrl(forceAuthn, isPassive, desiredNSISLevel, desiredProfile);
                     BodyPanel.Controls.Add(link);
                     BodyPanel.Controls.Add(new LiteralControl("<br/>"));
                 } else

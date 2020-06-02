@@ -1,11 +1,5 @@
-﻿using System.Collections.Generic;
-using System.Security.Cryptography;
-using System.Security.Cryptography.Xml;
-using System.Web;
-using System.Web.SessionState;
-using System.Xml;
+﻿using System.Web;
 using dk.nita.saml20;
-using dk.nita.saml20.protocol;
 using IdentityProviderDemo.Logic;
 using dk.nita.saml20.Bindings;
 using dk.nita.saml20.Schema.Protocol;

@@ -99,29 +99,29 @@ namespace dk.nita.saml20.config
         }
 
         // default to Substantial. Cooresponds to certificate level in the OIOSAML specification.
-        private string _minimumLegacyAssuranceLevel = "3";
+        private string _minimumAssuranceLevel = "3";
 
         /// <summary>
         /// Gets or sets the minimum assurance level configuration (spec 2.0)
         /// </summary>
-        [XmlElement(ElementName = "MinimumLegacyAssuranceLevel")]
-        public string MinimumLegacyAssuranceLevel
+        [XmlElement(ElementName = "MinimumAssuranceLevel")]
+        public string MinimumAssuranceLevel
         {
-            get { return _minimumLegacyAssuranceLevel; }
-            set { _minimumLegacyAssuranceLevel = value; }
+            get { return _minimumAssuranceLevel; }
+            set { _minimumAssuranceLevel = value; }
         }
 
         // default to Substantial. Cooresponds to certificate level in the OIOSAML specification.
-        private string _minimumLevelOfAssurance = "Substantial";
+        private string _minimumNSISLevel = "Substantial";
 
         /// <summary>
         /// Gets or sets the minimum assurance level configuration (spec 3.0)
         /// </summary>
-        [XmlElement(ElementName = "MinimumLevelOfAssurance")]
-        public string MinimumLevelOfAssurance
+        [XmlElement(ElementName = "MimimumNSISLevel")]
+        public string MinimumNSISLevel
         {
-            get { return _minimumLevelOfAssurance; }
-            set { _minimumLevelOfAssurance = value; }
+            get { return _minimumNSISLevel; }
+            set { _minimumNSISLevel = value; }
         }
 
 
@@ -1028,9 +1028,9 @@ namespace dk.nita.saml20.config
         /// Get a URL that redirects the user to the login-page for this IDPEndPoint
         /// </summary>
         /// <returns></returns>
-        public string GetIDPLoginUrl(bool forceAuthn, bool isPassive, string desiredLoa, string desiredProfile)
+        public string GetIDPLoginUrl(bool forceAuthn, bool isPassive, string desiredNSISLevel, string desiredProfile)
         {
-            return IDPSelectionUtil.GetIDPLoginUrl(Id, forceAuthn, isPassive, desiredLoa, desiredProfile);
+            return IDPSelectionUtil.GetIDPLoginUrl(Id, forceAuthn, isPassive, desiredNSISLevel, desiredProfile);
         }
     }
 

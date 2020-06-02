@@ -143,7 +143,7 @@ AppID={1}</value>
   <data name="AssertionExpired" xml:space="preserve">
     <value>Assertion is no longer valid.</value>
   </data>
-  <data name="AssuranceLevelTooLow" xml:space="preserve">
+  <data name="NSISLevelTooLow" xml:space="preserve">
     <value>Saml assertion does not have the required assurance level. Assurance level was: {0} and configured minimum assurance level was: {1}.</value>
   </data>
   <data name="AssertionIDAttributeMissing" xml:space="preserve">
@@ -516,13 +516,16 @@ AppID={1}</value>
   <data name="DemandingLevelOfAssuranceError" xml:space="preserve">
     <value>Received bad level os assurance value: "{0}". Valid values are "Low", "Substantial", "High".</value>
   </data>
-  <data name="AssuranceLevelTooLowAccordingToDemand" xml:space="preserve">
-    <value>Saml assertion does not have the required assurance level. Assurance level was: {0} and demanded minimum assurance level was: {1}.</value>
+  <data name="NSISLevelTooLowAccordingToDemand" xml:space="preserve">
+    <value>Saml assertion does not have the required NSIS level. NSIS level was: {0} and demanded minimum NSIS level was: {1}.</value>
   </data>
   <data name="DemandingProfileError" xml:space="preserve">
     <value>Received bad profile demand value: "{0}". Valid values are "Professional", "Person".</value>
   </data>
   <data name="AssuranceLevelMissing" xml:space="preserve">
     <value>The SAML token must contain an assurance level.</value>
+  </data>
+  <data name="NSISLevelMissing" xml:space="preserve">
+    <value>The SAML token must contain a NSIS level.</value>
   </data>
 </root>
