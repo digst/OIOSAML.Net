@@ -5,7 +5,7 @@ namespace dk.nita.saml20.Profiles.DKSaml20.Attributes
     /// <summary>
     /// 
     /// </summary>
-    public class DKSaml20NSISAttribute : DKSaml20Attribute
+    public class DKSaml20NSISLevelAttribute : DKSaml20Attribute
     {
         /// <summary>
         /// Attribute name

@@ -559,24 +559,24 @@ namespace dk.nita.saml20.protocol
             if (NSISLevel == null)
             {
                 AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST,
-                     Resources.AssuranceLevelMissing + " Assertion: " + elem.OuterXml);
+                     Resources.NSISLevelMissing + " Assertion: " + elem.OuterXml);
 
-                HandleError(context, Resources.AssuranceLevelMissing);
+                HandleError(context, Resources.NSISLevelMissing);
                 return;
             }
 
             // Only check if assertion has the required level of assurance (OIOSAML 3.0)
-            string minimumConfiguredNSISLevel = SAML20FederationConfig.GetConfig().MinimumLevelOfAssurance;
+            string minimumConfiguredNSISLevel = SAML20FederationConfig.GetConfig().MinimumNSISLevel;
 
             // Verify demanded assurance level if any
-            if (SessionStore.CurrentSession[SessionConstants.ExpectedLevelOfAssurance] != null)
+            if (SessionStore.CurrentSession[SessionConstants.ExpectedNSISLevel] != null)
             {
-                var expectedLevelOfAssurance = SessionStore.CurrentSession[SessionConstants.ExpectedLevelOfAssurance].ToString();
-                SessionStore.CurrentSession[SessionConstants.ExpectedLevelOfAssurance] = null;
-                if (!CheckLevelOfAssurance(NSISLevel, expectedLevelOfAssurance))
+                var expectedNSISLevel = SessionStore.CurrentSession[SessionConstants.ExpectedNSISLevel].ToString();
+                SessionStore.CurrentSession[SessionConstants.ExpectedNSISLevel] = null;
+                if (!CheckNSISLevel(NSISLevel, expectedNSISLevel))
                 {
-                    var loaErrorMessage = string.Format(Resources.AssuranceLevelTooLowAccordingToDemand, NSISLevel,
-                                                   expectedLevelOfAssurance);
+                    var loaErrorMessage = string.Format(Resources.NSISLevelTooLowAccordingToDemand, NSISLevel,
+                                                   expectedNSISLevel);
                     AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST,
                           loaErrorMessage + " Assertion: " + elem.OuterXml);
 
@@ -587,12 +587,12 @@ namespace dk.nita.saml20.protocol
             else
             {
                 // Verify minimum configured assurance level if no demand are present
-                if (!CheckLevelOfAssurance(NSISLevel, minimumConfiguredNSISLevel))
+                if (!CheckNSISLevel(NSISLevel, minimumConfiguredNSISLevel))
                 {
 
                     // Verify legacy assurance level if LOA did not validate
-                    string assuranceLevel = GetAssuranceLevel(assertion);
-                    string minimumConfiguredLegacyAssuranceLevel = SAML20FederationConfig.GetConfig().MinimumLegacyAssuranceLevel;
+                    string assuranceLevel = GetLegacyAssuranceLevel(assertion);
+                    string minimumConfiguredLegacyAssuranceLevel = SAML20FederationConfig.GetConfig().MinimumAssuranceLevel;
 
                     int assuranceLevelAsInt;
                     int minimumAssuranceLevelAsInt;
@@ -600,7 +600,7 @@ namespace dk.nita.saml20.protocol
                         !int.TryParse(minimumConfiguredLegacyAssuranceLevel, out minimumAssuranceLevelAsInt) ||
                         assuranceLevelAsInt < minimumAssuranceLevelAsInt))
                     {
-                        var loaErrorMessage = string.Format(Resources.AssuranceLevelTooLow, NSISLevel,
+                        var loaErrorMessage = string.Format(Resources.NSISLevelTooLow, NSISLevel,
                                             minimumConfiguredNSISLevel);
 
 
@@ -673,7 +673,7 @@ namespace dk.nita.saml20.protocol
             return true;
         }
 
-        private bool CheckLevelOfAssurance(string levelOfAssurance, string expectedLevelOfAssurance)
+        private bool CheckNSISLevel(string levelOfAssurance, string expectedLevelOfAssurance)
         {
             // Assurance level is ok if the string matches the configured minimum assurance level.
             if (levelOfAssurance != expectedLevelOfAssurance)
@@ -722,7 +722,7 @@ namespace dk.nita.saml20.protocol
                 Trace.TraceData(TraceEventType.Information, string.Format(Tracing.Login, assertion.Subject.Value, assertion.SessionIndex, assertion.Subject.Format));
             }
 
-            string assuranceLevel = GetAssuranceLevel(assertion) ?? GetNSISLevel(assertion) ?? "(Unknown)";
+            string assuranceLevel = GetNSISLevel(assertion) ?? GetLegacyAssuranceLevel(assertion) ?? "(Unknown)";
 
             AuditLogging.logEntry(Direction.IN, Operation.LOGIN, string.Format("Subject: {0} NameIDFormat: {1}  Level of assurance: {2}  Session timeout in minutes: {3}", assertion.Subject.Value, assertion.Subject.Format, assuranceLevel, FederationConfig.GetConfig().SessionTimeout));
 
@@ -740,7 +740,7 @@ namespace dk.nita.saml20.protocol
         /// Retrieves the assurance level (OIOSAML 2) from the assertion.
         /// </summary>
         /// <returns>Returns the assurance level or null if it has not been defined.</returns>
-        private string GetAssuranceLevel(Saml20Assertion assertion)
+        private string GetLegacyAssuranceLevel(Saml20Assertion assertion)
         {
             foreach (var attribute in assertion.Attributes)
             {
@@ -756,12 +756,12 @@ namespace dk.nita.saml20.protocol
         /// <summary>
         /// Retrieves the level of assurance from the assertion.
         /// </summary>
-        /// <returns>Returns the level of assurance or null if it has not been defined.</returns>
+        /// <returns>Returns the NSIS level or null if it has not been defined.</returns>
         private string GetNSISLevel(Saml20Assertion assertion)
         {
             foreach (var attribute in assertion.Attributes)
             {
-                if (attribute.Name == DKSaml20NSISAttribute.NAME
+                if (attribute.Name == DKSaml20NSISLevelAttribute.NAME
                     && attribute.AttributeValue != null
                     && attribute.AttributeValue.Length > 0)
                     return attribute.AttributeValue[0];
@@ -792,9 +792,9 @@ namespace dk.nita.saml20.protocol
             }
 
             var requestContextItems = new List<(string value, ItemsChoiceType7 type)>();
-            if (!string.IsNullOrEmpty(context.Request.Params[LevelOfAssurance]))
+            if (!string.IsNullOrEmpty(context.Request.Params[NSISLevel]))
             {
-                string demandedLevelOfAssurance = context.Request.Params[LevelOfAssurance].ToString();
+                string demandedLevelOfAssurance = context.Request.Params[NSISLevel].ToString();
 
                 if (!new[] { "Low", "Substantial", "High" }.Contains(demandedLevelOfAssurance))
                 {
@@ -802,10 +802,10 @@ namespace dk.nita.saml20.protocol
                     return;
                 }
 
-                requestContextItems.Add((DKSaml20NSISAttribute.NAME + "/" + demandedLevelOfAssurance, ItemsChoiceType7.AuthnContextClassRef));
+                requestContextItems.Add((DKSaml20NSISLevelAttribute.NAME + "/" + demandedLevelOfAssurance, ItemsChoiceType7.AuthnContextClassRef));
 
                 // Persist demanded Level of Assurance in session to be able to verify assertion
-                SessionStore.CurrentSession[SessionConstants.ExpectedLevelOfAssurance] = demandedLevelOfAssurance;
+                SessionStore.CurrentSession[SessionConstants.ExpectedNSISLevel] = demandedLevelOfAssurance;
 
                 Trace.TraceData(TraceEventType.Information, string.Format(Tracing.DemandingLevelOfAssurance, demandedLevelOfAssurance));
             }

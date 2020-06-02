@@ -111,12 +111,12 @@ namespace IdentityProviderDemo
         private void SetLevelOfAssurance(User user)
         {
             user.DynamicAttributes.RemoveAll(x => x.Key == DKSaml20AssuranceLevelAttribute.NAME);
-            user.DynamicAttributes.RemoveAll(x => x.Key == DKSaml20NSISAttribute.NAME);
+            user.DynamicAttributes.RemoveAll(x => x.Key == DKSaml20NSISLevelAttribute.NAME);
 
             if (LoaLegacy.Checked)
             {
                 user.DynamicAttributes.Add(new KeyValuePair<string, string>(DKSaml20AssuranceLevelAttribute.NAME, "3"));
-                user.DynamicAttributes.Add(new KeyValuePair<string, string>(DKSaml20NSISAttribute.NAME, LoaLow.Text));
+                user.DynamicAttributes.Add(new KeyValuePair<string, string>(DKSaml20NSISLevelAttribute.NAME, LoaLow.Text));
             }
             else
             {
@@ -128,7 +128,7 @@ namespace IdentityProviderDemo
                 if (LoaSubstantial.Checked)
                     level = LoaSubstantial.Text;
 
-                user.DynamicAttributes.Add(new KeyValuePair<string, string>(DKSaml20NSISAttribute.NAME, level));
+                user.DynamicAttributes.Add(new KeyValuePair<string, string>(DKSaml20NSISLevelAttribute.NAME, level));
             }
         }
 

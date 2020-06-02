@@ -23,6 +23,6 @@
         /// <summary>
         /// Session key used to save the demanded level of assurance
         /// </summary>
-        public const string ExpectedLevelOfAssurance = "ExpectedLevelOfAssurance";
+        public const string ExpectedNSISLevel = "ExpectedLevelOfAssurance";
     }
 }

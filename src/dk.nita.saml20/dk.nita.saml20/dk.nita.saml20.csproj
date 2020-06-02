@@ -175,7 +175,7 @@
     <Compile Include="Profiles\BasicPrivilegeProfile\Privilege.cs" />
     <Compile Include="Profiles\DKSaml20\Attributes\DKSaml20BasicPrivilegeProfileSimpleAttribute.cs" />
     <Compile Include="Profiles\DKSaml20\Attributes\DKSaml20BasicPrivilegeProfileIntermediateAttribute.cs" />
-    <Compile Include="Profiles\DKSaml20\Attributes\DKSaml20NSISAttribute.cs" />
+    <Compile Include="Profiles\DKSaml20\Attributes\DKSaml20NSISLevelAttribute.cs" />
     <Compile Include="Protocol\Saml20CDCIdPReturnPoint.cs" />
     <Compile Include="Protocol\Saml20CDCReader.cs" />
     <Compile Include="Saml20ArtifactResolve.cs" />

@@ -153,24 +153,6 @@ namespace Saml2.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Saml assertion does not have the required assurance level. Assurance level was: {0} and configured minimum assurance level was: {1}..
-        /// </summary>
-        internal static string AssuranceLevelTooLow {
-            get {
-                return ResourceManager.GetString("AssuranceLevelTooLow", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Saml assertion does not have the required assurance level. Assurance level was: {0} and demanded minimum assurance level was: {1}..
-        /// </summary>
-        internal static string AssuranceLevelTooLowAccordingToDemand {
-            get {
-                return ResourceManager.GetString("AssuranceLevelTooLowAccordingToDemand", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Xml error: {0} attribute is required on {1}: {2} element..
         /// </summary>
         internal static string AttributeMissing {
@@ -788,6 +770,33 @@ namespace Saml2.Properties {
         internal static string NoMoreThanOneXmlElement {
             get {
                 return ResourceManager.GetString("NoMoreThanOneXmlElement", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The SAML token must contain a NSIS level..
+        /// </summary>
+        internal static string NSISLevelMissing {
+            get {
+                return ResourceManager.GetString("NSISLevelMissing", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Saml assertion does not have the required assurance level. Assurance level was: {0} and configured minimum assurance level was: {1}..
+        /// </summary>
+        internal static string NSISLevelTooLow {
+            get {
+                return ResourceManager.GetString("NSISLevelTooLow", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Saml assertion does not have the required NSIS level. NSIS level was: {0} and demanded minimum NSIS level was: {1}..
+        /// </summary>
+        internal static string NSISLevelTooLowAccordingToDemand {
+            get {
+                return ResourceManager.GetString("NSISLevelTooLowAccordingToDemand", resourceCulture);
             }
         }
         
