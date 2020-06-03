@@ -78,28 +78,7 @@ namespace dk.nita.saml20
             spDescriptor.protocolSupportEnumeration = new string[] { Saml20Constants.PROTOCOL };
             spDescriptor.AuthnRequestsSigned = XmlConvert.ToString(true);
             spDescriptor.WantAssertionsSigned = XmlConvert.ToString(true);
-            if (config.ServiceProvider.NameIdFormats.All)
-            {
-                spDescriptor.NameIDFormat = new string[] {Saml20Constants.NameIdentifierFormats.Email,
-                                                          Saml20Constants.NameIdentifierFormats.Entity,
-                                                          Saml20Constants.NameIdentifierFormats.Kerberos,
-                                                          Saml20Constants.NameIdentifierFormats.Persistent,
-                                                          Saml20Constants.NameIdentifierFormats.Transient,
-                                                          Saml20Constants.NameIdentifierFormats.Unspecified,
-                                                          Saml20Constants.NameIdentifierFormats.Windows,
-                                                          Saml20Constants.NameIdentifierFormats.X509SubjectName};
-            }
-            else
-            {
-                spDescriptor.NameIDFormat = new string[config.ServiceProvider.NameIdFormats.NameIdFormats.Count];
-                int count = 0;
-                foreach (NameIdFormatElement elem in config.ServiceProvider.NameIdFormats.NameIdFormats)
-                {
-                    spDescriptor.NameIDFormat[count++] = elem.NameIdFormat;
-                }
-            }
-
-
+         
             Uri baseURL = new Uri(config.ServiceProvider.Server);
             List<Endpoint> logoutServiceEndpoints = new List<Endpoint>();
             List<IndexedEndpoint> signonServiceEndpoints = new List<IndexedEndpoint>();
