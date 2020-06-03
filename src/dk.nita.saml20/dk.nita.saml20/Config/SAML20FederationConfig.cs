@@ -650,7 +650,6 @@ namespace dk.nita.saml20.config
         public ServiceProviderElement()
         {
             ContactPerson = new List<Contact>();
-            NameIdFormats = new NameIdFormatsElement();
         }
 
         private string _id;
@@ -744,11 +743,6 @@ namespace dk.nita.saml20.config
                 return FindEndpoint(EndpointType.METADATA);
             }
         }
-
-        /// <summary>
-        /// Supported NameIdFormats
-        /// </summary>
-        public NameIdFormatsElement NameIdFormats;
 
         private Saml20ServiceEndpoint FindEndpoint(EndpointType type)
         {
