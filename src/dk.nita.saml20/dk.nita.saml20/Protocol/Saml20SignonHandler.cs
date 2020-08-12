@@ -340,9 +340,16 @@ namespace dk.nita.saml20.protocol
                 HandleAssertion(context, assertion);
                 return;
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                HandleError(context, e);
+                if (ex is Saml20NSISLevelException)
+                {
+                    HandleError(context, ex.ToString(), (m) => new Saml20NSISLevelException(m));
+                }
+                else
+                {
+                    HandleError(context, ex);
+                }
                 return;
             }
         }
@@ -608,7 +615,7 @@ namespace dk.nita.saml20.protocol
                         AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST,
                               loaErrorMessage + " Assertion: " + elem.OuterXml);
 
-                        HandleError(context, loaErrorMessage);
+                        HandleError(context, loaErrorMessage, (m) => new Saml20NSISLevelException(m));
                         return;
                     }
                 }
