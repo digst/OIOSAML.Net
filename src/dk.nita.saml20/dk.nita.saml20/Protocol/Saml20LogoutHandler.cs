@@ -526,7 +526,7 @@ namespace dk.nita.saml20.protocol
                 if (logoutRequest.NotOnOrAfter.HasValue)
                 {
 
-                    if (logoutRequest.NotOnOrAfter.Value.AddMinutes(FederationConfig.GetConfig().AllowedClockSkewMinutes) >= DateTime.UtcNow)
+                    if (logoutRequest.NotOnOrAfter.Value.AddMinutes(FederationConfig.GetConfig().AllowedClockSkewMinutes) <= DateTime.UtcNow)
                     {
                         var errormessage =
                             $"Logout request received after specified NotOnOrAfter ({logoutRequest.NotOnOrAfter}) time.";
