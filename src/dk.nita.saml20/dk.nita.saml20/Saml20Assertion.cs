@@ -386,7 +386,7 @@ namespace dk.nita.saml20
         /// </summary>        
         public bool IsExpired()
         {
-            return DateTime.UtcNow > NotOnOrAfter.AddMinutes(_allowedClockSkewMinutes);
+            return DateTime.UtcNow >= NotOnOrAfter.AddMinutes(_allowedClockSkewMinutes);
         }
 
         /// <summary>

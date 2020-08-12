@@ -525,12 +525,11 @@ namespace dk.nita.saml20.protocol
 
                 if (logoutRequest.NotOnOrAfter.HasValue)
                 {
-                    var allowedClockSkewTime = DateTime.UtcNow.AddMinutes(FederationConfig.GetConfig().AllowedClockSkewMinutes);
 
-                    if (logoutRequest.NotOnOrAfter >= allowedClockSkewTime)
+                    if (logoutRequest.NotOnOrAfter.Value.AddMinutes(FederationConfig.GetConfig().AllowedClockSkewMinutes) >= DateTime.UtcNow)
                     {
                         var errormessage =
-                            $"Logout request NotOnOrAfter ({logoutRequest.NotOnOrAfter}) is after allowed time ({allowedClockSkewTime})";
+                            $"Logout request received after specified NotOnOrAfter ({logoutRequest.NotOnOrAfter}) time.";
                         AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, errormessage);
                         HandleError(context, errormessage);
                         return;
