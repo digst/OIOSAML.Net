@@ -158,6 +158,7 @@
     <Compile Include="Bindings\SignatureProviders\SignatureProvider.cs" />
     <Compile Include="Bindings\SignatureProviders\SignatureProviderFactory.cs" />
     <Compile Include="Config\ShaHashingAlgorithm.cs" />
+    <Compile Include="Exceptions\Saml20NSISLevelLowException.cs" />
     <Compile Include="Identity\Saml20PrincipalCache.cs" />
     <Compile Include="ISaml20IdpTokenAccessor.cs" />
     <Compile Include="Config\ConfigurationConstants.cs" />
