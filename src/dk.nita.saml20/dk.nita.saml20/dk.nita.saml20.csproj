@@ -198,6 +198,7 @@
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
     </Compile>
+    <Compile Include="Saml20AssertionEncryptionUtility.cs" />
     <Compile Include="Schema\BasicPrivilegeProfile\Constraint.cs" />
     <Compile Include="Schema\BasicPrivilegeProfile\PrivilegeGroupType.cs" />
     <Compile Include="Schema\BasicPrivilegeProfile\PrivilegeListType.cs" />

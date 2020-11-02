@@ -16,5 +16,11 @@ namespace dk.nita.saml20.Schema.Protocol
         /// The XML Element name of this class
         /// </summary>
         public new const string ELEMENT_NAME = "EncryptedAssertion";
+
+        /// <summary>
+        /// The response session id
+        /// </summary>
+        [XmlAttribute("InResponseTo")]
+        public string InResponseTo { get; set; }
     }
 }
