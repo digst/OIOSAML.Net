@@ -1,18 +1,16 @@
-using System;
+﻿using System;
 using System.Security.Cryptography;
 using System.Security.Cryptography.Xml;
 using System.Xml;
+using dk.nita.saml20;
 using dk.nita.saml20.Schema.Core;
 using dk.nita.saml20.Schema.Protocol;
 using dk.nita.saml20.Utils;
 using SfwEncryptedData = dk.nita.saml20.Schema.XEnc.EncryptedData;
 
-namespace dk.nita.saml20
+namespace IdentityProviderDemo.AssertionEncryptionUtility
 {
-    /// <summary>
-    /// Handles the <code>EncryptedAssertion</code> element. 
-    /// </summary>
-    public class Saml20AssertionEncryptionUtility
+    public class AssertionEncryptionUtility
     {
         /// <summary>
         /// Whether to use OAEP (Optimal Asymmetric Encryption Padding) by default, if no EncryptionMethod is specified 
@@ -47,17 +45,17 @@ namespace dk.nita.saml20
             private set { _assertion = value; }
         }
 
-          /// <summary>
+        /// <summary>
         /// Initializes a new instance of <code>EncryptedAssertion</code>.
         /// </summary>
-        public Saml20AssertionEncryptionUtility()
+        public AssertionEncryptionUtility()
         { }
 
         /// <summary>
         /// Initializes a new instance of <code>EncryptedAssertion</code>.
         /// </summary>
         /// <param name="transportKey">The transport key is used for securing the symmetric key that has encrypted the assertion.</param>        
-        public Saml20AssertionEncryptionUtility(RSA transportKey) : this()
+        public AssertionEncryptionUtility(RSA transportKey) : this()
         {
             _transportKey = transportKey;
         }
@@ -67,7 +65,7 @@ namespace dk.nita.saml20
         /// </summary>
         /// <param name="transportKey">The transport key is used for securing the symmetric key that has encrypted the assertion.</param>
         /// <param name="encryptedAssertion">An <code>XmlDocument</code> containing an <code>EncryptedAssertion</code> element.</param>
-        public Saml20AssertionEncryptionUtility(RSA transportKey, Assertion encryptedAssertion) : this(transportKey)
+        public AssertionEncryptionUtility(RSA transportKey, Assertion encryptedAssertion) : this(transportKey)
         {
             var xml = Serialization.SerializeToXmlString(encryptedAssertion);
             var xmlDoc = Serialization.DeserializeFromXmlString<XmlElement>(xml);
@@ -91,7 +89,7 @@ namespace dk.nita.saml20
 
         private string _sessionKeyAlgorithm = EncryptedXml.XmlEncAES256Url;
 
-     
+
 
         private RSA _transportKey;
         /// <summary>
@@ -134,7 +132,7 @@ namespace dk.nita.saml20
             encryptedData.KeyInfo.AddClause(new KeyInfoEncryptedKey(encryptedKey));
 
             // Create an empty EncryptedAssertion to hook into.
-           var encryptedAssertion = new EncryptedAssertion();
+            var encryptedAssertion = new EncryptedAssertion();
             encryptedAssertion.encryptedData = new SfwEncryptedData();
 
             XmlDocument result = new XmlDocument();
@@ -152,7 +150,7 @@ namespace dk.nita.saml20
 
 
 
- 
+
         /// <summary>
         /// Creates an instance of a symmetric key, based on the algorithm identifier found in the Xml Encryption standard.        
         /// see also http://www.w3.org/TR/xmlenc-core/#sec-Algorithms
@@ -221,6 +219,5 @@ namespace dk.nita.saml20
             }
         }
 
-    
     }
 }

@@ -194,6 +194,7 @@ namespace IdentityProviderDemo
             var nameIdFormat = metadataDocument.Entity.Items.OfType<SPSSODescriptor>().SingleOrDefault()?.NameIDFormat.SingleOrDefault() ?? Saml20Constants.NameIdentifierFormats.Persistent;
             Assertion assertion = CreateAssertion(user, entityId, nameIdFormat);
 
+            var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(ShaHashingAlgorithm.SHA256);
             EncryptedAssertion encryptedAssertion = null;
 
             var keyDescriptors = metadataDocument.Keys.Where(x => x.use == KeyTypes.encryption);
@@ -214,10 +215,11 @@ namespace IdentityProviderDemo
                             if (spec.IsSatisfiedBy(cert, out error))
                             {
                                 AsymmetricAlgorithm key = XmlSignatureUtils.ExtractKey(clause);
+                                AssertionEncryptionUtility.AssertionEncryptionUtility encryptedAssertionUtil = new AssertionEncryptionUtility.AssertionEncryptionUtility((RSA)key, assertion);
 
+                                // Sign the assertion inside the response message.
+                                signatureProvider.SignAssertion(encryptedAssertionUtil.Assertion, assertion.ID, IDPConfig.IDPCertificate);
 
-                                // TODO: use first valid certificate
-                                Saml20AssertionEncryptionUtility encryptedAssertionUtil = new Saml20AssertionEncryptionUtility((RSA)key, assertion);
                                 encryptedAssertionUtil.Encrypt();
                                 encryptedAssertion = Serialization.DeserializeFromXmlString<EncryptedAssertion>(encryptedAssertionUtil.EncryptedAssertion.OuterXml);
                                 break;
@@ -250,9 +252,11 @@ namespace IdentityProviderDemo
             responseDoc.PreserveWhitespace = true;
             responseDoc.LoadXml(Serialization.SerializeToXmlString(response));
 
-            // Sign the assertion inside the response message.
-            var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(ShaHashingAlgorithm.SHA256);
-            signatureProvider.SignAssertion(responseDoc, assertion.ID, IDPConfig.IDPCertificate);
+            if (encryptedAssertion == null)
+            {
+                // Sign the assertion inside the response message.
+                signatureProvider.SignAssertion(responseDoc, assertion.ID, IDPConfig.IDPCertificate);
+            }
 
             HttpPostBindingBuilder builder = new HttpPostBindingBuilder(endpoint);
             builder.Action = SAMLAction.SAMLResponse;
@@ -271,7 +275,7 @@ namespace IdentityProviderDemo
             cdc.Domain = "." + Context.Request.Url.Host;
             Context.Response.Cookies.Add(cdc);
         }
-
+        
         private Assertion CreateAssertion(User user, string receiver, string nameIdFormat)
         {
             Assertion assertion = new Assertion();
