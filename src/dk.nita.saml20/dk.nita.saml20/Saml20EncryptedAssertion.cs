@@ -44,7 +44,7 @@ namespace dk.nita.saml20
         /// Initializes a new instance of <code>EncryptedAssertion</code>.
         /// </summary>
         public Saml20EncryptedAssertion()
-        {}
+        { }
 
         /// <summary>
         /// Initializes a new instance of <code>EncryptedAssertion</code>.
@@ -71,7 +71,7 @@ namespace dk.nita.saml20
         public void LoadXml(XmlElement element)
         {
             CheckEncryptedAssertionElement(element);
-            
+
             _encryptedAssertion = new XmlDocument();
             _encryptedAssertion.XmlResolver = null;
             _encryptedAssertion.AppendChild(_encryptedAssertion.ImportNode(element, true));
@@ -86,7 +86,7 @@ namespace dk.nita.saml20
                 throw new ArgumentException("The element must be of type \"EncryptedAssertion\".");
 
             if (element.NamespaceURI != Saml20Constants.ASSERTION)
-                throw new ArgumentException("The element must be of type \"" + Saml20Constants.ASSERTION + "#EncryptedAssertion\".");            
+                throw new ArgumentException("The element must be of type \"" + Saml20Constants.ASSERTION + "#EncryptedAssertion\".");
         }
 
 
@@ -127,51 +127,7 @@ namespace dk.nita.saml20
         {
             set { _transportKey = value; }
             get { return _transportKey; }
-        }        
-
-        /// <summary>
-        /// Encrypts the Assertion in the assertion property and creates an <code>EncryptedAssertion</code> element
-        /// that can be retrieved using the <code>GetXml</code> method.
-        /// </summary>
-        public void Encrypt()
-        {
-            if (_transportKey == null)
-                throw new InvalidOperationException("The \"TransportKey\" property is required to encrypt the assertion.");
-            
-            if (_assertion == null)
-                throw new InvalidOperationException("The \"Assertion\" property is required for this operation.");
-
-            EncryptedData encryptedData = new EncryptedData();
-            encryptedData.Type = EncryptedXml.XmlEncElementUrl;
-
-            encryptedData.EncryptionMethod = new EncryptionMethod(_sessionKeyAlgorithm);
-
-            // Encrypt the assertion and add it to the encryptedData instance.
-            EncryptedXml encryptedXml = new EncryptedXml();
-            byte[] encryptedElement = encryptedXml.EncryptData(_assertion.DocumentElement, SessionKey, false);
-            encryptedData.CipherData.CipherValue = encryptedElement;
-
-            // Add an encrypted version of the key used.
-            encryptedData.KeyInfo = new KeyInfo();
-
-            EncryptedKey encryptedKey = new EncryptedKey();            
-            encryptedKey.EncryptionMethod = new EncryptionMethod(EncryptedXml.XmlEncRSA15Url);
-            encryptedKey.CipherData = new CipherData(EncryptedXml.EncryptKey(SessionKey.Key, TransportKey, false));
-            encryptedData.KeyInfo.AddClause(new KeyInfoEncryptedKey(encryptedKey));
-
-            // Create an empty EncryptedAssertion to hook into.
-            EncryptedAssertion encryptedAssertion = new EncryptedAssertion();
-            encryptedAssertion.encryptedData = new SfwEncryptedData();
-
-            XmlDocument result = new XmlDocument();
-            result.XmlResolver = null;
-            result.LoadXml(Serialization.SerializeToXmlString(encryptedAssertion));
-
-            XmlElement encryptedDataElement = GetElement(SfwEncryptedData.ELEMENT_NAME, Saml20Constants.XENC, result.DocumentElement);
-            EncryptedXml.ReplaceElement(encryptedDataElement, encryptedData, false);
-
-            _encryptedAssertion = result;
-        }        
+        }
 
         /// <summary>
         /// Decrypts the assertion using the key given as the method parameter. The resulting assertion
@@ -179,9 +135,9 @@ namespace dk.nita.saml20
         /// </summary>
         /// <exception cref="Saml20FormatException">Thrown if it not possible to decrypt the assertion.</exception>
         public void Decrypt()
-        {                        
+        {
             if (TransportKey == null)
-                throw new InvalidOperationException("The \"TransportKey\" property must contain the asymmetric key to decrypt the assertion.");            
+                throw new InvalidOperationException("The \"TransportKey\" property must contain the asymmetric key to decrypt the assertion.");
 
             if (_encryptedAssertion == null)
                 throw new InvalidOperationException("Unable to find the <EncryptedAssertion> element. Use a constructor or the LoadXml - method to set it.");
@@ -194,7 +150,7 @@ namespace dk.nita.saml20
             if (encryptedData.EncryptionMethod != null)
             {
                 _sessionKeyAlgorithm = encryptedData.EncryptionMethod.KeyAlgorithm;
-                sessionKey = ExtractSessionKey(_encryptedAssertion, encryptedData.EncryptionMethod.KeyAlgorithm);                
+                sessionKey = ExtractSessionKey(_encryptedAssertion, encryptedData.EncryptionMethod.KeyAlgorithm);
             }
             else
             {
@@ -206,7 +162,7 @@ namespace dk.nita.saml20
              * The EncryptedXml class can't handle an <EncryptedData> element without an underlying <EncryptionMethod> element,
              * despite the standard dictating that this is ok. 
              * If this becomes a problem with other IDPs, consider adding a default EncryptionMethod instance manually before decrypting.
-             */             
+             */
             EncryptedXml encryptedXml = new EncryptedXml();
             byte[] plaintext = encryptedXml.DecryptData(encryptedData, sessionKey);
 
@@ -217,7 +173,8 @@ namespace dk.nita.saml20
             try
             {
                 _assertion.Load(new StringReader(Encoding.UTF8.GetString(plaintext)));
-            } catch(XmlException e)
+            }
+            catch (XmlException e)
             {
                 _assertion = null;
                 throw new Saml20FormatException("Unable to parse the decrypted assertion.", e);
@@ -242,14 +199,14 @@ namespace dk.nita.saml20
         private SymmetricAlgorithm ExtractSessionKey(XmlDocument encryptedAssertionDoc, string keyAlgorithm)
         {
             // Check if there are any <EncryptedKey> elements immediately below the EncryptedAssertion element.
-            foreach (XmlNode node in encryptedAssertionDoc.DocumentElement.ChildNodes)            
+            foreach (XmlNode node in encryptedAssertionDoc.DocumentElement.ChildNodes)
                 if (node.LocalName == Schema.XEnc.EncryptedKey.ELEMENT_NAME && node.NamespaceURI == Saml20Constants.XENC)
                 {
-                    return ToSymmetricKey((XmlElement) node, keyAlgorithm);
+                    return ToSymmetricKey((XmlElement)node, keyAlgorithm);
                 }
 
             // Check if the key is embedded in the <EncryptedData> element.
-            XmlElement encryptedData = 
+            XmlElement encryptedData =
                 GetElement(SfwEncryptedData.ELEMENT_NAME, Saml20Constants.XENC, encryptedAssertionDoc.DocumentElement);
             if (encryptedData != null)
             {
@@ -290,7 +247,7 @@ namespace dk.nita.saml20
                 key.Key = EncryptedXml.DecryptKey(encryptedKey.CipherData.CipherValue, TransportKey, useOAEP);
                 return key;
             }
-            
+
             throw new NotImplementedException("Unable to decode CipherData of type \"CipherReference\".");
         }
 
@@ -303,12 +260,12 @@ namespace dk.nita.saml20
         private static SymmetricAlgorithm GetKeyInstance(string algorithm)
         {
             SymmetricAlgorithm result;
-            switch(algorithm)
-            {                
-                case EncryptedXml.XmlEncTripleDESUrl:                    
+            switch (algorithm)
+            {
+                case EncryptedXml.XmlEncTripleDESUrl:
                     result = TripleDES.Create();
                     break;
-                case EncryptedXml.XmlEncAES128Url :
+                case EncryptedXml.XmlEncAES128Url:
                     result = new RijndaelManaged();
                     result.KeySize = 128;
                     break;
@@ -320,7 +277,7 @@ namespace dk.nita.saml20
                     result = new RijndaelManaged();
                     result.KeySize = 256;
                     break;
-                default :
+                default:
                     result = new RijndaelManaged();
                     result.KeySize = 256;
                     break;
@@ -334,7 +291,7 @@ namespace dk.nita.saml20
         /// </summary>
         private static XmlElement GetElement(string element, string elementNS, XmlElement doc)
         {
-            XmlNodeList list = doc.GetElementsByTagName(element, elementNS);            
+            XmlNodeList list = doc.GetElementsByTagName(element, elementNS);
             if (list.Count == 0)
                 return null;
 
@@ -343,7 +300,7 @@ namespace dk.nita.saml20
 
 
         private SymmetricAlgorithm _sessionKey;
-        
+
         /// <summary>
         /// The key used for encrypting the <code>Assertion</code>. This key is embedded within a <code>KeyInfo</code> element
         /// in the <code>EncryptedAssertion</code> element. The session key is encrypted with the <code>TransportKey</code> before
@@ -353,9 +310,9 @@ namespace dk.nita.saml20
         {
             get
             {
-                if ( _sessionKey == null)
+                if (_sessionKey == null)
                 {
-                    _sessionKey = GetKeyInstance(_sessionKeyAlgorithm);                    
+                    _sessionKey = GetKeyInstance(_sessionKeyAlgorithm);
                     _sessionKey.GenerateKey();
                 }
                 return _sessionKey;

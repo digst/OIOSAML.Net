@@ -17,6 +17,10 @@ using dk.nita.saml20.Utils;
 using System.Linq;
 using dk.nita.saml20.Profiles.DKSaml20.Attributes;
 using dk.nita.saml20.Schema.Metadata;
+using System.Security.Cryptography.Xml;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
+using dk.nita.saml20.Specification;
 
 namespace IdentityProviderDemo
 {
@@ -189,21 +193,75 @@ namespace IdentityProviderDemo
 
             var nameIdFormat = metadataDocument.Entity.Items.OfType<SPSSODescriptor>().SingleOrDefault()?.NameIDFormat.SingleOrDefault() ?? Saml20Constants.NameIdentifierFormats.Persistent;
             Assertion assertion = CreateAssertion(user, entityId, nameIdFormat);
-            response.Items = new object[] { assertion };
 
-            // Serialize the response.
-            XmlDocument assertionDoc = new XmlDocument();
-            assertionDoc.XmlResolver = null;
-            assertionDoc.PreserveWhitespace = true;
-            assertionDoc.LoadXml(Serialization.SerializeToXmlString(response));
-
-            // Sign the assertion inside the response message.
             var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(ShaHashingAlgorithm.SHA256);
-            signatureProvider.SignAssertion(assertionDoc, assertion.ID, IDPConfig.IDPCertificate);
+            EncryptedAssertion encryptedAssertion = null;
+
+            var keyDescriptors = metadataDocument.Keys.Where(x => x.use == KeyTypes.encryption);
+            if (keyDescriptors.Any())
+            {
+                 foreach (KeyDescriptor keyDescriptor in keyDescriptors)
+                {
+                    KeyInfo ki = (KeyInfo)keyDescriptor.KeyInfo;
+
+                    foreach (KeyInfoClause clause in ki)
+                    {
+                        if (clause is KeyInfoX509Data)
+                        {
+                            X509Certificate2 cert = XmlSignatureUtils.GetCertificateFromKeyInfo((KeyInfoX509Data)clause);
+
+                            var spec = new DefaultCertificateSpecification();
+                            string error;
+                            if (spec.IsSatisfiedBy(cert, out error))
+                            {
+                                AsymmetricAlgorithm key = XmlSignatureUtils.ExtractKey(clause);
+                                AssertionEncryptionUtility.AssertionEncryptionUtility encryptedAssertionUtil = new AssertionEncryptionUtility.AssertionEncryptionUtility((RSA)key, assertion);
+
+                                // Sign the assertion inside the response message.
+                                signatureProvider.SignAssertion(encryptedAssertionUtil.Assertion, assertion.ID, IDPConfig.IDPCertificate);
+
+                                encryptedAssertionUtil.Encrypt();
+                                encryptedAssertion = Serialization.DeserializeFromXmlString<EncryptedAssertion>(encryptedAssertionUtil.EncryptedAssertion.OuterXml);
+                                break;
+                            }
+                        }
+                    }
+                    if (encryptedAssertion != null)
+                    {
+                        break;
+                    }
+                }
+
+                if (encryptedAssertion == null)
+                    throw new Exception("Could not encrypt. No valid certificates found.");
+            }
+
+            if(encryptedAssertion!= null)
+            {
+                response.Items = new object[] { encryptedAssertion };
+
+            }
+            else
+            {
+                response.Items = new object[] { assertion };
+            }
+         
+            // Serialize the response.
+            XmlDocument responseDoc = new XmlDocument();
+            responseDoc.XmlResolver = null;
+            responseDoc.PreserveWhitespace = true;
+            responseDoc.LoadXml(Serialization.SerializeToXmlString(response));
+
+            if (encryptedAssertion == null)
+            {
+                // Sign the assertion inside the response message.
+                signatureProvider.SignAssertion(responseDoc, assertion.ID, IDPConfig.IDPCertificate);
+            }
 
             HttpPostBindingBuilder builder = new HttpPostBindingBuilder(endpoint);
             builder.Action = SAMLAction.SAMLResponse;
-            builder.Response = assertionDoc.OuterXml;
+         
+            builder.Response = responseDoc.OuterXml;
 
             builder.GetPage().ProcessRequest(Context);
             Context.Response.End();
@@ -217,7 +275,7 @@ namespace IdentityProviderDemo
             cdc.Domain = "." + Context.Request.Url.Host;
             Context.Response.Cookies.Add(cdc);
         }
-
+        
         private Assertion CreateAssertion(User user, string receiver, string nameIdFormat)
         {
             Assertion assertion = new Assertion();
@@ -283,7 +341,7 @@ namespace IdentityProviderDemo
                 foreach (KeyValuePair<string, string> att in user.Attributes)
                 {
                     var existingAttribute = attributes.FirstOrDefault(x => x.Name == att.Key);
-                    if(existingAttribute != null)
+                    if (existingAttribute != null)
                     {
                         var attributesValues = new List<string>();
                         attributesValues.AddRange(existingAttribute.AttributeValue);
