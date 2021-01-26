@@ -197,7 +197,7 @@ namespace dk.nita.test.Saml20
             {
                 X509Certificate2 cert = new X509Certificate2(@"Saml20\Certificates\sts_dev_certificate.pfx", "test1234");
                 Assert.That(cert.HasPrivateKey);
-                signedXml.SigningKey = cert.PrivateKey;
+                signedXml.SigningKey = cert.GetRSAPrivateKey();
                 signedXml.KeyInfo.AddClause(new KeyInfoX509Data(cert, X509IncludeOption.EndCertOnly));
             }
 
