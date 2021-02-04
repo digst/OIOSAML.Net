@@ -491,6 +491,8 @@ namespace dk.nita.saml20.protocol
                     return;
                 }
 
+                ValidateNotOnOrAfter(context, logoutRequest); // Throws if not valid.
+                
                 Saml20MetadataDocument metadata = endpoint.metadata;
 
                 if (!parser.VerifySignature(metadata.GetKeys(KeyTypes.signing)))
