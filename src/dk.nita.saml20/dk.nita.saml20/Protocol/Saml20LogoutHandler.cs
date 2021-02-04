@@ -624,19 +624,24 @@ namespace dk.nita.saml20.protocol
         /// <exception cref="Saml20Exception">Throws Saml20Exception if validation fails, and config is set to throw exception.</exception>
         private void ValidateNotOnOrAfter(HttpContext context, LogoutRequest logoutRequest)
         {
-            if (!logoutRequest.NotOnOrAfter.HasValue) 
+            if (!logoutRequest.NotOnOrAfter.HasValue)
+            {
                 return;
-            
+            }
+
             var notOnOrAfter = logoutRequest.NotOnOrAfter.Value;
             var allowedClockSkewTime = FederationConfig.GetConfig().AllowedClockSkewMinutes;
             var now = DateTime.UtcNow;
-            
-            if (notOnOrAfter.AddMinutes(allowedClockSkewTime) > now) 
+
+            if (notOnOrAfter.AddMinutes(allowedClockSkewTime) > now)
+            {
                 return;
-            
+            }
+
             var errormessage = $"Logout request expired. NotOnOrAfter={notOnOrAfter}, RequestReceived={now}";
             AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, errormessage);
             HandleError(context, errormessage);
+            
         }
 
         #endregion
