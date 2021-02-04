@@ -671,7 +671,7 @@ namespace dk.nita.saml20.protocol
                 }
                 else
                 {
-                    Trace.TraceData(TraceEventType.Warning, "The user was logged out but the session had already expired. Distributed session could therefore not be abandonded�");
+                    Trace.TraceData(TraceEventType.Warning, "The user was logged out but the session had already expired. Distributed session could therefore not be abandoned");
                 }
             }
         }
