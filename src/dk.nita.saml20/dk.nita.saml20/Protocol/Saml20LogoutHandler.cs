@@ -210,6 +210,8 @@ namespace dk.nita.saml20.protocol
                 }
                 else
                 {
+                    ValidateNotOnOrAfter(context, parser.LogoutRequest);
+                    
                     Saml20MetadataDocument metadata = idp.metadata;
 
                     if (!parser.CheckSignature(metadata.GetKeys(KeyTypes.signing)))
