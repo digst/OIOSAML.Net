@@ -634,7 +634,7 @@ namespace dk.nita.saml20.protocol
             if (notOnOrAfter.AddMinutes(allowedClockSkewTime) > now) 
                 return;
             
-            var errormessage = $"Logout request expired. NotOnOrAfter={notOnOrAfter}, RequestReceived={allowedClockSkewTime}";
+            var errormessage = $"Logout request expired. NotOnOrAfter={notOnOrAfter}, RequestReceived={now}";
             AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, errormessage);
             HandleError(context, errormessage);
         }
