@@ -7,8 +7,11 @@ using System.Web;
 using dk.nita.saml20.session;
 using dk.nita.saml20.config;
 using System.Web.SessionState;
+using System.Xml;
+using dk.nita.saml20.Logging;
 using dk.nita.saml20.protocol.pages;
 using dk.nita.saml20.Session;
+using Saml2.Properties;
 using Trace = dk.nita.saml20.Utils.Trace;
 
 namespace dk.nita.saml20.protocol
@@ -65,6 +68,20 @@ namespace dk.nita.saml20.protocol
                 page.ProcessRequest(context);
                 context.Response.End();
             }
+        }
+
+        /// <summary>
+        /// Invoked when a LoA validation has failed. Adds a log entry to the audit log and displays an error page.
+        /// </summary>
+        protected void HandleLoaValidationError(string errorMessageTemplate, string sourceLoa, string requiredMinLoa, 
+            HttpContext context, XmlElement assertionXml)
+        {
+            var loaErrorMessage = string.Format(errorMessageTemplate, sourceLoa, requiredMinLoa);
+            
+            AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST,
+                loaErrorMessage + " Assertion: " + assertionXml.OuterXml);
+            
+            HandleError(context, loaErrorMessage, (m) => new Saml20NSISLevelException(m));
         }
 
         /// <summary>

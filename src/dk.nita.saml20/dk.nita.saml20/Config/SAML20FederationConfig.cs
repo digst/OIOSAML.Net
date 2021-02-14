@@ -98,6 +98,18 @@ namespace dk.nita.saml20.config
             set { _showError = value; }
         }
 
+        private bool _allowLegacyAssuranceLevel = false;
+
+        /// <summary>
+        /// Allow legacy OIOSAML2 assurance level validation.
+        /// </summary>
+        [XmlElement(ElementName = "AllowLegacyAssuranceLevel")]
+        public bool AllowLegacyAssuranceLevel
+        {
+            get { return _allowLegacyAssuranceLevel; }
+            set { _allowLegacyAssuranceLevel = value; }
+        }
+
         // default to Substantial. Cooresponds to certificate level in the OIOSAML specification.
         private string _minimumAssuranceLevel = "3";
 
