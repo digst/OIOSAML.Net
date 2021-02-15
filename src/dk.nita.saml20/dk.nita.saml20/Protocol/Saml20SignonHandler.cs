@@ -580,14 +580,14 @@ namespace dk.nita.saml20.protocol
         /// <returns>True if valid, otherwise false.</returns>
         private bool ValidateLoA(HttpContext context, Saml20Assertion assertion, XmlElement assertionXml)
         {
-            // If legacy AssuranceLevel support is enabled, and it's present in assertion, validate.
-            var allowLegacyAL = SAML20FederationConfig.GetConfig().AllowLegacyAssuranceLevel;
-            var assertionLegacyAL = GetLegacyAssuranceLevel(assertion);
-            if(allowLegacyAL && assertionLegacyAL != null)
+            // If AssuranceLevel support is enabled, and it's present in assertion, validate.
+            var allowAL = SAML20FederationConfig.GetConfig().AllowAssuranceLevel;
+            var assertionAL = GetAssuranceLevel(assertion);
+            if(allowAL && assertionAL != null)
             {
-                var requiredMinLegacyAL = SAML20FederationConfig.GetConfig().MinimumAssuranceLevel;
-                if (ValidateLegacyAssuranceLevel(assertionLegacyAL, requiredMinLegacyAL)) return true;
-                HandleLoaValidationError(Resources.NSISLevelTooLow, assertionLegacyAL, requiredMinLegacyAL, context, assertionXml);
+                var requiredMinAL = SAML20FederationConfig.GetConfig().MinimumAssuranceLevel;
+                if (ValidateAssuranceLevel(assertionAL, requiredMinAL)) return true;
+                HandleLoaValidationError(Resources.NSISLevelTooLow, assertionAL, requiredMinAL, context, assertionXml);
                 return false;
             }
 
@@ -640,12 +640,12 @@ namespace dk.nita.saml20.protocol
         }
 
         /// <summary>
-        /// Validates if a legacy AssuranceLevel is equals to or higher than a minimum required AssuranceLevel.
+        /// Validates if a AssuranceLevel is equals to or higher than a minimum required AssuranceLevel.
         /// </summary>
-        /// <param name="sourceAL">Legacy AssuranceLevel to validate against <paramref name="minAL"/></param>
+        /// <param name="sourceAL">AssuranceLevel to validate against <paramref name="minAL"/></param>
         /// <param name="minAL">Minimum required AssuranceLevel.</param>
         /// <returns>True if valid, otherwise false.</returns>
-        private bool ValidateLegacyAssuranceLevel(string sourceAL, string minAL)
+        private bool ValidateAssuranceLevel(string sourceAL, string minAL)
         {
             if (sourceAL == null ||
                 !int.TryParse(sourceAL, out var sourceLoaInt) ||
@@ -736,7 +736,7 @@ namespace dk.nita.saml20.protocol
                 Trace.TraceData(TraceEventType.Information, string.Format(Tracing.Login, assertion.Subject.Value, assertion.SessionIndex, assertion.Subject.Format));
             }
 
-            string assuranceLevel = GetNsisLoa(assertion) ?? GetLegacyAssuranceLevel(assertion) ?? "(Unknown)";
+            string assuranceLevel = GetNsisLoa(assertion) ?? GetAssuranceLevel(assertion) ?? "(Unknown)";
 
             AuditLogging.logEntry(Direction.IN, Operation.LOGIN, string.Format("Subject: {0} NameIDFormat: {1}  Level of assurance: {2}  Session timeout in minutes: {3}", assertion.Subject.Value, assertion.Subject.Format, assuranceLevel, FederationConfig.GetConfig().SessionTimeout));
 
@@ -754,7 +754,7 @@ namespace dk.nita.saml20.protocol
         /// Retrieves the assurance level (OIOSAML 2) from the assertion.
         /// </summary>
         /// <returns>Returns the assurance level or null if it has not been defined.</returns>
-        private string GetLegacyAssuranceLevel(Saml20Assertion assertion)
+        private string GetAssuranceLevel(Saml20Assertion assertion)
         {
             foreach (var attribute in assertion.Attributes)
             {
