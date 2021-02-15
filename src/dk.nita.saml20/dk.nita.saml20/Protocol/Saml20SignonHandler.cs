@@ -580,15 +580,12 @@ namespace dk.nita.saml20.protocol
         /// <returns>True if valid, otherwise false.</returns>
         private bool ValidateLoA(HttpContext context, Saml20Assertion assertion, XmlElement assertionXml)
         {
-            // If AssuranceLevel support is enabled, and it's present in assertion, validate.
+            // If AssuranceLevel is allowed, and it's present in assertion, validate.
             var allowAL = SAML20FederationConfig.GetConfig().AllowAssuranceLevel;
             var assertionAL = GetAssuranceLevel(assertion);
             if(allowAL && assertionAL != null)
             {
-                var requiredMinAL = SAML20FederationConfig.GetConfig().MinimumAssuranceLevel;
-                if (ValidateAssuranceLevel(assertionAL, requiredMinAL)) return true;
-                HandleLoaValidationError(Resources.NSISLevelTooLow, assertionAL, requiredMinAL, context, assertionXml);
-                return false;
+                return ValidateAssuranceLevel(assertionAL, context, assertionXml);
             }
 
             // If NSIS LoA is missing, invalidate.
@@ -600,40 +597,30 @@ namespace dk.nita.saml20.protocol
                 return false;
             }
 
-            // Verify demanded assurance level if any
-            var demandedNsisLoa = SessionStore.CurrentSession[SessionConstants.ExpectedNSISLevel]?.ToString();
-            if (demandedNsisLoa != null)
-            {
-                SessionStore.CurrentSession[SessionConstants.ExpectedNSISLevel] = null;
-                if (ValidateNsisLoa(assertionNsisLoa, demandedNsisLoa)) return true;
-                HandleLoaValidationError(Resources.NSISLevelTooLowAccordingToDemand, assertionNsisLoa, demandedNsisLoa, context, assertionXml);
-            }
-            else
-            {
-                // Verify minimum configured NSIS LoA when no demanded is present. 
-                var requiredMinNsisLoa = SAML20FederationConfig.GetConfig().MinimumNSISLevel;
-                if (ValidateNsisLoa(assertionNsisLoa, requiredMinNsisLoa)) return true;
-                HandleLoaValidationError(Resources.NSISLevelTooLow, assertionNsisLoa, requiredMinNsisLoa, context, assertionXml);
-            }
-            
-            return false;
+            return ValidateNsisLoa(assertionNsisLoa, context, assertionXml);
         }
 
         /// <summary>
         /// Validates if a NSIS LoA is equals to or higher than a minimum required LoA.
+        /// If validation fails, response is modified to display an error page.
         /// </summary>
-        /// <param name="sourceLoa">LoA to validate against <paramref name="minLoa"/></param>
-        /// <param name="minLoa">Minimum required LoA.</param>
-        /// <returns>True if valid, otherwise false.</returns>
-        private bool ValidateNsisLoa(string sourceLoa, string minLoa)
+        /// <returns>True if valid, otherwise false (and modified response).</returns>
+        private bool ValidateNsisLoa(string loa, HttpContext context, XmlElement assertionXml)
         {
-            if (sourceLoa == minLoa) return true;
-
+            var demandedNsisLoa = SessionStore.CurrentSession[SessionConstants.ExpectedNSISLevel]?.ToString();
+            var minLoa = demandedNsisLoa ?? SAML20FederationConfig.GetConfig().MinimumNSISLevel;
+            
+            if (loa == minLoa) return true;
+            
             switch (minLoa)
             {
-                case "High" when sourceLoa != "High":
-                case "Substantial" when sourceLoa != "High" && sourceLoa != "Substantial":
-                    return false; 
+                case "High" when loa != "High":
+                case "Substantial" when loa != "High" && loa != "Substantial":
+                    var msgTemplate = demandedNsisLoa != null ?
+                        Resources.NSISLevelTooLowAccordingToDemand :
+                        Resources.NSISLevelTooLow;
+                    HandleLoaValidationError(msgTemplate, loa, demandedNsisLoa, context, assertionXml);
+                    return false;
                 default:
                     return true;
             }
@@ -641,20 +628,23 @@ namespace dk.nita.saml20.protocol
 
         /// <summary>
         /// Validates if a AssuranceLevel is equals to or higher than a minimum required AssuranceLevel.
+        /// If validation fails, response is modified to display an error page.
         /// </summary>
-        /// <param name="sourceAL">AssuranceLevel to validate against <paramref name="minAL"/></param>
-        /// <param name="minAL">Minimum required AssuranceLevel.</param>
-        /// <returns>True if valid, otherwise false.</returns>
-        private bool ValidateAssuranceLevel(string sourceAL, string minAL)
+        /// <returns>True if valid, otherwise false (and modified response).</returns>
+        private bool ValidateAssuranceLevel(string assouranceLevel, HttpContext context, XmlElement assertionXml)
         {
-            if (sourceAL == null ||
-                !int.TryParse(sourceAL, out var sourceLoaInt) ||
-                !int.TryParse(minAL, out var minLoaInt))
+            var minAL = SAML20FederationConfig.GetConfig().MinimumAssuranceLevel;
+            
+            if (assouranceLevel != null &&
+                int.TryParse(assouranceLevel, out var sourceLoaInt) &&
+                int.TryParse(minAL, out var minLoaInt) &&
+                sourceLoaInt >= minLoaInt)
             {
-                return false;
+                return true;
             }
 
-            return sourceLoaInt >= minLoaInt;
+            HandleLoaValidationError(Resources.NSISLevelTooLow, assouranceLevel, minAL, context, assertionXml);
+            return false;
         }
 
         internal static IEnumerable<AsymmetricAlgorithm> GetTrustedSigners(ICollection<KeyDescriptor> keys, IDPEndPoint ep, out IEnumerable<string> validationFailureReasons)
