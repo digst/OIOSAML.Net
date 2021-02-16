@@ -19,7 +19,7 @@ namespace Saml2.Properties {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class Resources {
@@ -342,7 +342,7 @@ namespace Saml2.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Received bad level os assurance value: &quot;{0}&quot;. Valid values are &quot;Low&quot;, &quot;Substantial&quot;, &quot;High&quot;..
+        ///   Looks up a localized string similar to Received bad Level of Assurance value: &quot;{0}&quot;. Valid values are &quot;Low&quot;, &quot;Substantial&quot;, &quot;High&quot;..
         /// </summary>
         internal static string DemandingLevelOfAssuranceError {
             get {
@@ -774,29 +774,29 @@ namespace Saml2.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The SAML token must contain a NSIS level..
+        ///   Looks up a localized string similar to The SAML token must contain a NSIS Level of Assurance..
         /// </summary>
-        internal static string NSISLevelMissing {
+        internal static string NsisLoaMissing {
             get {
-                return ResourceManager.GetString("NSISLevelMissing", resourceCulture);
+                return ResourceManager.GetString("NsisLoaMissing", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Saml assertion does not have the required assurance level. Assurance level was: {0} and configured minimum assurance level was: {1}..
+        ///   Looks up a localized string similar to SAML assertion does not have the required Level of Assurance. LoA was: {0} and configured minimum required LoA was: {1}..
         /// </summary>
-        internal static string NSISLevelTooLow {
+        internal static string NsisLoaTooLow {
             get {
-                return ResourceManager.GetString("NSISLevelTooLow", resourceCulture);
+                return ResourceManager.GetString("NsisLoaTooLow", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Saml assertion does not have the required NSIS level. NSIS level was: {0} and demanded minimum NSIS level was: {1}..
+        ///   Looks up a localized string similar to Saml assertion does not have the required NSIS Level of Assurance. LoA was: {0} and demanded minimum required LoA was: {1}..
         /// </summary>
-        internal static string NSISLevelTooLowAccordingToDemand {
+        internal static string NsisLoaTooLowAccordingToDemand {
             get {
-                return ResourceManager.GetString("NSISLevelTooLowAccordingToDemand", resourceCulture);
+                return ResourceManager.GetString("NsisLoaTooLowAccordingToDemand", resourceCulture);
             }
         }
         

@@ -18,7 +18,6 @@ namespace dk.nita.saml20.protocol
     /// </summary>
     public abstract class Saml20AbstractEndpointHandler : AbstractEndpointHandler
     {
-
         /// <summary>
         /// Parameter name for idp choice
         /// </summary>
@@ -32,9 +31,9 @@ namespace dk.nita.saml20.protocol
         /// </summary>
         public const string IDPIsPassive = "isPassive";
         /// <summary>
-        /// Parameter name for level of assurance
+        /// Parameter name for NSIS Level of Assurance
         /// </summary>
-        public const string NSISLevel = "levelOfAssurance";
+        public const string NsisLoa = "levelOfAssurance";
         /// <summary>
         /// Parameter name for profile type (Person/Professional)
         /// </summary>
@@ -57,9 +56,9 @@ namespace dk.nita.saml20.protocol
             }
             catch (Exception ex)
             {
-                if (ex is Saml20NSISLevelException)
+                if (ex is Saml20NsisLoaException)
                 {
-                    HandleError(context, ex.ToString(), (m) => new Saml20NSISLevelException(m));
+                    HandleError(context, ex.ToString(), (m) => new Saml20NsisLoaException(m));
                 }
                 else
                 {

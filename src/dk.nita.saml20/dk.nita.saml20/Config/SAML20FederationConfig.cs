@@ -124,16 +124,16 @@ namespace dk.nita.saml20.config
         }
 
         // default to Substantial. Cooresponds to certificate level in the OIOSAML specification.
-        private string _minimumNSISLevel = "Substantial";
+        private string _minimumNsisLoa = "Substantial";
 
         /// <summary>
-        /// Gets or sets the minimum assurance level configuration (spec 3.0)
+        /// Gets or sets the minimum NSIS level of assurance configuration (spec 3.0)
         /// </summary>
-        [XmlElement(ElementName = "MimimumNSISLevel")]
-        public string MinimumNSISLevel
+        [XmlElement(ElementName = "MinimumNsisLoa")]
+        public string MinimumNsisLoa
         {
-            get { return _minimumNSISLevel; }
-            set { _minimumNSISLevel = value; }
+            get { return _minimumNsisLoa; }
+            set { _minimumNsisLoa = value; }
         }
 
 
@@ -1034,9 +1034,9 @@ namespace dk.nita.saml20.config
         /// Get a URL that redirects the user to the login-page for this IDPEndPoint
         /// </summary>
         /// <returns></returns>
-        public string GetIDPLoginUrl(bool forceAuthn, bool isPassive, string desiredNSISLevel, string desiredProfile)
+        public string GetIDPLoginUrl(bool forceAuthn, bool isPassive, string desiredNsisLoa, string desiredProfile)
         {
-            return IDPSelectionUtil.GetIDPLoginUrl(Id, forceAuthn, isPassive, desiredNSISLevel, desiredProfile);
+            return IDPSelectionUtil.GetIDPLoginUrl(Id, forceAuthn, isPassive, desiredNsisLoa, desiredProfile);
         }
     }
 

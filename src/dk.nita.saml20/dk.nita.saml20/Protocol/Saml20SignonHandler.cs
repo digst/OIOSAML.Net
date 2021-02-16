@@ -343,9 +343,9 @@ namespace dk.nita.saml20.protocol
             }
             catch (Exception ex)
             {
-                if (ex is Saml20NSISLevelException)
+                if (ex is Saml20NsisLoaException)
                 {
-                    HandleError(context, ex.ToString(), (m) => new Saml20NSISLevelException(m));
+                    HandleError(context, ex.ToString(), (m) => new Saml20NsisLoaException(m));
                 }
                 else
                 {
@@ -592,8 +592,8 @@ namespace dk.nita.saml20.protocol
             var assertionNsisLoa = GetNsisLoa(assertion);
             if (assertionNsisLoa == null)
             {
-                AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST, Resources.NSISLevelMissing + " Assertion: " + assertionXml.OuterXml);
-                HandleError(context, Resources.NSISLevelMissing);
+                AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST, Resources.NsisLoaMissing + " Assertion: " + assertionXml.OuterXml);
+                HandleError(context, Resources.NsisLoaMissing);
                 return false;
             }
 
@@ -607,8 +607,8 @@ namespace dk.nita.saml20.protocol
         /// <returns>True if valid, otherwise false (and modified response).</returns>
         private bool ValidateNsisLoa(string loa, HttpContext context, XmlElement assertionXml)
         {
-            var demandedNsisLoa = SessionStore.CurrentSession[SessionConstants.ExpectedNSISLevel]?.ToString();
-            var minLoa = demandedNsisLoa ?? SAML20FederationConfig.GetConfig().MinimumNSISLevel;
+            var demandedNsisLoa = SessionStore.CurrentSession[SessionConstants.ExpectedNsisLoa]?.ToString();
+            var minLoa = demandedNsisLoa ?? SAML20FederationConfig.GetConfig().MinimumNsisLoa;
             
             if (loa == minLoa) return true;
             
@@ -617,8 +617,8 @@ namespace dk.nita.saml20.protocol
                 case "High" when loa != "High":
                 case "Substantial" when loa != "High" && loa != "Substantial":
                     var msgTemplate = demandedNsisLoa != null ?
-                        Resources.NSISLevelTooLowAccordingToDemand :
-                        Resources.NSISLevelTooLow;
+                        Resources.NsisLoaTooLowAccordingToDemand :
+                        Resources.NsisLoaTooLow;
                     HandleLoaValidationError(msgTemplate, loa, demandedNsisLoa, context, assertionXml);
                     return false;
                 default:
@@ -643,7 +643,7 @@ namespace dk.nita.saml20.protocol
                 return true;
             }
 
-            HandleLoaValidationError(Resources.NSISLevelTooLow, assouranceLevel, minAL, context, assertionXml);
+            HandleLoaValidationError(Resources.NsisLoaTooLow, assouranceLevel, minAL, context, assertionXml);
             return false;
         }
 
@@ -758,14 +758,14 @@ namespace dk.nita.saml20.protocol
         }
 
         /// <summary>
-        /// Retrieves the level of assurance from the assertion.
+        /// Retrieves the NSIS level of assurance from the assertion.
         /// </summary>
-        /// <returns>Returns the NSIS level or null if it has not been defined.</returns>
+        /// <returns>Returns the NSIS LoA or null if it has not been defined.</returns>
         private string GetNsisLoa(Saml20Assertion assertion)
         {
             foreach (var attribute in assertion.Attributes)
             {
-                if (attribute.Name == DKSaml20NSISLevelAttribute.NAME
+                if (attribute.Name == DKSaml20NsisLoaAttribute.NAME
                     && attribute.AttributeValue != null
                     && attribute.AttributeValue.Length > 0)
                     return attribute.AttributeValue[0];
@@ -796,9 +796,9 @@ namespace dk.nita.saml20.protocol
             }
 
             var requestContextItems = new List<(string value, ItemsChoiceType7 type)>();
-            if (!string.IsNullOrEmpty(context.Request.Params[NSISLevel]))
+            if (!string.IsNullOrEmpty(context.Request.Params[NsisLoa]))
             {
-                string demandedLevelOfAssurance = context.Request.Params[NSISLevel].ToString();
+                string demandedLevelOfAssurance = context.Request.Params[NsisLoa].ToString();
 
                 if (!new[] { "Low", "Substantial", "High" }.Contains(demandedLevelOfAssurance))
                 {
@@ -806,10 +806,10 @@ namespace dk.nita.saml20.protocol
                     return;
                 }
 
-                requestContextItems.Add((DKSaml20NSISLevelAttribute.NAME + "/" + demandedLevelOfAssurance, ItemsChoiceType7.AuthnContextClassRef));
+                requestContextItems.Add((DKSaml20NsisLoaAttribute.NAME + "/" + demandedLevelOfAssurance, ItemsChoiceType7.AuthnContextClassRef));
 
-                // Persist demanded Level of Assurance in session to be able to verify assertion
-                SessionStore.CurrentSession[SessionConstants.ExpectedNSISLevel] = demandedLevelOfAssurance;
+                // Persist demanded LoA in session to be able to verify assertion
+                SessionStore.CurrentSession[SessionConstants.ExpectedNsisLoa] = demandedLevelOfAssurance;
 
                 Trace.TraceData(TraceEventType.Information, string.Format(Tracing.DemandingLevelOfAssurance, demandedLevelOfAssurance));
             }
