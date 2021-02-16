@@ -158,7 +158,7 @@
     <Compile Include="Bindings\SignatureProviders\SignatureProvider.cs" />
     <Compile Include="Bindings\SignatureProviders\SignatureProviderFactory.cs" />
     <Compile Include="Config\ShaHashingAlgorithm.cs" />
-    <Compile Include="Exceptions\Saml20NSISLevelException.cs" />
+    <Compile Include="Exceptions\Saml20NsisLoaException.cs" />
     <Compile Include="Identity\Saml20PrincipalCache.cs" />
     <Compile Include="ISaml20IdpTokenAccessor.cs" />
     <Compile Include="Config\ConfigurationConstants.cs" />
@@ -176,7 +176,7 @@
     <Compile Include="Profiles\BasicPrivilegeProfile\Privilege.cs" />
     <Compile Include="Profiles\DKSaml20\Attributes\DKSaml20BasicPrivilegeProfileSimpleAttribute.cs" />
     <Compile Include="Profiles\DKSaml20\Attributes\DKSaml20BasicPrivilegeProfileIntermediateAttribute.cs" />
-    <Compile Include="Profiles\DKSaml20\Attributes\DKSaml20NSISLevelAttribute.cs" />
+    <Compile Include="Profiles\DKSaml20\Attributes\DKSaml20NsisLoaAttribute.cs" />
     <Compile Include="Protocol\Saml20CDCIdPReturnPoint.cs" />
     <Compile Include="Protocol\Saml20CDCReader.cs" />
     <Compile Include="Saml20ArtifactResolve.cs" />
