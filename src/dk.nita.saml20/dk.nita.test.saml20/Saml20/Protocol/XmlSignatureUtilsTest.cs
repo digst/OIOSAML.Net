@@ -24,23 +24,23 @@ namespace dk.nita.test.Saml20.Protocol
         }
 
         [Test]
-        [ExpectedException(typeof(InvalidOperationException))]
         public void DetectSignature_02()
         {
             XmlDocument doc = LoadDocument(@"Saml20\Assertions\EncryptedAssertion_01");
             doc.PreserveWhitespace = false;
-            XmlSignatureUtils.IsSigned(doc);
+            Assert.Throws<InvalidOperationException>(
+                () => XmlSignatureUtils.IsSigned(doc));
         }
 
         [Test]
-        [ExpectedException(typeof(InvalidOperationException))]
         public void CheckSignature_01()
         {
-            XmlDocument doc = LoadDocument(@"Saml20\Assertions\EncryptedAssertion_01");            
-            XmlSignatureUtils.CheckSignature(doc);
+            XmlDocument doc = LoadDocument(@"Saml20\Assertions\EncryptedAssertion_01");
+            Assert.Throws<InvalidOperationException>(
+                () => XmlSignatureUtils.CheckSignature(doc));
         }
 
-        [Test]        
+        [Test]
         public void CheckSignature_02()
         {
             XmlDocument doc = LoadDocument(@"Saml20\Assertions\Saml2Assertion_01");
@@ -51,8 +51,8 @@ namespace dk.nita.test.Saml20.Protocol
         public void ExtractKeyInfo_01()
         {
             XmlDocument doc = LoadDocument(@"Saml20\Assertions\Saml2Assertion_01");
-            KeyInfo keyInfo = XmlSignatureUtils.ExtractSignatureKeys(doc); 
-            Assert.IsNotNull(keyInfo);            
+            KeyInfo keyInfo = XmlSignatureUtils.ExtractSignatureKeys(doc);
+            Assert.IsNotNull(keyInfo);
         }
 
         public static XmlDocument LoadDocument(string assertionFile)
