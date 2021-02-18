@@ -18,7 +18,6 @@ namespace IntegrationTest
             
             var options = new ChromeOptions();
             options.AddArguments("headless");
-            options.AddArguments("allow-insecure-localhost");
             
             var driver = new ChromeDriver(options);
             
@@ -28,7 +27,7 @@ namespace IntegrationTest
                 
                 //Navigate to login page
                 driver.Navigate().GoToUrl(serviceProviderEndpoint);
-                wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementIsVisible(By.XPath("//*[text()='Test login']"))).Click();
+                wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementIsVisible(By.CssSelector("[href*='/login.aspx/mitidsim']"))).Click();
                 
                 //Log in
                 wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementIsVisible(By.Id("ContentPlaceHolder_MitIdSimulatorControl_txtUsername")))
