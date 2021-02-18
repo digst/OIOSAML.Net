@@ -8,7 +8,7 @@ using dk.nita.saml20.Schema.XEnc;
 using NUnit.Framework;
 using dk.nita.saml20;
 using dk.nita.saml20.Validation;
-using Assertion=dk.nita.saml20.Schema.Core.Assertion;
+using Assertion = dk.nita.saml20.Schema.Core.Assertion;
 
 namespace dk.nita.test.Saml20
 {
@@ -22,7 +22,7 @@ namespace dk.nita.test.Saml20
 
         public DKSAML20ProfileValidationTest()
         {
-            _validator = new DKSaml20AssertionValidator(AssertionUtil.GetAudiences(),false);
+            _validator = new DKSaml20AssertionValidator(AssertionUtil.GetAudiences(), false);
         }
 
         #region Tests
@@ -41,7 +41,6 @@ namespace dk.nita.test.Saml20
         /// Test that EncryptedData element with the correct Type value is disallowed by the DK Saml 2.0 validation
         /// </summary>        
         [Test]
-        [ExpectedException(typeof(DKSaml20FormatException), ExpectedMessage = "The DK-SAML 2.0 profile does not allow encrypted attributes.")]
         public void AttributeStatement_Invalid_EncryptedAttribute_DKSaml20()
         {
             Assertion saml20Assertion = AssertionUtil.GetBasicAssertion();
@@ -57,21 +56,23 @@ namespace dk.nita.test.Saml20
 
             XmlDocument doc = AssertionUtil.ConvertAssertion(saml20Assertion);
             var assertion = new Saml20Assertion(doc.DocumentElement, null, false);
-            assertion.Validate(DateTime.MinValue);
+
+            Assert.Throws<DKSaml20FormatException>(
+                () => assertion.Validate(DateTime.MinValue),
+                "The DK-SAML 2.0 profile does not allow encrypted attributes.");
         }
 
         /// <summary>
         /// Add an &lt;AuthzDecisionStatement&gt; to the list of statements and check that this is detected as a violation.
         /// </summary>
         [Test]
-        [ExpectedException(typeof(DKSaml20FormatException), ExpectedMessage = "The DK-SAML 2.0 profile requires exactly one \"AuthnStatement\" element and one \"AttributeStatement\" element.")]        
         public void AttributeStatement_Invalid_Statementtype()
         {
             Assertion saml20Assertion = AssertionUtil.GetBasicAssertion();
             AuthzDecisionStatement authzDecisionStatement = new AuthzDecisionStatement();
             authzDecisionStatement.Decision = DecisionType.Permit;
             authzDecisionStatement.Resource = "http://safewhere.net";
-            authzDecisionStatement.Action = new dk.nita.saml20.Schema.Core.Action[] { new dk.nita.saml20.Schema.Core.Action() };            
+            authzDecisionStatement.Action = new dk.nita.saml20.Schema.Core.Action[] { new dk.nita.saml20.Schema.Core.Action() };
             authzDecisionStatement.Action[0].Namespace = "http://actionns.com";
             authzDecisionStatement.Action[0].Value = "value";
 
@@ -81,7 +82,10 @@ namespace dk.nita.test.Saml20
             saml20Assertion.Items = statements.ToArray();
 
             var assertion = new Saml20Assertion(AssertionUtil.ConvertAssertion(saml20Assertion).DocumentElement, null, false);
-            assertion.Validate(DateTime.MinValue);
+
+            Assert.Throws<DKSaml20FormatException>(
+                () => assertion.Validate(DateTime.MinValue),
+                "The DK-SAML 2.0 profile requires exactly one \"AuthnStatement\" element and one \"AttributeStatement\" element.");
         }
 
         /// <summary>
@@ -106,7 +110,7 @@ namespace dk.nita.test.Saml20
         //    saml20Assertion.Issuer.Format = "http://example.com";
 
         //    TestAssertion(saml20Assertion, "The DK-SAML 2.0 Profile does not allow the \"Issuer\" element to have any attributes.");
-            
+
         //    saml20Assertion.Issuer.Format = null;
         //    saml20Assertion.Issuer.NameQualifier = "NameQualifier";
 
@@ -116,7 +120,7 @@ namespace dk.nita.test.Saml20
         //    saml20Assertion.Issuer.SPNameQualifier = "SPNameQualifier";
 
         //    TestAssertion(saml20Assertion, "The DK-SAML 2.0 Profile does not allow the \"Issuer\" element to have any attributes.");
-            
+
         //    saml20Assertion.Issuer.SPNameQualifier = null;
         //    saml20Assertion.Issuer.SPProvidedID = "SPProvidedID";
 
@@ -156,8 +160,8 @@ namespace dk.nita.test.Saml20
 
             Assert.That(saml20Assertion.Subject.Items.Length > 0);
 
-            SubjectConfirmation subjectConfirmation = 
-                (SubjectConfirmation) Array.Find(saml20Assertion.Subject.Items, delegate(object item) { return item is SubjectConfirmation; });
+            SubjectConfirmation subjectConfirmation =
+                (SubjectConfirmation)Array.Find(saml20Assertion.Subject.Items, delegate (object item) { return item is SubjectConfirmation; });
             Assert.IsNotNull(subjectConfirmation);
             string originalMethod = subjectConfirmation.Method;
             subjectConfirmation.Method = "IllegalMethod";
@@ -176,7 +180,7 @@ namespace dk.nita.test.Saml20
             TestAssertion(saml20Assertion, "The DK-SAML 2.0 Profile requires that the \"SubjectConfirmationData\" element contains the \"NotOnOrAfter\" attribute.");
             subjectConfirmation.SubjectConfirmationData.NotOnOrAfter = DateTime.UtcNow;
 
-            subjectConfirmation.SubjectConfirmationData.NotBefore = DateTime.UtcNow.Subtract(new TimeSpan(5,0,0,0));
+            subjectConfirmation.SubjectConfirmationData.NotBefore = DateTime.UtcNow.Subtract(new TimeSpan(5, 0, 0, 0));
             TestAssertion(saml20Assertion, "The DK-SAML 2.0 Profile disallows the use of the \"NotBefore\" attribute of the \"SubjectConfirmationData\" element.");
 
             subjectConfirmation.SubjectConfirmationData.NotBefore = null;
@@ -201,11 +205,11 @@ namespace dk.nita.test.Saml20
             List<ConditionAbstract> conditions =
                 new List<ConditionAbstract>(saml20Assertion.Conditions.Items);
 
-            int index = conditions.FindIndex(delegate(ConditionAbstract cond) { return cond is AudienceRestriction; });
-            Assert.That( index != -1);
+            int index = conditions.FindIndex(delegate (ConditionAbstract cond) { return cond is AudienceRestriction; });
+            Assert.That(index != -1);
             conditions.RemoveAt(index);
             // Add another condition to avoid an empty list of conditions.
-            conditions.Add( new OneTimeUse());
+            conditions.Add(new OneTimeUse());
             saml20Assertion.Conditions.Items = conditions;
 
             TestAssertion(saml20Assertion, "The DK-SAML 2.0 profile requires that an \"AudienceRestriction\" element is present on the saml20Assertion.");
@@ -214,12 +218,12 @@ namespace dk.nita.test.Saml20
         /// <summary>
         /// Verify the rules for the &lt;AuthnStatement&gt; element, which are outlined in section 7.1.7 of [DKSAML]
         /// </summary>
-        [Test]        
+        [Test]
         public void AuthnStatement_Element()
         {
             Assertion saml20Assertion = AssertionUtil.GetBasicAssertion();
             AuthnStatement authnStmt =
-                (AuthnStatement)Array.Find(saml20Assertion.Items, delegate(StatementAbstract stmnt) { return stmnt is AuthnStatement; });
+                (AuthnStatement)Array.Find(saml20Assertion.Items, delegate (StatementAbstract stmnt) { return stmnt is AuthnStatement; });
 
             // Mess around with the AuthnStatement.
             {
@@ -230,9 +234,9 @@ namespace dk.nita.test.Saml20
             }
 
             {
-                int index = 
-                    Array.FindIndex(authnStmt.AuthnContext.Items, 
-                                    delegate(object o) { return o is string && o.ToString() == "urn:oasis:names:tc:SAML:2.0:ac:classes:X509"; });
+                int index =
+                    Array.FindIndex(authnStmt.AuthnContext.Items,
+                                    delegate (object o) { return o is string && o.ToString() == "urn:oasis:names:tc:SAML:2.0:ac:classes:X509"; });
                 object oldValue = authnStmt.AuthnContext.Items[index];
                 authnStmt.AuthnContext.Items[index] = "Hallelujagobble!!";
                 TestAssertion(saml20Assertion, "AuthnContextClassRef has a value which is not a wellformed absolute uri");
@@ -242,7 +246,7 @@ namespace dk.nita.test.Saml20
             // Remove it.
             saml20Assertion = AssertionUtil.GetBasicAssertion();
             List<StatementAbstract> statements = new List<StatementAbstract>(saml20Assertion.Items);
-            statements.RemoveAll(delegate(StatementAbstract stmnt) { return stmnt is AuthnStatement; });
+            statements.RemoveAll(delegate (StatementAbstract stmnt) { return stmnt is AuthnStatement; });
             saml20Assertion.Items = statements.ToArray();
             TestAssertion(saml20Assertion, "The DK-SAML 2.0 profile requires exactly one \"AuthnStatement\" element and one \"AttributeStatement\" element.");
         }
@@ -250,15 +254,15 @@ namespace dk.nita.test.Saml20
         /// <summary>
         /// Verify the rules for the &lt;AttributeStatement&gt; element, which are outlined in section 7.1.8 of [DKSAML]
         /// </summary>
-        [Test]        
+        [Test]
         public void AttributeStatement_Element()
-        {            
+        {
             Predicate<StatementAbstract> findAttributeStatement =
-                delegate(StatementAbstract stmnt) { return stmnt is AttributeStatement; };
+                delegate (StatementAbstract stmnt) { return stmnt is AttributeStatement; };
             Assertion saml20Assertion = AssertionUtil.GetBasicAssertion();
 
             AttributeStatement attributeStatement =
-                (AttributeStatement) Array.Find(saml20Assertion.Items, findAttributeStatement);           
+                (AttributeStatement)Array.Find(saml20Assertion.Items, findAttributeStatement);
 
             // Add an encrypted attribute.
             EncryptedElement encAtt = new EncryptedElement();
@@ -270,14 +274,14 @@ namespace dk.nita.test.Saml20
             TestAssertion(saml20Assertion, "The DK-SAML 2.0 profile does not allow encrypted attributes.");
 
             // Add an attribute with the wrong nameformat.
-//            Attribute att = DKSaml20EmailAttribute.create("test@example.com");
-//            att.NameFormat = "http://example.com";
-//            attributeStatement.Items = new object[] { att };
-//            testAssertion(saml20Assertion, "The DK-SAML 2.0 profile requires that an attribute's \"NameFormat\" element is urn:oasis:names:tc:SAML:2.0:attrname-format:uri.");
+            //            Attribute att = DKSaml20EmailAttribute.create("test@example.com");
+            //            att.NameFormat = "http://example.com";
+            //            attributeStatement.Items = new object[] { att };
+            //            testAssertion(saml20Assertion, "The DK-SAML 2.0 profile requires that an attribute's \"NameFormat\" element is urn:oasis:names:tc:SAML:2.0:attrname-format:uri.");
 
             // Clear all the attributes.
             attributeStatement.Items = new object[0];
-            TestAssertion(saml20Assertion, "AttributeStatement MUST contain at least one Attribute or EncryptedAttribute");            
+            TestAssertion(saml20Assertion, "AttributeStatement MUST contain at least one Attribute or EncryptedAttribute");
 
             // Remove it.
             saml20Assertion = AssertionUtil.GetBasicAssertion();
@@ -310,8 +314,8 @@ namespace dk.nita.test.Saml20
         /// <param name="statements"></param>
         /// <returns></returns>
         private static AttributeStatement GetAttributeStatement(List<StatementAbstract> statements)
-        {            
-            return (AttributeStatement) statements.Find(delegate(StatementAbstract ssa) { return ssa is AttributeStatement; });
+        {
+            return (AttributeStatement)statements.Find(delegate (StatementAbstract ssa) { return ssa is AttributeStatement; });
         }
     }
 }

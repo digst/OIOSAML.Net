@@ -12,8 +12,8 @@ using NUnit.Framework;
 using dk.nita.saml20.config;
 using dk.nita.saml20;
 using dk.nita.saml20.protocol;
-using Assertion=dk.nita.saml20.Schema.Core.Assertion;
-using Saml20Assertion=dk.nita.saml20.Saml20Assertion;
+using Assertion = dk.nita.saml20.Schema.Core.Assertion;
+using Saml20Assertion = dk.nita.saml20.Saml20Assertion;
 
 namespace dk.nita.test.Saml20
 {
@@ -22,7 +22,7 @@ namespace dk.nita.test.Saml20
     /// </summary>
     [TestFixture]
     public class EncryptedAssertionTest
-    {    
+    {
         private static Saml20Assertion CreateDKSaml20TokenFromAssertion(Saml20EncryptedAssertion encAss)
         {
             return new Saml20Assertion(encAss.Assertion.DocumentElement, null, false);
@@ -41,12 +41,12 @@ namespace dk.nita.test.Saml20
         /// An example on how to decrypt an encrypted assertion.
         /// </summary>
         private static void DecryptAssertion(string file)
-        {            
+        {
             XmlDocument doc = new XmlDocument();
-            doc.Load(file);            
-            XmlElement encryptedDataElement = GetElement(dk.nita.saml20.Schema.XEnc.EncryptedData.ELEMENT_NAME, Saml20Constants.XENC, doc);                        
+            doc.Load(file);
+            XmlElement encryptedDataElement = GetElement(dk.nita.saml20.Schema.XEnc.EncryptedData.ELEMENT_NAME, Saml20Constants.XENC, doc);
 
-            
+
             EncryptedData encryptedData = new EncryptedData();
             encryptedData.LoadXml(encryptedDataElement);
 
@@ -54,7 +54,7 @@ namespace dk.nita.test.Saml20
             Assert.That(nodelist.Count > 0);
 
             KeyInfo key = new KeyInfo();
-            key.LoadXml((XmlElement) nodelist[0]);
+            key.LoadXml((XmlElement)nodelist[0]);
 
             // Review: Is it possible to figure out which certificate to load based on the Token?
             /*
@@ -74,12 +74,12 @@ namespace dk.nita.test.Saml20
             {
                 if (keyInfoClause is KeyInfoEncryptedKey)
                 {
-                    KeyInfoEncryptedKey keyInfoEncryptedKey = (KeyInfoEncryptedKey) keyInfoClause;
+                    KeyInfoEncryptedKey keyInfoEncryptedKey = (KeyInfoEncryptedKey)keyInfoClause;
                     EncryptedKey encryptedKey = keyInfoEncryptedKey.EncryptedKey;
                     symmetricKey = new RijndaelManaged();
-                                        
+
                     symmetricKey.Key =
-                        EncryptedXml.DecryptKey(encryptedKey.CipherData.CipherValue, (RSA) cert.PrivateKey, false);
+                        EncryptedXml.DecryptKey(encryptedKey.CipherData.CipherValue, (RSA)cert.PrivateKey, false);
                     continue;
                 }
             }
@@ -141,11 +141,11 @@ namespace dk.nita.test.Saml20
             encryptedAssertion.encryptedKey[0] = new saml20.Schema.XEnc.EncryptedKey();
 
             XmlDocument result;
-            result = Serialization.Serialize(encryptedAssertion);            
+            result = Serialization.Serialize(encryptedAssertion);
 
             XmlElement encryptedDataElement = GetElement(dk.nita.saml20.Schema.XEnc.EncryptedData.ELEMENT_NAME, Saml20Constants.XENC, result);
             EncryptedXml.ReplaceElement(encryptedDataElement, encryptedData, false);
-        }        
+        }
 
         /// <summary>
         /// Attempts to decrypt the assertion in the file "EncryptedAssertion_01".
@@ -160,7 +160,7 @@ namespace dk.nita.test.Saml20
             // Find the transport key.
             X509Certificate2 cert = new X509Certificate2(@"Saml20\Certificates\sts_dev_certificate.pfx", "test1234");
 
-            Saml20EncryptedAssertion encryptedAssertion = new Saml20EncryptedAssertion((RSA) cert.PrivateKey, doc);
+            Saml20EncryptedAssertion encryptedAssertion = new Saml20EncryptedAssertion((RSA)cert.PrivateKey, doc);
             Assert.IsNull(encryptedAssertion.Assertion); // Check that it does not contain an assertion prior to decryption.
             encryptedAssertion.Decrypt();
             Assert.IsNotNull(encryptedAssertion.Assertion);
@@ -172,7 +172,7 @@ namespace dk.nita.test.Saml20
         /// Test that the <code>Saml20EncryptedAssertion</code> class is capable of finding keys that are "peer" included,
         /// ie. the &lt;EncryptedKey&gt; element is a sibling of the &lt;EncryptedData&gt; element.
         /// </summary>
-        [Test]        
+        [Test]
         public void TestAssertionDecryption_02()
         {
             // Load the assertion
@@ -186,13 +186,13 @@ namespace dk.nita.test.Saml20
             Assert.IsNull(encryptedAssertion.Assertion); // Check that it does not contain an assertion prior to decryption.
             encryptedAssertion.Decrypt();
             Assert.IsNotNull(encryptedAssertion.Assertion);
-        }        
-        
+        }
+
         /// <summary>
         /// Test that the <code>Saml20EncryptedAssertion</code> class is capable of finding keys that are "peer" included,
         /// ie. the &lt;EncryptedKey&gt; element is a sibling of the &lt;EncryptedData&gt; element.
         /// </summary>
-        [Test]        
+        [Test]
         public void TestAssertionDecryption_03()
         {
             // Load the assertion
@@ -269,7 +269,7 @@ namespace dk.nita.test.Saml20
             encryptedAssertion.Assertion = AssertionUtil.GetTestAssertion_01();
 
             X509Certificate2 cert = new X509Certificate2(@"Saml20\Certificates\sts_dev_certificate.pfx", "test1234");
-            encryptedAssertion.TransportKey = (RSA) cert.PublicKey.Key;
+            encryptedAssertion.TransportKey = (RSA)cert.PublicKey.Key;
 
             encryptedAssertion.Encrypt();
 
@@ -289,12 +289,15 @@ namespace dk.nita.test.Saml20
         /// Tests that it is possible to specify the algorithm of the session key.
         /// </summary>
         [Test]
-        [ExpectedException(typeof(ArgumentException))]
         public void TestAlgorithmConfiguration_01()
         {
-            Saml20EncryptedAssertion encryptedAssertion = new Saml20EncryptedAssertion();
-            encryptedAssertion.SessionKeyAlgorithm = "RSA";
-            Assert.Fail("\"Saml20EncryptedAssertion\" class does not respond to incorrect algorithm identifying URI.");
+            Assert.Throws<ArgumentException>(
+                () =>
+                {
+                    Saml20EncryptedAssertion encryptedAssertion = new Saml20EncryptedAssertion();
+                    encryptedAssertion.SessionKeyAlgorithm = "RSA";
+                    Assert.Fail("\"Saml20EncryptedAssertion\" class does not respond to incorrect algorithm identifying URI.");
+                });
         }
 
         /// <summary>
@@ -319,11 +322,11 @@ namespace dk.nita.test.Saml20
             Assert.IsNotNull(encryptedAssertionXML);
 
             // Verify that the EncryptionMethod element is set correctly.
-            XmlNodeList list = 
+            XmlNodeList list =
                 encryptedAssertionXML.GetElementsByTagName(dk.nita.saml20.Schema.XEnc.EncryptedData.ELEMENT_NAME,
                                                            Saml20Constants.XENC);
             Assert.AreEqual(1, list.Count);
-            XmlElement el = (XmlElement) list[0];
+            XmlElement el = (XmlElement)list[0];
 
             // Go through the children and look for the EncryptionMethod element, and verify its algorithm attribute.
             bool encryptionMethodFound = false;
@@ -332,7 +335,7 @@ namespace dk.nita.test.Saml20
                 if (node.LocalName == dk.nita.saml20.Schema.XEnc.EncryptionMethod.ELEMENT_NAME &&
                     node.NamespaceURI == Saml20Constants.XENC)
                 {
-                    el = (XmlElement) node;
+                    el = (XmlElement)node;
                     Assert.AreEqual(EncryptedXml.XmlEncAES128Url, el.GetAttribute("Algorithm"));
                     encryptionMethodFound = true;
                 }
@@ -340,7 +343,7 @@ namespace dk.nita.test.Saml20
             Assert.That(encryptionMethodFound, "Unable to find EncryptionMethod element in EncryptedData.");
 
             // Now decrypt the assertion, and verify that it recognizes the Algorithm used.
-            Saml20EncryptedAssertion decrypter = new Saml20EncryptedAssertion((RSA) cert.PrivateKey);
+            Saml20EncryptedAssertion decrypter = new Saml20EncryptedAssertion((RSA)cert.PrivateKey);
             Assert.IsNull(decrypter.Assertion);
             decrypter.LoadXml(encryptedAssertionXML.DocumentElement);
             // Set a wrong algorithm and make sure that the class gets it algorithm info from the assertion itself.
