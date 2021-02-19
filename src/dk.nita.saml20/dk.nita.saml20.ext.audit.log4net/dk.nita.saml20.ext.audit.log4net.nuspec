@@ -15,9 +15,7 @@
     <copyright>$copyright$</copyright>
     <tags>SAML OIOSAML SAML2 NEMLOGIN NEMLOG-IN</tags>
     <dependencies>
-      <group targetFramework=".NETFramework4.7.2">
         <dependency id="dk.nita.saml20" version="[$version$]" />
-      </group>
     </dependencies>
   </metadata>
   <files>
