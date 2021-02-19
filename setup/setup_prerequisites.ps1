@@ -8,6 +8,7 @@ set-location $PSScriptRoot
 . .\functions.ps1
 
 $certpassword = ConvertTo-SecureString -String "test1234" -AsPlainText -Force
+$certpassword2  = ConvertTo-SecureString -String "Test1234" -AsPlainText -Force
 
 write-host "Installing demoidp ssl certificate"
 $demoIdpSslcertificate = Import-PfxCertificate '..\certificates\demoidp ssl.pfx' -Password $certpassword -CertStoreLocation Cert:\LocalMachine\My
@@ -32,8 +33,8 @@ write-host "Installed demoidp's expired signing certificate $($demoidpexpiredcer
 write-host "This certificate is automatically configured as one of the signing certificates for the demoidp"
 
 write-host "Installing serviceprovider's signing certificate"
-$serviceprovidercertificate = Import-PfxCertificate '..\certificates\serviceprovider.pfx' -Password $certpassword -CertStoreLocation Cert:\LocalMachine\My
-$serviceprovidercertificate = Import-PfxCertificate '..\certificates\serviceprovider.pfx' -Password $certpassword -CertStoreLocation Cert:\LocalMachine\TrustedPeople
+$serviceprovidercertificate = Import-PfxCertificate '..\certificates\serviceprovider.p12' -Password $certpassword2 -CertStoreLocation Cert:\LocalMachine\My
+$serviceprovidercertificate = Import-PfxCertificate '..\certificates\serviceprovider.p12' -Password $certpassword2 -CertStoreLocation Cert:\LocalMachine\TrustedPeople
 write-host "Installed serviceprovider's signing certificate $($serviceprovidercertificate.Thumbprint) in LocalMachine\My and LocalMachine\TrustedPeople. This ensures the certificate is trusted on your machine and browser"
 write-host "This certificate is used by the demo website (service provider) as its current signing certificate"
 

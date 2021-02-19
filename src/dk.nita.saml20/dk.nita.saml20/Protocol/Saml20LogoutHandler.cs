@@ -210,6 +210,8 @@ namespace dk.nita.saml20.protocol
                 }
                 else
                 {
+                    ValidateNotOnOrAfter(context, parser.LogoutRequest);
+                    
                     Saml20MetadataDocument metadata = idp.metadata;
 
                     if (!parser.CheckSignature(metadata.GetKeys(KeyTypes.signing)))
@@ -491,6 +493,8 @@ namespace dk.nita.saml20.protocol
                     return;
                 }
 
+                ValidateNotOnOrAfter(context, logoutRequest); // Throws if not valid.
+                
                 Saml20MetadataDocument metadata = endpoint.metadata;
 
                 if (!parser.VerifySignature(metadata.GetKeys(KeyTypes.signing)))
@@ -523,19 +527,8 @@ namespace dk.nita.saml20.protocol
                     return;
                 }
 
-                if (logoutRequest.NotOnOrAfter.HasValue)
-                {
-
-                    if (logoutRequest.NotOnOrAfter.Value.AddMinutes(FederationConfig.GetConfig().AllowedClockSkewMinutes) <= DateTime.UtcNow)
-                    {
-                        var errormessage =
-                            $"Logout request received after specified NotOnOrAfter ({logoutRequest.NotOnOrAfter}) time.";
-                        AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, errormessage);
-                        HandleError(context, errormessage);
-                        return;
-                    }
-                }
-
+                ValidateNotOnOrAfter(context, logoutRequest); // Throws if not valid.
+                
                 Saml20MetadataDocument metadata = endpoint.metadata;
 
                 // handle a logout-request
@@ -620,6 +613,35 @@ namespace dk.nita.saml20.protocol
                 return;
             }
         }
+        
+        /// <summary>
+        /// Validates that the <see cref="LogoutRequest"/> has not expired, by checking that NotOnOrAfter + allowedTimeSkew is greater than current time.
+        /// Only validated if <see cref="LogoutRequest.NotOnOrAfter"/> is not null.
+        /// </summary>
+        /// <param name="context">The requests <see cref="HttpContext"/></param>
+        /// <param name="logoutRequest">The LogoutRequest to validate</param>
+        /// <exception cref="T:System.Threading.ThreadAbortException">Throws ThreadAbortException if validation fails, and config is set to show an error page.</exception>
+        /// <exception cref="Saml20Exception">Throws Saml20Exception if validation fails, and config is set to throw exception.</exception>
+        private void ValidateNotOnOrAfter(HttpContext context, LogoutRequest logoutRequest)
+        {
+            if (!logoutRequest.NotOnOrAfter.HasValue)
+            {
+                return;
+            }
+
+            var notOnOrAfter = logoutRequest.NotOnOrAfter.Value;
+            var allowedClockSkewTime = FederationConfig.GetConfig().AllowedClockSkewMinutes;
+            var now = DateTime.UtcNow;
+
+            if (notOnOrAfter.AddMinutes(allowedClockSkewTime) > now)
+            {
+                return;
+            }
+
+            var errormessage = $"Logout request expired. NotOnOrAfter={notOnOrAfter}, RequestReceived={now}";
+            AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, errormessage);
+            HandleError(context, errormessage);
+        }
 
         #endregion
 
@@ -655,7 +677,7 @@ namespace dk.nita.saml20.protocol
                 }
                 else
                 {
-                    Trace.TraceData(TraceEventType.Warning, "The user was logged out but the session had already expired. Distributed session could therefore not be abandonded½");
+                    Trace.TraceData(TraceEventType.Warning, "The user was logged out but the session had already expired. Distributed session could therefore not be abandoned");
                 }
             }
         }

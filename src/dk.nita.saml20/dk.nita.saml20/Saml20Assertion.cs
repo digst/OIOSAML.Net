@@ -15,7 +15,7 @@ namespace dk.nita.saml20
     /// Encapsulates the functionality required of a DK-SAML 2.0 Assertion. 
     /// 
     ///</summary>
-    public class Saml20Assertion 
+    public class Saml20Assertion
     {
         #region Private variables
         /// <summary>
@@ -92,7 +92,7 @@ namespace dk.nita.saml20
         {
             get
             {
-                if(_assertion == null)
+                if (_assertion == null)
                 {
                     if (_samlAssertion == null)
                         throw new InvalidOperationException("No assertion is loaded.");
@@ -100,7 +100,7 @@ namespace dk.nita.saml20
                     XmlNodeReader reader = new XmlNodeReader(_samlAssertion);
                     _assertion = Serialization.Deserialize<Assertion>(reader);
                 }
-                    
+
                 return _assertion;
             }
         }
@@ -125,10 +125,12 @@ namespace dk.nita.saml20
         {
             get
             {
-                foreach (object o in Assertion.Subject.Items)
+                foreach (var o in Assertion.Subject.Items)
                 {
-                    if(o is NameID)
-                        return (NameID) o;
+                    if (o is NameID id)
+                    {
+                        return id;
+                    }
                 }
                 return null;
             }
@@ -200,7 +202,7 @@ namespace dk.nita.saml20
             {
                 foreach (ConditionAbstract item in Assertion.Conditions.Items)
                 {
-                    if(item is OneTimeUse)
+                    if (item is OneTimeUse)
                         return true;
                 }
 
@@ -223,7 +225,7 @@ namespace dk.nita.saml20
             {
                 // _assertionAttributes == null is reserved for signalling that the attribute is not initialized, so 
                 // convert it to an empty list.
-                if (value == null) 
+                if (value == null)
                     value = new List<SamlAttribute>(0);
                 _assertionAttributes = value;
             }
@@ -234,8 +236,8 @@ namespace dk.nita.saml20
         /// </summary>
         public List<EncryptedElement> EncryptedAttributes
         {
-            get 
-            { 
+            get
+            {
                 if (_encryptedAssertionAttributes == null)
                     ExtractAttributes(); // Lazy initialization of the attributes list.
                 return _encryptedAssertionAttributes;
@@ -303,8 +305,8 @@ namespace dk.nita.saml20
         /// <summary>
         /// Initializes a new instance of the <see cref="Saml20Assertion"/> class.
         /// </summary>
-        public Saml20Assertion() 
-        {}
+        public Saml20Assertion()
+        { }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Saml20Assertion"/> class.
@@ -350,7 +352,7 @@ namespace dk.nita.saml20
                 if (key == null)
                     continue;
 
-                if (CheckSignature(key)) 
+                if (CheckSignature(key))
                     return true;
             }
 
@@ -365,7 +367,7 @@ namespace dk.nita.saml20
                 return true;
             }
             return false;
-            
+
         }
 
         /// <summary>
@@ -380,7 +382,7 @@ namespace dk.nita.saml20
             if (IsExpired())
                 throw new Saml20Exception("Assertion is no longer valid.");
         }
-        
+
         /// <summary>
         /// Checks if the expiration time has been exceeded.
         /// </summary>        
@@ -399,8 +401,8 @@ namespace dk.nita.saml20
                 return null;
 
             return XmlSignatureUtils.ExtractSignatureKeys(_samlAssertion);
-            
-            
+
+
         }
 
         /// <summary>
@@ -431,7 +433,7 @@ namespace dk.nita.saml20
         /// stores it in <code>_assertionAttributes</code>.
         /// </summary>
         private void ExtractAttributes()
-        {            
+        {
             _assertionAttributes = new List<SamlAttribute>(0);
             _encryptedAssertionAttributes = new List<EncryptedElement>(0);
 
@@ -444,19 +446,19 @@ namespace dk.nita.saml20
             // NOTE It would be nice to implement a better-performing solution where only the AttributeStatement is converted.
             // NOTE Namespace issues in the xml-schema "type"-attribute prevents this, though.
             Assertion assertion = Serialization.Deserialize<Assertion>(new XmlNodeReader(_samlAssertion));
-                        
+
             List<AttributeStatement> attributeStatements = assertion.GetAttributeStatements();
             if (attributeStatements.Count == 0 || attributeStatements[0].Items == null)
                 return;
 
-            AttributeStatement attributeStatement = attributeStatements[0];            
+            AttributeStatement attributeStatement = attributeStatements[0];
             foreach (object item in attributeStatement.Items)
             {
                 if (item is SamlAttribute)
                     _assertionAttributes.Add((SamlAttribute)item);
 
                 if (item is EncryptedElement)
-                    _encryptedAssertionAttributes.Add((EncryptedElement) item);
+                    _encryptedAssertionAttributes.Add((EncryptedElement)item);
             }
         }
 
