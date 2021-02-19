@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Configuration;
-using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Xml.Serialization;
 using dk.nita.saml20.Session;
@@ -167,7 +166,6 @@ namespace dk.nita.saml20.config
             set => _allowedClockSkewMinutes = value;
         }
     }
-
 
     /// <summary>
     /// The Actions configuration element class

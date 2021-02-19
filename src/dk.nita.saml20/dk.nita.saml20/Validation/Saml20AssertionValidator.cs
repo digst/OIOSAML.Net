@@ -115,9 +115,8 @@ namespace dk.nita.saml20.Validation
 
             foreach (AuthnStatement statement in assertion.GetAuthnStatements())
             {                
-                if (statement.SessionNotOnOrAfter != null
-                    && statement.SessionNotOnOrAfter <= currentUtcTime)
-                    throw new Saml20FormatException("AuthnStatement attribute SessionNotOnOrAfter is not within expected range");
+                if (statement.SessionNotOnOrAfter != null && statement.SessionNotOnOrAfter <= currentUtcTime)
+                    throw new Saml20FormatException("AuthnStatement attribute SessionNotOnOrAfter MUST be in the future");
 
                 // TODO: Consider validating that authnStatement.AuthnInstant is in the past
             }
@@ -223,7 +222,7 @@ namespace dk.nita.saml20.Validation
 
             bool oneTimeUseSeen = false;
             bool proxyRestrictionsSeen = false;
-            
+
             ValidateConditionsInterval(assertion.Conditions);
 
             foreach (ConditionAbstract cat in assertion.Conditions.Items)

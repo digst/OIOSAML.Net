@@ -383,7 +383,7 @@ namespace dk.nita.test.Saml20
             Assertion saml20Assertion = AssertionUtil.GetBasicAssertion();
 
             new XmlSerializer(typeof(Assertion));
-
+            
             CreateSaml20Token(saml20Assertion);
         }
 
@@ -1476,6 +1476,7 @@ namespace dk.nita.test.Saml20
             var assertion = new Saml20Assertion(doc.DocumentElement, null, false);
             assertion.Validate(currentUtcTime ?? DateTime.MinValue);
         }
+
 
         #endregion
 
