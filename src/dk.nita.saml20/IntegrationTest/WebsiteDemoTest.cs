@@ -9,7 +9,7 @@ namespace IntegrationTest
 {
     public class WebsiteDemoTest
     {
-        [Fact(Skip="Awaiting DevTest4 metadata")]
+        [Fact]
         public void LoginTest()
         {
             var serviceProviderEndpoint = ConfigurationManager.AppSettings["ServiceProviderEndpoint"];
