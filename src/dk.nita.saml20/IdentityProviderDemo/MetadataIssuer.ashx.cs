@@ -59,7 +59,7 @@ namespace IdentityProviderDemo
             foreach (string name in IDPConfig.attributes)
             {
                 SamlAttribute att = new SamlAttribute();
-                att.NameFormat = SamlAttribute.NAMEFORMAT_BASIC;
+                att.NameFormat = SamlAttribute.NAMEFORMAT_URI;
                 att.Name = name;
                 atts.Add(att);
             }

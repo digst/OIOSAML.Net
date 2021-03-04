@@ -168,7 +168,7 @@ namespace dk.nita.saml20
                     attConsumingService.RequestedAttribute[i].Name = config.RequestedAttributes.Attributes[i].name;
                     if (config.RequestedAttributes.Attributes[i].IsRequired)
                         attConsumingService.RequestedAttribute[i].isRequired = true;
-                    attConsumingService.RequestedAttribute[i].NameFormat = SamlAttribute.NAMEFORMAT_BASIC;
+                    attConsumingService.RequestedAttribute[i].NameFormat = SamlAttribute.NAMEFORMAT_URI;
                 }
             }
             else

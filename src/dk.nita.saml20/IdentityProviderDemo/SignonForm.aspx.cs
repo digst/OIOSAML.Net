@@ -353,7 +353,7 @@ namespace IdentityProviderDemo
                         SamlAttribute attribute = new SamlAttribute();
                         attribute.Name = att.Key;
                         attribute.AttributeValue = new string[] { att.Value };
-                        attribute.NameFormat = SamlAttribute.NAMEFORMAT_BASIC;
+                        attribute.NameFormat = SamlAttribute.NAMEFORMAT_URI;
                         attributes.Add(attribute);
                     }
                 }
