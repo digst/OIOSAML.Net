@@ -26,7 +26,7 @@ namespace dk.nita.saml20.protocol
         /// <param name="context">An <see cref="T:System.Web.HttpContext"/> object that provides references to the intrinsic server objects (for example, Request, Response, Session, and Server) used to service HTTP requests.</param>
         public override void ProcessRequest(HttpContext context)
         {
-            string encoding = context.Request.QueryString["encoding"];
+            var encoding = context.Request.QueryString["encoding"];
             try
             {
                 if (!string.IsNullOrEmpty(encoding))
@@ -38,7 +38,7 @@ namespace dk.nita.saml20.protocol
                 return;
             }
 
-            bool sign = true;
+            var sign = false;
             try
             {
                 string param = context.Request.QueryString["sign"];                
