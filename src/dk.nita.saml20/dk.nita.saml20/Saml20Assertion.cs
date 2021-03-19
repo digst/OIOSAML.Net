@@ -328,7 +328,8 @@ namespace dk.nita.saml20
         /// <param name="trustedSigners">If <code>null</code>, the signature of the given assertion is not verified.</param>
         /// <param name="profile">Determines the type of validation to perform on the token</param>
         /// <param name="quirksMode">if set to <c>true</c> quirks mode is enabled.</param>
-        public Saml20Assertion(XmlElement assertion, IEnumerable<AsymmetricAlgorithm> trustedSigners, AssertionProfile profile, bool quirksMode){
+        public Saml20Assertion(XmlElement assertion, IEnumerable<AsymmetricAlgorithm> trustedSigners, AssertionProfile profile, bool quirksMode)
+        {
             this.profile = profile;
             _quirksMode = quirksMode;
             LoadXml(assertion, trustedSigners);
