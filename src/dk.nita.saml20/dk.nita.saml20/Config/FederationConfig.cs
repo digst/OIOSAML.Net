@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
+using System.Configuration;
+using System.Security.Cryptography.X509Certificates;
 using System.Xml.Serialization;
-using dk.nita.saml20.session;
 using dk.nita.saml20.Session;
 
 namespace dk.nita.saml20.config
@@ -20,16 +22,18 @@ namespace dk.nita.saml20.config
         /// </summary>
         public FederationConfig()
         {
-            SigningCertificate = new Certificate();
+
         }
 
-        // To create a new XSD Run this command:
-        // xsd -t:Safewhere.Config.Federation   Safewhere.dll
         /// <summary>
+        /// The list of signing certificates - each represented by an X509 certificate reference
+        /// To create a new XSD Run this command:
+        /// xsd -t:Safewhere.Config.Federation   Safewhere.dll
         /// Certificate used to sign exchanged saml tokens
         /// </summary>
-        [XmlElement]
-        public Certificate SigningCertificate;
+        [XmlArray("SigningCertificates", IsNullable = false)]
+        [XmlArrayItem("SigningCertificate", IsNullable = false)]
+        public List<Certificate> SigningCertificates;
 
         // default to 30 minutes
         private int _sessionTimeout = 30;
@@ -129,6 +133,25 @@ namespace dk.nita.saml20.config
                 return _actions;
             }
             set { _actions = value; }
+        }
+
+        /// <summary>
+        /// Determines the first valid certificate from the configuration
+        /// </summary>
+        /// <returns></returns>
+        public X509Certificate2 GetFirstValidCertificate()
+        {
+            foreach (var certificate in SigningCertificates)
+            {
+                var x509Certificate = certificate.GetFirstValidX509Certificate();
+                if (x509Certificate == null)
+                    continue;
+
+                return x509Certificate;
+            }
+
+            var msg = $"Found no valid certificate configured in the certificate configuration. Make sure at least one valid certificate is configured.";
+            throw new ConfigurationErrorsException(msg);
         }
 
         private int _allowedClockSkewMinutes = 5;

@@ -13,7 +13,7 @@ namespace WebsiteDemo
         {
             litIDPList.Text = "<ul>";
             SAML20FederationConfig.GetConfig().Endpoints.IDPEndPoints.ForEach(idp =>
-                litIDPList.Text += "<li><a href=\"" + idp.GetIDPLoginUrl(false, false) + "\">" + (string.IsNullOrEmpty(idp.Name) ? idp.Id : idp.Name) + "</a></li>");
+                litIDPList.Text += "<li><a href=\"" + idp.GetIDPLoginUrl(false, false, null, null) + "\">" + (string.IsNullOrEmpty(idp.Name) ? idp.Id : idp.Name) + "</a></li>");
             litIDPList.Text += "</ul>";
         }
     }

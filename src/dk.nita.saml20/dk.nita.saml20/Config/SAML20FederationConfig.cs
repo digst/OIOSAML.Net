@@ -6,11 +6,10 @@ using System.IO;
 using System.Text;
 using System.Xml;
 using System.Xml.Serialization;
-using dk.nita.saml20.identity;
 using dk.nita.saml20.Schema.Metadata;
 using dk.nita.saml20.Utils;
 using Saml2.Properties;
-using Trace=dk.nita.saml20.Utils.Trace;
+using Trace = dk.nita.saml20.Utils.Trace;
 using System.Security.Cryptography;
 
 namespace dk.nita.saml20.config
@@ -22,7 +21,7 @@ namespace dk.nita.saml20.config
     /// </summary>
     [Serializable]
     [XmlType(Namespace = ConfigurationConstants.NamespaceUri)]
-    [XmlRoot(ConfigurationConstants.SectionNames.SAML20Federation, Namespace = ConfigurationConstants.NamespaceUri, IsNullable = false)]    
+    [XmlRoot(ConfigurationConstants.SectionNames.SAML20Federation, Namespace = ConfigurationConstants.NamespaceUri, IsNullable = false)]
     public class SAML20FederationConfig : ConfigurationInstance<SAML20FederationConfig>
     {
         /// <summary>
@@ -31,7 +30,7 @@ namespace dk.nita.saml20.config
         public SAML20FederationConfig()
         {
             ServiceProvider = new ServiceProviderElement();
-            _idpEndpoints = new IDPEndpoints();                        
+            _idpEndpoints = new IDPEndpoints();
         }
 
         /// <summary>
@@ -74,7 +73,13 @@ namespace dk.nita.saml20.config
         [XmlElement(ElementName = "NameIdFormat")]
         public string NameIdFormat
         {
-            get { return _nameIdFormat; }
+            get
+            {
+                if (_nameIdFormat == null)
+                    return Saml20Constants.NameIdentifierFormats.Persistent;
+
+                return _nameIdFormat;
+            }
             set { _nameIdFormat = value; }
         }
 
@@ -93,11 +98,23 @@ namespace dk.nita.saml20.config
             set { _showError = value; }
         }
 
-        // default to 3. Cooresponds to certificate level in the OIOSAML specification.
+        private bool _allowAssuranceLevel = false;
+
+        /// <summary>
+        /// Allow OIOSAML2 assurance level validation.
+        /// </summary>
+        [XmlElement(ElementName = "AllowAssuranceLevel")]
+        public bool AllowAssuranceLevel
+        {
+            get { return _allowAssuranceLevel; }
+            set { _allowAssuranceLevel = value; }
+        }
+
+        // default to Substantial. Cooresponds to certificate level in the OIOSAML specification.
         private string _minimumAssuranceLevel = "3";
 
         /// <summary>
-        /// Gets or sets the minimum assurance level configuration
+        /// Gets or sets the minimum assurance level configuration (spec 2.0)
         /// </summary>
         [XmlElement(ElementName = "MinimumAssuranceLevel")]
         public string MinimumAssuranceLevel
@@ -105,6 +122,20 @@ namespace dk.nita.saml20.config
             get { return _minimumAssuranceLevel; }
             set { _minimumAssuranceLevel = value; }
         }
+
+        // default to Substantial. Cooresponds to certificate level in the OIOSAML specification.
+        private string _minimumNsisLoa = "Substantial";
+
+        /// <summary>
+        /// Gets or sets the minimum NSIS level of assurance configuration (spec 3.0)
+        /// </summary>
+        [XmlElement(ElementName = "MinimumNsisLoa")]
+        public string MinimumNsisLoa
+        {
+            get { return _minimumNsisLoa; }
+            set { _minimumNsisLoa = value; }
+        }
+
 
         private IDPEndpoints _idpEndpoints;
 
@@ -142,7 +173,7 @@ namespace dk.nita.saml20.config
         /// <returns></returns>
         public IDPEndPoint FindEndPoint(string endPointId)
         {
-            return IDPEndPoints.Find(delegate(IDPEndPoint ep) { return ep.Id == endPointId; });
+            return IDPEndPoints.Find(delegate (IDPEndPoint ep) { return ep.Id == endPointId; });
         }
 
         /// <summary>
@@ -207,14 +238,14 @@ namespace dk.nita.saml20.config
         /// Attributes
         /// </summary>
         [XmlElement("att")]
-        public List<Attribute> Attributes;        
+        public List<Attribute> Attributes;
     }
 
     /// <summary>
     /// Attribute configuration element
     /// </summary>
     [Serializable]
-    [XmlType(Namespace = ConfigurationConstants.NamespaceUri)]    
+    [XmlType(Namespace = ConfigurationConstants.NamespaceUri)]
     public class Attribute
     {
         /// <summary>
@@ -260,7 +291,7 @@ namespace dk.nita.saml20.config
     {
         [XmlIgnore]
         private string _metadataLocation;
-        
+
         /// <summary>
         /// Watches the metadata location for changes
         /// </summary>
@@ -271,7 +302,7 @@ namespace dk.nita.saml20.config
         /// </summary>
         public IDPEndpoints()
         {
-            IDPEndPoints = new List<IDPEndPoint>();            
+            IDPEndPoints = new List<IDPEndPoint>();
             _fileToEntity = new Dictionary<string, string>();
         }
 
@@ -282,7 +313,7 @@ namespace dk.nita.saml20.config
         public string MetadataLocation
         {
             get { return _metadataLocation; }
-            set 
+            set
             {
                 if (!Path.IsPathRooted(value))
                 {
@@ -323,7 +354,7 @@ namespace dk.nita.saml20.config
         /// <returns></returns>
         public IDPEndPoint FindEndPoint(string endPointId)
         {
-            return IDPEndPoints.Find(delegate(IDPEndPoint ep) { return ep.Id == endPointId; });
+            return IDPEndPoints.Find(delegate (IDPEndPoint ep) { return ep.Id == endPointId; });
         }
 
         /// <summary>
@@ -335,7 +366,7 @@ namespace dk.nita.saml20.config
         {
             if (_encodings != null)
                 return _encodings;
-            
+
             if (string.IsNullOrEmpty(encodings))
             {
                 // If it has not been specified in the config file, use the defaults.
@@ -344,7 +375,7 @@ namespace dk.nita.saml20.config
                 _encodings.Add(Encoding.GetEncoding("iso-8859-1"));
                 return _encodings;
             }
-            
+
             string[] encs = encodings.Split(' ');
             _encodings = new List<Encoding>(encs.Length);
             foreach (string enc in encs)
@@ -356,7 +387,7 @@ namespace dk.nita.saml20.config
         /// <summary>
         /// List of IdP endpoints
         /// </summary>
-        [XmlElement("add")]        
+        [XmlElement("add")]
         public List<IDPEndPoint> IDPEndPoints;
 
         #region Handling of metadata files 
@@ -364,7 +395,7 @@ namespace dk.nita.saml20.config
         /// <summary>
         /// This dictionary links a file name to the entity id of the metadata document in the file.
         /// </summary>
-        [XmlIgnore] 
+        [XmlIgnore]
         private Dictionary<string, string> _fileToEntity;
 
         /// <summary>
@@ -436,12 +467,12 @@ namespace dk.nita.saml20.config
             var metadataDoc = ParseFile(filename);
             // First we try and find the endpoint based on the entity id in the metadata
             var endp = FindEndPoint(metadataDoc.EntityId);
-            if (endp == null && _fileToEntity.ContainsKey(filename)) 
+            if (endp == null && _fileToEntity.ContainsKey(filename))
             {
                 // Otherwise we find it in our dictionary - this means that the entity id has been changed in the file
                 endp = FindEndPoint(_fileToEntity[filename]);
             }
-            
+
             // If we found it - we will update
             if (endp != null)
             {
@@ -503,7 +534,7 @@ namespace dk.nita.saml20.config
         /// Parses the metadata files found in the directory specified in the configuration.
         /// </summary>
         private Saml20MetadataDocument ParseFile(string file)
-        {            
+        {
             XmlDocument doc = LoadFileAsXmlDocument(file);
             //_fileInfo[file] = File.GetLastWriteTime(file); // Mark that we have seen the file.
             try
@@ -513,22 +544,23 @@ namespace dk.nita.saml20.config
                     if (child.NamespaceURI == Saml20Constants.METADATA)
                     {
                         if (child.LocalName == EntityDescriptor.ELEMENT_NAME)
-                            return new Saml20MetadataDocument(doc);                                                    
+                            return new Saml20MetadataDocument(doc);
 
                         // TODO Decide how to handle several entities in one metadata file.
                         if (child.LocalName == EntitiesDescriptor.ELEMENT_NAME)
-                            throw new NotImplementedException();                                                                            
+                            throw new NotImplementedException();
                     }
                 }
-                
+
                 // No entity descriptor found. 
                 throw new InvalidDataException(); // BAIIIIIIL!!                
-            } catch(Exception e)
+            }
+            catch (Exception e)
             {
                 // Probably not a metadata file.
                 Trace.TraceData(TraceEventType.Error, file, "Probably not a SAML2.0 metadata file.", e.ToString());
                 return null;
-            }            
+            }
         }
 
         /// <summary>
@@ -539,7 +571,7 @@ namespace dk.nita.saml20.config
             XmlDocument doc = new XmlDocument();
             doc.XmlResolver = null;
             doc.PreserveWhitespace = true;
-            
+
             try
             {
                 // First attempt a standard load, where the XML document is expected to declare its encoding by itself.
@@ -548,8 +580,9 @@ namespace dk.nita.saml20.config
                 {
                     if (XmlSignatureUtils.IsSigned(doc) && !XmlSignatureUtils.CheckSignature(doc))
                         throw new InvalidOperationException("Invalid file signature");
-                            // Throw an exception to get into quirksmode.
-                }catch(CryptographicException)
+                    // Throw an exception to get into quirksmode.
+                }
+                catch (CryptographicException)
                 {
                     //Ignore cryptographic exception caused by Geneva server's inability to generate a
                     //.net compliant xml signature
@@ -558,7 +591,7 @@ namespace dk.nita.saml20.config
                 return doc;
             }
             catch (XmlException)
-            {                
+            {
                 // Enter quirksmode
                 List<Encoding> encs = _getEncodings();
                 foreach (Encoding encoding in encs)
@@ -566,16 +599,16 @@ namespace dk.nita.saml20.config
                     StreamReader reader = null;
                     try
                     {
-                        reader = new StreamReader(filename, encoding);                        
+                        reader = new StreamReader(filename, encoding);
                         doc.Load(reader);
                         if (XmlSignatureUtils.IsSigned(doc) && !XmlSignatureUtils.CheckSignature(doc))
-                            continue;                        
+                            continue;
                     }
-                    catch (XmlException) 
-                        { continue; }
+                    catch (XmlException)
+                    { continue; }
                     finally
                     {
-                        if (reader != null) 
+                        if (reader != null)
                             reader.Close();
                     }
 
@@ -588,18 +621,18 @@ namespace dk.nita.saml20.config
         private static XmlDocument ParseGenevaServerMetadata(XmlDocument doc)
         {
             if (doc == null) throw new ArgumentNullException("doc");
-            if( doc.DocumentElement == null) throw new ArgumentException("DocumentElement cannot be null", "doc");
+            if (doc.DocumentElement == null) throw new ArgumentException("DocumentElement cannot be null", "doc");
             XmlDocument other = new XmlDocument();
             other.XmlResolver = null;
             other.PreserveWhitespace = true;
-            
+
             other.LoadXml(doc.OuterXml);
 
             List<XmlNode> remove = new List<XmlNode>();
 
-            foreach(XmlNode node in other.DocumentElement.ChildNodes)
+            foreach (XmlNode node in other.DocumentElement.ChildNodes)
             {
-                if(node.Name != IDPSSODescriptor.ELEMENT_NAME)
+                if (node.Name != IDPSSODescriptor.ELEMENT_NAME)
                 {
                     remove.Add(node);
                 }
@@ -629,7 +662,6 @@ namespace dk.nita.saml20.config
         public ServiceProviderElement()
         {
             ContactPerson = new List<Contact>();
-            NameIdFormats = new NameIdFormatsElement();
         }
 
         private string _id;
@@ -643,13 +675,13 @@ namespace dk.nita.saml20.config
         {
             get
             {
-                #if DEBUG
+#if DEBUG
                 if (_id == "urn:")
                 {
                     string machineName = Environment.MachineName.ToLower();
                     return "urn:" + machineName.Substring(0, 1).ToUpper() + machineName.Remove(0, 1);
                 }
-                #endif
+#endif
 
                 return _id;
             }
@@ -662,7 +694,7 @@ namespace dk.nita.saml20.config
             }
         }
 
-        
+
         private string _server;
 
         /// <summary>
@@ -674,10 +706,10 @@ namespace dk.nita.saml20.config
         {
             get
             {
-                #if DEBUG
+#if DEBUG
                 if (_server == "http://" || _server == "https://")
                     return _server + Environment.MachineName.ToLower() + "." + Environment.GetEnvironmentVariable("USERDNSDOMAIN").ToLower();
-                #endif
+#endif
                 return _server;
             }
             set { _server = value; }
@@ -724,26 +756,21 @@ namespace dk.nita.saml20.config
             }
         }
 
-        /// <summary>
-        /// Supported NameIdFormats
-        /// </summary>
-        public NameIdFormatsElement NameIdFormats;
-
         private Saml20ServiceEndpoint FindEndpoint(EndpointType type)
         {
-            return serviceEndpoints.Find(delegate(Saml20ServiceEndpoint ep) { return ep.endpointType == type; });
+            return serviceEndpoints.Find(delegate (Saml20ServiceEndpoint ep) { return ep.endpointType == type; });
         }
 
         /// <summary>
         /// Organization
         /// </summary>
-        [XmlElement(Namespace = Saml20Constants.METADATA)] 
+        [XmlElement(Namespace = Saml20Constants.METADATA)]
         public Organization Organization;
 
         /// <summary>
         /// Contact person
         /// </summary>
-        [XmlElement(Namespace = Saml20Constants.METADATA)] 
+        [XmlElement(Namespace = Saml20Constants.METADATA)]
         public List<Contact> ContactPerson;
     }
 
@@ -765,7 +792,7 @@ namespace dk.nita.saml20.config
         /// <summary>
         /// Shorthand for supporting all NameIdFormats
         /// </summary>
-        [XmlAttribute(AttributeName="all")]
+        [XmlAttribute(AttributeName = "all")]
         public bool All;
 
         /// <summary>
@@ -785,7 +812,7 @@ namespace dk.nita.saml20.config
         /// <summary>
         /// The NameIdFormat
         /// </summary>
-        [XmlAttribute(AttributeName="nameIdFormat")]
+        [XmlAttribute(AttributeName = "nameIdFormat")]
         public string NameIdFormat;
     }
 
@@ -827,13 +854,13 @@ namespace dk.nita.saml20.config
         /// <summary>
         /// Numeric index of this endpoint
         /// </summary>
-        [XmlAttribute("index")] 
+        [XmlAttribute("index")]
         public ushort endPointIndex;
 
         /// <summary>
         /// Redirect to this url on succesful request
         /// </summary>
-        [XmlAttribute("redirectUrl")] 
+        [XmlAttribute("redirectUrl")]
         public string RedirectUrl;
 
         /// <summary>
@@ -939,7 +966,7 @@ namespace dk.nita.saml20.config
         /// <summary>
         /// Force authentication on each authnrequest
         /// </summary>
-        [XmlAttribute(AttributeName = "forceAuthn")] 
+        [XmlAttribute(AttributeName = "forceAuthn")]
         public bool ForceAuthn;
 
         /// <summary>
@@ -967,13 +994,13 @@ namespace dk.nita.saml20.config
         /// <summary>
         /// Certificate validation
         /// </summary>
-        [XmlElement(ElementName = "CertificateValidation")] 
+        [XmlElement(ElementName = "CertificateValidation")]
         public CertificateValidationElements CertificateValidation;
 
         /// <summary>
         /// AttributeQuery configuration parameters
         /// </summary>
-        [XmlElement(ElementName = "AttributeQuery")] 
+        [XmlElement(ElementName = "AttributeQuery")]
         public HttpBasicAuthElement AttributeQuery;
 
         /// <summary>
@@ -985,7 +1012,7 @@ namespace dk.nita.saml20.config
         /// <summary>
         /// Single sign on
         /// </summary>
-        [XmlElement(ElementName = "SSO")] 
+        [XmlElement(ElementName = "SSO")]
         public IDPEndPointElement SSOEndpoint;
 
         /// <summary>
@@ -997,14 +1024,8 @@ namespace dk.nita.saml20.config
         /// <summary>
         /// Common Domain Cookie settings
         /// </summary>
-        [XmlElement(ElementName = "CDC")] 
+        [XmlElement(ElementName = "CDC")]
         public CDCElement CDC;
-
-        /// <summary>
-        /// Persistent pseudonym
-        /// </summary>
-        [XmlElement(ElementName = "PersistentPseudonym")] 
-        public PersistentPseudonymMapper PersistentPseudonym;
 
         // Default value is SHA256
         private string _shaHashingAlgorithm = config.ShaHashingAlgorithm.SHA256.ToString();
@@ -1013,12 +1034,10 @@ namespace dk.nita.saml20.config
         /// Get a URL that redirects the user to the login-page for this IDPEndPoint
         /// </summary>
         /// <returns></returns>
-        public string GetIDPLoginUrl(bool forceAuthn, bool isPassive)
+        public string GetIDPLoginUrl(bool forceAuthn, bool isPassive, string desiredNsisLoa, string desiredProfile)
         {
-            return IDPSelectionUtil.GetIDPLoginUrl(Id, forceAuthn, isPassive);
+            return IDPSelectionUtil.GetIDPLoginUrl(Id, forceAuthn, isPassive, desiredNsisLoa, desiredProfile);
         }
-
-        
     }
 
     /// <summary>
@@ -1094,7 +1113,7 @@ namespace dk.nita.saml20.config
         /// <summary>
         /// Extra common domain cookie settings.
         /// </summary>
-        [XmlElement(ElementName = "Settings")] 
+        [XmlElement(ElementName = "Settings")]
         public ExtraSettings ExtraSettings;
 
     }
@@ -1109,7 +1128,7 @@ namespace dk.nita.saml20.config
         /// <summary>
         /// List of extra settings
         /// </summary>
-        [XmlElement(ElementName="add")]
+        [XmlElement(ElementName = "add")]
         public List<KeyValue> KeyValues;
     }
 
@@ -1123,7 +1142,7 @@ namespace dk.nita.saml20.config
         /// <summary>
         /// The key (name)
         /// </summary>
-        [XmlAttribute(AttributeName="key")]
+        [XmlAttribute(AttributeName = "key")]
         public string Key;
 
         /// <summary>
@@ -1132,38 +1151,6 @@ namespace dk.nita.saml20.config
         [XmlAttribute(AttributeName = "value")]
         public string Value;
 
-    }
-
-    /// <summary>
-    /// The persistent pseudonym mapper configuration element
-    /// </summary>
-    [Serializable]
-    [XmlType(Namespace = ConfigurationConstants.NamespaceUri)]
-    public class PersistentPseudonymMapper
-    {
-        private IPersistentPseudonymMapper _mapper = null;
-
-        /// <summary>
-        /// Mapper to use
-        /// </summary>
-        [XmlAttribute("mapper")] 
-        public string Mapper;
-
-        ///<summary>
-        /// Returns the runtime-class configured pseudonym mapper (if any is present) for a given IdP.
-        ///</summary>
-        ///<returns></returns>
-        public IPersistentPseudonymMapper GetMapper()
-        {
-            if (String.IsNullOrEmpty(Mapper))
-                return null;
-
-            if (_mapper != null)
-                return _mapper;
-
-            _mapper = (IPersistentPseudonymMapper)Activator.CreateInstance(Type.GetType(Mapper), true);
-            return _mapper;
-        }
     }
 
     /// <summary>
@@ -1177,7 +1164,7 @@ namespace dk.nita.saml20.config
         /// Initializes a new instance of the <see cref="IDPEndPointElement"/> class.
         /// </summary>
         public IDPEndPointElement()
-        {}
+        { }
 
         /// <summary>
         /// Constructor that converts the Saml20 Endpoint element to our IDPEndpointElement.
@@ -1188,18 +1175,18 @@ namespace dk.nita.saml20.config
                 throw new ArgumentNullException("endpoint");
 
             Url = endpoint.Location;
-            switch(endpoint.Binding)
+            switch (endpoint.Binding)
             {
-                case Saml20Constants.ProtocolBindings.HTTP_Post :
+                case Saml20Constants.ProtocolBindings.HTTP_Post:
                     Binding = SAMLBinding.POST;
                     break;
-                case Saml20Constants.ProtocolBindings.HTTP_Redirect :
+                case Saml20Constants.ProtocolBindings.HTTP_Redirect:
                     Binding = SAMLBinding.REDIRECT;
                     break;
-                case Saml20Constants.ProtocolBindings.HTTP_Artifact :
+                case Saml20Constants.ProtocolBindings.HTTP_Artifact:
                     Binding = SAMLBinding.ARTIFACT;
                     break;
-                case Saml20Constants.ProtocolBindings.HTTP_SOAP :
+                case Saml20Constants.ProtocolBindings.HTTP_SOAP:
                     Binding = SAMLBinding.SOAP;
                     break;
                 default:

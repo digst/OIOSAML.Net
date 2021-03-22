@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "dk.nita.saml20.ext.audit.lo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "dk.nita.saml20.ext.sessionstore.sqlserver", "dk.nita.saml20.ext.sessionstore.sqlserver\dk.nita.saml20.ext.sessionstore.sqlserver.csproj", "{38CEE6DC-0D71-44FA-815F-E38035BDC345}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IntegrationTest", "IntegrationTest\IntegrationTest.csproj", "{645D93C7-A134-45B7-827E-0B6CDF58769C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -94,6 +96,18 @@ Global
 		{38CEE6DC-0D71-44FA-815F-E38035BDC345}.Release|Any CPU.Build.0 = Release|Any CPU
 		{38CEE6DC-0D71-44FA-815F-E38035BDC345}.Release|x64.ActiveCfg = Release|Any CPU
 		{38CEE6DC-0D71-44FA-815F-E38035BDC345}.Release|x64.Build.0 = Release|Any CPU
+		{645D93C7-A134-45B7-827E-0B6CDF58769C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{645D93C7-A134-45B7-827E-0B6CDF58769C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{645D93C7-A134-45B7-827E-0B6CDF58769C}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{645D93C7-A134-45B7-827E-0B6CDF58769C}.Debug|x64.Build.0 = Debug|Any CPU
+		{645D93C7-A134-45B7-827E-0B6CDF58769C}.MSI|Any CPU.ActiveCfg = Debug|Any CPU
+		{645D93C7-A134-45B7-827E-0B6CDF58769C}.MSI|Any CPU.Build.0 = Debug|Any CPU
+		{645D93C7-A134-45B7-827E-0B6CDF58769C}.MSI|x64.ActiveCfg = Debug|Any CPU
+		{645D93C7-A134-45B7-827E-0B6CDF58769C}.MSI|x64.Build.0 = Debug|Any CPU
+		{645D93C7-A134-45B7-827E-0B6CDF58769C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{645D93C7-A134-45B7-827E-0B6CDF58769C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{645D93C7-A134-45B7-827E-0B6CDF58769C}.Release|x64.ActiveCfg = Release|Any CPU
+		{645D93C7-A134-45B7-827E-0B6CDF58769C}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

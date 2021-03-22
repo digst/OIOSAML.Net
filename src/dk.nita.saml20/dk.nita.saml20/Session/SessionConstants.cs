@@ -19,5 +19,10 @@
         /// Session key used to save the current message id with the purpose of preventing replay attacks
         /// </summary>
         public const string ExpectedInResponseTo = "ExpectedInResponseTo";
+
+        /// <summary>
+        /// Session key used to save the demanded level of assurance
+        /// </summary>
+        public const string ExpectedNsisLoa = "ExpectedLevelOfAssurance";
     }
 }

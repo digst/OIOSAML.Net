@@ -7,9 +7,12 @@ using System.Web;
 using dk.nita.saml20.session;
 using dk.nita.saml20.config;
 using System.Web.SessionState;
+using System.Xml;
+using dk.nita.saml20.Logging;
 using dk.nita.saml20.protocol.pages;
 using dk.nita.saml20.Session;
-using Trace=dk.nita.saml20.Utils.Trace;
+using Saml2.Properties;
+using Trace = dk.nita.saml20.Utils.Trace;
 
 namespace dk.nita.saml20.protocol
 {
@@ -44,7 +47,8 @@ namespace dk.nita.saml20.protocol
         /// <param name="context">The current HTTP context.</param>
         /// <param name="errorMessage">The error message.</param>
         /// <param name="overrideConfigSetting">if set to <c>true</c> [override config setting].</param>
-        public void HandleError(HttpContext context, string errorMessage, bool overrideConfigSetting)
+        /// <param name="exceptionCreatorFunc"></param>
+        public void HandleError(HttpContext context, string errorMessage, bool overrideConfigSetting, Func<string, Saml20Exception> exceptionCreatorFunc)
         {
             Trace.TraceData(TraceEventType.Error, "Error: " + errorMessage);
 
@@ -53,10 +57,8 @@ namespace dk.nita.saml20.protocol
 
             if (!string.IsNullOrEmpty(ErrorBehaviour) && ErrorBehaviour.Equals(dk.nita.saml20.config.ErrorBehaviour.THROWEXCEPTION.ToString()))
             {
-                if (showError)
-                    throw new Saml20Exception(errorMessage);
-                else
-                    throw new Saml20Exception(DEFAULT_MESSAGE);
+                var exception = showError ? exceptionCreatorFunc(errorMessage) : exceptionCreatorFunc(DEFAULT_MESSAGE);
+                throw exception;
             }
             else
             {
@@ -69,13 +71,50 @@ namespace dk.nita.saml20.protocol
         }
 
         /// <summary>
+        /// Invoked when a LoA validation has failed. Adds a log entry to the audit log and displays an error page.
+        /// </summary>
+        protected void HandleLoaValidationError(string errorMessageTemplate, string sourceLoa, string requiredMinLoa, 
+            HttpContext context, XmlElement assertionXml)
+        {
+            var loaErrorMessage = string.Format(errorMessageTemplate, sourceLoa, requiredMinLoa);
+            
+            AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST,
+                loaErrorMessage + " Assertion: " + assertionXml.OuterXml);
+            
+            HandleError(context, loaErrorMessage, (m) => new Saml20NsisLoaException(m));
+        }
+
+        /// <summary>
         /// Displays an error page.
         /// </summary>
         /// <param name="context">The current HTTP context.</param>
         /// <param name="errorMessage">The error message.</param>
         public void HandleError(HttpContext context, string errorMessage)
         {
-            HandleError(context, errorMessage, false);
+            HandleError(context, errorMessage, false, (m) => new Saml20Exception(m));
+        }
+
+
+        /// <summary>
+        /// Displays an error page.
+        /// </summary>
+        /// <param name="context">The current HTTP context.</param>
+        /// <param name="errorMessage">The error message.</param>
+        /// <param name="overrideConfigSetting"></param>
+        public void HandleError(HttpContext context, string errorMessage, bool overrideConfigSetting)
+        {
+            HandleError(context, errorMessage, false, (m) => new Saml20Exception(m));
+        }
+
+        /// <summary>
+        /// Displays an error page.
+        /// </summary>
+        /// <param name="context">The current HTTP context.</param>
+        /// <param name="errorMessage">The error message.</param>
+        /// <param name="exceptionCreatorFunc"></param>
+        public void HandleError(HttpContext context, string errorMessage, Func<string, Saml20Exception> exceptionCreatorFunc)
+        {
+            HandleError(context, errorMessage, false, exceptionCreatorFunc);
         }
 
         /// <summary>
@@ -89,11 +128,11 @@ namespace dk.nita.saml20.protocol
             if (e is ThreadAbortException)
                 return;
 
-            StringBuilder sb = new StringBuilder(1000);            
+            StringBuilder sb = new StringBuilder(1000);
             while (e != null)
             {
-                sb.AppendLine(e.ToString());                
-                e = e.InnerException;                
+                sb.AppendLine(e.ToString());
+                e = e.InnerException;
             }
 
             HandleError(context, sb.ToString());
@@ -120,7 +159,7 @@ namespace dk.nita.saml20.protocol
         public string RedirectUrl
         {
             get { return _redirectUrl; }
-            set{ _redirectUrl = value;}
+            set { _redirectUrl = value; }
         }
 
         /// <summary>
@@ -132,7 +171,7 @@ namespace dk.nita.saml20.protocol
             var currentSession = SessionStore.CurrentSession;
             if (currentSession != null)
             {
-                var redirectUrl = (string) currentSession[SessionConstants.RedirectUrl];
+                var redirectUrl = (string)currentSession[SessionConstants.RedirectUrl];
                 if (!string.IsNullOrEmpty(redirectUrl))
                 {
                     currentSession[SessionConstants.RedirectUrl] = null;

@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Configuration;
-using System;
 
 namespace IdentityProviderDemo.Logic
 {
@@ -19,15 +18,11 @@ namespace IdentityProviderDemo.Logic
 
         static UserData()
         {
-
-
             DemoIdPConfigurationSection config = (DemoIdPConfigurationSection)ConfigurationManager.GetSection("demoIdp");
             foreach (User u in config.Users)
             {
                 UserData.Users.Add(u.Username, u);
             }
-
-
         }
     }
 
@@ -37,12 +32,12 @@ namespace IdentityProviderDemo.Logic
         {
         }
 
-        public User(string Username, string Password, string PPID)
+        public User(string Username, string Password, string UUID)
             : this()
         {
             this.Username = Username;
             this.Password = Password;
-            this.ppid = PPID;
+            this.uuid = UUID;
         }
 
         [ConfigurationProperty("userName")]
@@ -59,11 +54,18 @@ namespace IdentityProviderDemo.Logic
             set { base["password"] = value; }
         }
 
-        [ConfigurationProperty("ppid")]
-        public string ppid
+        [ConfigurationProperty("profile")]
+        public string Profile
         {
-            get { return (string)base["ppid"]; }
-            set { base["ppid"] = value; }
+            get { return (string)base["profile"]; }
+            set { base["profile"] = value; }
+        }
+
+        [ConfigurationProperty("uuid")]
+        public string uuid
+        {
+            get { return (string)base["uuid"]; }
+            set { base["uuid"] = value; }
         }
 
         [ConfigurationProperty("attributes", IsDefaultCollection = false)]
@@ -72,15 +74,18 @@ namespace IdentityProviderDemo.Logic
             get { return (AttributeCollection)base["attributes"]; }
         }
 
+        public List<KeyValuePair<string, string>> DynamicAttributes { get; } = new List<KeyValuePair<string, string>>();
+
         public List<KeyValuePair<string, string>> Attributes
         {
-            get 
+            get
             {
-                List<KeyValuePair<string, string>> returnValue = new List<KeyValuePair<string, string>>();
+                List<KeyValuePair<string, string>> returnValue = new List<KeyValuePair<string, string>>(DynamicAttributes);
                 foreach (Attribute a in this.ConfiguredAttributes)
                 {
                     returnValue.Add(new KeyValuePair<string, string>(a.Name, a.Value));
                 }
+
                 return returnValue;
             }
         }

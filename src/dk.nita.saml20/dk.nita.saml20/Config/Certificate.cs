@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Configuration;
 using System.Security.Cryptography.X509Certificates;
 using System.Xml.Serialization;
@@ -9,7 +10,7 @@ namespace dk.nita.saml20.config
     /// Common implementation of X509 certificate references used in configuration files. 
     /// Specializations are free to provide the xml namespace that fit the best (ie the namespace of the containing element)
     /// </summary>
-    public class Certificate
+    public class Certificate 
     {
         /// <summary>
         /// Opens the certificate from its store.
@@ -33,6 +34,54 @@ namespace dk.nita.saml20.config
                     throw new ConfigurationErrorsException(msg);
                 }
                 return found[0];
+            }
+            finally
+            {
+                store.Close();
+            }
+        }
+
+        /// <summary>
+        /// Opens the certificate from its store.
+        /// </summary>
+        /// <returns></returns>
+        public X509Certificate2 GetFirstValidX509Certificate()
+        {
+            var store = new X509Store(storeName, storeLocation);
+            try
+            {
+                store.Open(OpenFlags.ReadOnly);
+                var found = store.Certificates.Find(x509FindType, findValue, true);
+                if (found.Count == 0)
+                {
+                    return null;
+                }
+
+                return found[0];
+            }
+            finally
+            {
+                store.Close();
+            }
+        }
+
+        /// <summary>
+        /// Opens the certificate from its store.
+        /// </summary>
+        /// <returns></returns>
+        public X509Certificate2Collection GetAllValidX509Certificates()
+        {
+            var store = new X509Store(storeName, storeLocation);
+            try
+            {
+                store.Open(OpenFlags.ReadOnly);
+                var found = store.Certificates.Find(x509FindType, findValue, true);
+                if (found.Count == 0)
+                {
+                    return null;
+                }
+
+                return found;
             }
             finally
             {

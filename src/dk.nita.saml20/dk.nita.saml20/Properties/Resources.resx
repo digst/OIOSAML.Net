@@ -143,8 +143,8 @@ AppID={1}</value>
   <data name="AssertionExpired" xml:space="preserve">
     <value>Assertion is no longer valid.</value>
   </data>
-  <data name="AssuranceLevelTooLow" xml:space="preserve">
-    <value>Saml assertion does not have the required assurance level. Assurance level was: {0} and configured minimum assurance level was: {1}.</value>
+  <data name="NsisLoaTooLow" xml:space="preserve">
+    <value>SAML assertion does not have the required Level of Assurance. LoA was: {0} and configured minimum required LoA was: {1}.</value>
   </data>
   <data name="AssertionIDAttributeMissing" xml:space="preserve">
     <value>A SAML token must have an AssertionID.</value>
@@ -512,5 +512,20 @@ AppID={1}</value>
   </data>
   <data name="UsernameAndPasswordMissing" xml:space="preserve">
     <value>The SAMLtoken cannot be automatically issued when using username/password authentication</value>
+  </data>
+  <data name="DemandingLevelOfAssuranceError" xml:space="preserve">
+    <value>Received bad Level of Assurance value: "{0}". Valid values are "Low", "Substantial", "High".</value>
+  </data>
+  <data name="NsisLoaTooLowAccordingToDemand" xml:space="preserve">
+    <value>Saml assertion does not have the required NSIS Level of Assurance. LoA was: {0} and demanded minimum required LoA was: {1}.</value>
+  </data>
+  <data name="DemandingProfileError" xml:space="preserve">
+    <value>Received bad profile demand value: "{0}". Valid values are "Professional", "Person".</value>
+  </data>
+  <data name="AssuranceLevelMissing" xml:space="preserve">
+    <value>The SAML token must contain an assurance level.</value>
+  </data>
+  <data name="NsisLoaMissing" xml:space="preserve">
+    <value>The SAML token must contain a NSIS Level of Assurance.</value>
   </data>
 </root>

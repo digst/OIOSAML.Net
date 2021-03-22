@@ -1,4 +1,11 @@
+using dk.nita.saml20.identity;
+using dk.nita.saml20.Profiles.BasicPrivilegeProfile;
+using dk.nita.saml20.Profiles.DKSaml20.Attributes;
+using dk.nita.saml20.Schema.BasicPrivilegeProfile;
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using System.Xml;
 
 namespace dk.nita.saml20.Utils
@@ -41,11 +48,11 @@ namespace dk.nita.saml20.Utils
         {
             if (optString != null)
                 return ValidateRequiredString(optString);
-            
+
             return true;
         }
 
-        
+
         /// <summary>
         /// Make sure that the ID elements is at least 128 bits in length (SAML2.0 std section 1.3.4)
         /// </summary>
@@ -55,6 +62,45 @@ namespace dk.nita.saml20.Utils
                 return false;
 
             return id.Length >= 16;
+        }
+
+        /// <summary>
+        /// Extracts the Basic privilege profile (simple or intermediate) from the saml attributes
+        /// </summary>
+        /// <param name="identity"></param>
+        /// <returns></returns>
+        public static IEnumerable<Privilege> GetBasicPrivilegeProfilePrivileges(Saml20Identity identity)
+        {
+            if (identity.HasAttribute(DKSaml20BasicPrivilegeProfileIntermediateAttribute.NAME))
+            {
+                var intermetiateProfiles = identity[DKSaml20BasicPrivilegeProfileIntermediateAttribute.NAME];
+                foreach (var profile64 in intermetiateProfiles)
+                {
+                    var basicPrivilegeProfileXml = Encoding.UTF8.GetString(Convert.FromBase64String(profile64.AttributeValue[0]));
+                    var basicPrivilegeProfile = Serialization.DeserializeFromXmlString<PrivilegeListType>(basicPrivilegeProfileXml);
+
+                    foreach (var privilegeGroup in basicPrivilegeProfile.PrivilegeGroups)
+                    {
+                        foreach (var privilege in privilegeGroup.Privilege)
+                        {
+                            yield return new Privilege(privilegeGroup.Scope, privilege, privilegeGroup.Constraint?.Select(x=>
+                                new Profiles.BasicPrivilegeProfile.Constraint(x.Name, x.Value)));
+                        }
+                    }
+                }
+            }
+
+            if (identity.HasAttribute(DKSaml20BasicPrivilegeProfileSimpleAttribute.NAME))
+            {
+                var simpleProfiles = identity[DKSaml20BasicPrivilegeProfileSimpleAttribute.NAME];
+                foreach (var attribute in simpleProfiles)
+                {
+                    foreach (var attributeValue in attribute.AttributeValue)
+                    {
+                        yield return new Privilege(null, attributeValue);
+                    }
+                }
+            }
         }
     }
 }

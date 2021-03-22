@@ -5,6 +5,7 @@ using System.Web;
 using dk.nita.saml20.config;
 using Saml2.Properties;
 using System.Security.Cryptography.Xml;
+using System.Collections.Generic;
 
 namespace dk.nita.saml20.protocol
 {
@@ -25,7 +26,7 @@ namespace dk.nita.saml20.protocol
         /// <param name="context">An <see cref="T:System.Web.HttpContext"/> object that provides references to the intrinsic server objects (for example, Request, Response, Session, and Server) used to service HTTP requests.</param>
         public override void ProcessRequest(HttpContext context)
         {
-            string encoding = context.Request.QueryString["encoding"];
+            var encoding = context.Request.QueryString["encoding"];
             try
             {
                 if (!string.IsNullOrEmpty(encoding))
@@ -37,7 +38,7 @@ namespace dk.nita.saml20.protocol
                 return;
             }
 
-            bool sign = true;
+            var sign = false;
             try
             {
                 string param = context.Request.QueryString["sign"];                
@@ -74,14 +75,18 @@ namespace dk.nita.saml20.protocol
         {
             SAML20FederationConfig configuration = SAML20FederationConfig.GetConfig();
 
-            KeyInfo keyinfo = new KeyInfo();
-            KeyInfoX509Data keyClause = new KeyInfoX509Data(FederationConfig.GetConfig().SigningCertificate.GetCertificate(), X509IncludeOption.EndCertOnly);
-            keyinfo.AddClause(keyClause);
+            var keyinfos = new List<KeyInfo>();
+            foreach(Certificate certificate in FederationConfig.GetConfig().SigningCertificates)
+            {
+                KeyInfo keyinfo = new KeyInfo();
+                KeyInfoX509Data keyClause = new KeyInfoX509Data(certificate.GetCertificate(), X509IncludeOption.EndCertOnly);
+                keyinfo.AddClause(keyClause);
+                keyinfos.Add(keyinfo);
+            }
 
-            Saml20MetadataDocument doc = new Saml20MetadataDocument(configuration, keyinfo, sign);
+            Saml20MetadataDocument doc = new Saml20MetadataDocument(configuration, keyinfos, sign);
 
             context.Response.Write(doc.ToXml( context.Response.ContentEncoding ));
         }
-
     }
 }

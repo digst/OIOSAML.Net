@@ -260,32 +260,6 @@ namespace dk.nita.test.Saml20
 
 
         /// <summary>
-        /// Uses the <code>EncryptedAssertion</code> class to encrypt an assertion. 
-        /// </summary>
-        [Test]
-        public void TestAssertionEncryption()
-        {
-            Saml20EncryptedAssertion encryptedAssertion = new Saml20EncryptedAssertion();
-            encryptedAssertion.Assertion = AssertionUtil.GetTestAssertion_01();
-
-            X509Certificate2 cert = new X509Certificate2(@"Saml20\Certificates\sts_dev_certificate.pfx", "test1234");
-            encryptedAssertion.TransportKey = (RSA) cert.PublicKey.Key;
-
-            encryptedAssertion.Encrypt();
-
-            XmlDocument encryptedAssertionXML = encryptedAssertion.GetXml();
-            Assert.IsNotNull(encryptedAssertionXML);
-
-            // A number of simple tests until we get some better way to verify the generated encrypted assertion.
-            XmlNodeList list;
-            list = encryptedAssertionXML.GetElementsByTagName(EncryptedAssertion.ELEMENT_NAME, Saml20Constants.ASSERTION);
-            Assert.AreEqual(1, list.Count);
-
-            list = encryptedAssertionXML.GetElementsByTagName(dk.nita.saml20.Schema.XEnc.EncryptedKey.ELEMENT_NAME, Saml20Constants.XENC);
-            Assert.AreEqual(1, list.Count);
-        }
-
-        /// <summary>
         /// Tests that it is possible to specify the algorithm of the session key.
         /// </summary>
         [Test]
@@ -297,61 +271,7 @@ namespace dk.nita.test.Saml20
             Assert.Fail("\"Saml20EncryptedAssertion\" class does not respond to incorrect algorithm identifying URI.");
         }
 
-        /// <summary>
-        /// Tests that it is possible to specify the algorithm of the session key.
-        /// Steps: 
-        /// - Create a new encrypted assertion with a specific session key algorithm that is different than the default.
-        /// - Decrypt the assertion and verify that it uses the correct algorithm.
-        /// - Verify that the SessionKeyAlgorithm property behaves as expected.
-        /// </summary>
-        [Test]
-        public void TestAlgorithmConfiguration_02()
-        {
-            Saml20EncryptedAssertion encryptedAssertion = new Saml20EncryptedAssertion();
-            encryptedAssertion.SessionKeyAlgorithm = EncryptedXml.XmlEncAES128Url;
-            encryptedAssertion.Assertion = AssertionUtil.GetTestAssertion_01();
-
-            X509Certificate2 cert = new X509Certificate2(@"Saml20\Certificates\sts_dev_certificate.pfx", "test1234");
-            encryptedAssertion.TransportKey = (RSA)cert.PublicKey.Key;
-
-            encryptedAssertion.Encrypt();
-            XmlDocument encryptedAssertionXML = encryptedAssertion.GetXml();
-            Assert.IsNotNull(encryptedAssertionXML);
-
-            // Verify that the EncryptionMethod element is set correctly.
-            XmlNodeList list = 
-                encryptedAssertionXML.GetElementsByTagName(dk.nita.saml20.Schema.XEnc.EncryptedData.ELEMENT_NAME,
-                                                           Saml20Constants.XENC);
-            Assert.AreEqual(1, list.Count);
-            XmlElement el = (XmlElement) list[0];
-
-            // Go through the children and look for the EncryptionMethod element, and verify its algorithm attribute.
-            bool encryptionMethodFound = false;
-            foreach (XmlNode node in el.ChildNodes)
-            {
-                if (node.LocalName == dk.nita.saml20.Schema.XEnc.EncryptionMethod.ELEMENT_NAME &&
-                    node.NamespaceURI == Saml20Constants.XENC)
-                {
-                    el = (XmlElement) node;
-                    Assert.AreEqual(EncryptedXml.XmlEncAES128Url, el.GetAttribute("Algorithm"));
-                    encryptionMethodFound = true;
-                }
-            }
-            Assert.That(encryptionMethodFound, "Unable to find EncryptionMethod element in EncryptedData.");
-
-            // Now decrypt the assertion, and verify that it recognizes the Algorithm used.
-            Saml20EncryptedAssertion decrypter = new Saml20EncryptedAssertion((RSA) cert.PrivateKey);
-            Assert.IsNull(decrypter.Assertion);
-            decrypter.LoadXml(encryptedAssertionXML.DocumentElement);
-            // Set a wrong algorithm and make sure that the class gets it algorithm info from the assertion itself.
-            decrypter.SessionKeyAlgorithm = EncryptedXml.XmlEncTripleDESUrl;
-            decrypter.Decrypt();
-            // Verify that the class has discovered the correct algorithm and set the SessionKeyAlgorithm property accordingly.
-            Assert.AreEqual(EncryptedXml.XmlEncAES128Url, decrypter.SessionKeyAlgorithm);
-            Assert.IsNotNull(decrypter.Assertion);
-        }
-
-
+        
 
         private static XmlElement GetElement(string element, string ns, XmlDocument doc)
         {
