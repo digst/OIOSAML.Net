@@ -129,7 +129,9 @@
   <ItemGroup>
     <Content Include="Default.aspx" />
     <Content Include="idp-metadata\local_demo_idp.xml" />
+    <Content Include="idp-metadata\Prod-nemlog-in-2.xml" />
     <Content Include="idp-metadata\Test-nemlog-in-2.xml" />
+    <Content Include="spMetadata\sso_metadata.xml" />
     <Content Include="Web.config">
       <SubType>Designer</SubType>
     </Content>
