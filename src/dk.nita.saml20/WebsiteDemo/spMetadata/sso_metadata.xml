@@ -1,9 +1,5 @@
 <q1:EntityDescriptor xmlns:q1="urn:oasis:names:tc:SAML:2.0:metadata" entityID="https://saml.oiosaml-net-nltt-599.dk" validUntil="2020-12-24T10:54:35.0925240Z" ID="id51ea10adeb5646d4894b9aa6ccc70001" xmlns:kfobs="dk:gov:nemlogin:kfobsinternalschema">
   <q1:SPSSODescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol" AuthnRequestsSigned="true" WantAssertionsSigned="true">
-    <md:Extensions xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata">
-      <kfobs:IsOptOutSimulatedMoces>False</kfobs:IsOptOutSimulatedMoces>
-      <kfobs:ReferenceTextNemIdKeyApp>Nemlog-in</kfobs:ReferenceTextNemIdKeyApp>
-    </md:Extensions>
     <q1:KeyDescriptor use="signing">
       <KeyInfo xmlns="http://www.w3.org/2000/09/xmldsig#">
         <X509Data>
