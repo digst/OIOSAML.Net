@@ -196,6 +196,7 @@
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
     </Compile>
+    <Compile Include="Schema\BasicPrivilegeProfile\Constants.cs" />
     <Compile Include="Schema\BasicPrivilegeProfile\Constraint.cs" />
     <Compile Include="Schema\BasicPrivilegeProfile\PrivilegeGroupType.cs" />
     <Compile Include="Schema\BasicPrivilegeProfile\PrivilegeListType.cs" />
