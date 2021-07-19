@@ -5,6 +5,8 @@ Please note that the tagged version in Git does not follow the OIO SAML profile 
 *    OIO SAML 2.1.0: Newest NuGet release: 2.0.6 (only metadata changes required)
 *    OIO SAML 3.0.2: Newest NuGet release: 3.0.0
 
+See content and changes of releases in [release notes](RELEASE_NOTES.md).
+
 # Getting started with OIOSAML.Net
 
 This is the codebase that the OIOSAML.Net components are built from.
