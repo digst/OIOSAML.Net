@@ -120,7 +120,6 @@ namespace IdentityProviderDemo
             if (LoaLegacy.Checked)
             {
                 user.DynamicAttributes.Add(new KeyValuePair<string, string>(DKSaml20AssuranceLevelAttribute.NAME, "3"));
-                user.DynamicAttributes.Add(new KeyValuePair<string, string>(DKSaml20NsisLoaAttribute.NAME, LoaLow.Text));
             }
             else
             {
