@@ -1017,6 +1017,15 @@ namespace Saml2.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to IdP responded with status code NoPassive. A user cannot be signed in with the IsPassiveFlag set when the user does not have a session with the IdP..
+        /// </summary>
+        internal static string SamlNoPassiveError {
+            get {
+                return ResourceManager.GetString("SamlNoPassiveError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to SamlSubject does not contain a key..
         /// </summary>
         internal static string SamlSubjectKeyMissing {

@@ -136,7 +136,7 @@ namespace dk.nita.saml20.protocol
                 AuditLogging.AssertionId = parser.ArtifactResolve.ID;
                 if (!parser.CheckSamlMessageSignature(idp.metadata.Keys))
                 {
-                    HandleError(context, "Invalid Saml message signature");
+                    HandleError(context, "Invalid SAML message signature");
                     AuditLogging.logEntry(Direction.IN, Operation.ARTIFACTRESOLVE, "Could not verify signature", parser.SamlMessage);
                 }
                 builder.RespondToArtifactResolve(idp, parser.ArtifactResolve);
@@ -171,9 +171,7 @@ namespace dk.nita.saml20.protocol
                 else
                 {
                     AuditLogging.logEntry(Direction.IN, Operation.ARTIFACTRESOLVE, string.Format("Unsupported payload message in ArtifactResponse: {0}, msg: {1}", parser.ArtifactResponse.Any.LocalName, parser.SamlMessage));
-                    HandleError(context,
-                                string.Format("Unsupported payload message in ArtifactResponse: {0}",
-                                              parser.ArtifactResponse.Any.LocalName));
+                    HandleError(context,"Unsupported payload message in ArtifactResponse: {0}",parser.ArtifactResponse.Any.LocalName);
                 }
             }
             else
@@ -186,7 +184,7 @@ namespace dk.nita.saml20.protocol
                 else
                 {
                     AuditLogging.logEntry(Direction.IN, Operation.ARTIFACTRESOLVE, string.Format("Unsupported SamlMessage element: {0}, msg: {1}", parser.SamlMessageName, parser.SamlMessage));
-                    HandleError(context, string.Format("Unsupported SamlMessage element: {0}", parser.SamlMessageName));
+                    HandleError(context, "Unsupported SamlMessage element: {0}", parser.SamlMessageName);
                 }
             }
         }
@@ -284,8 +282,7 @@ namespace dk.nita.saml20.protocol
             try
             {
 
-                XmlAttribute inResponseToAttribute =
-                    doc.DocumentElement.Attributes["InResponseTo"];
+                var inResponseToAttribute = doc.DocumentElement.Attributes["InResponseTo"];
 
                 if (inResponseToAttribute == null)
                     throw new Saml20Exception("Received a response message that did not contain an InResponseTo attribute");
@@ -299,7 +296,7 @@ namespace dk.nita.saml20.protocol
                 if (status.StatusCode.Value != Saml20Constants.StatusCodes.Success)
                 {
                     if (status.StatusCode.Value == Saml20Constants.StatusCodes.Responder && status.StatusCode.SubStatusCode != null && Saml20Constants.StatusCodes.NoPassive == status.StatusCode.SubStatusCode.Value)
-                        HandleError(context, "IdP responded with statuscode NoPassive. A user cannot be signed in with the IsPassiveFlag set when the user does not have a session with the IdP.");
+                        HandleError(context, Resources.SamlNoPassiveError);
 
                     HandleError(context, status);
                     return;
@@ -797,11 +794,10 @@ namespace dk.nita.saml20.protocol
             var requestContextItems = new List<(string value, ItemsChoiceType7 type)>();
             if (!string.IsNullOrEmpty(context.Request.Params[NsisLoa]))
             {
-                string demandedLevelOfAssurance = context.Request.Params[NsisLoa].ToString();
-
+                var demandedLevelOfAssurance = context.Request.Params[NsisLoa];
                 if (!new[] { "Low", "Substantial", "High" }.Contains(demandedLevelOfAssurance))
                 {
-                    HandleError(context, string.Format(Resources.DemandingLevelOfAssuranceError, demandedLevelOfAssurance));
+                    HandleError(context, Resources.DemandingLevelOfAssuranceError, demandedLevelOfAssurance);
                     return;
                 }
 
@@ -815,11 +811,11 @@ namespace dk.nita.saml20.protocol
 
             if (!string.IsNullOrEmpty(context.Request.Params[Profile]))
             {
-                string demandedProfile = context.Request.Params[Profile].ToString();
+                var demandedProfile = context.Request.Params[Profile];
 
                 if (!new[] { "Professional", "Person" }.Contains(demandedProfile))
                 {
-                    HandleError(context, string.Format(Resources.DemandingProfileError, demandedProfile));
+                    HandleError(context, Resources.DemandingProfileError, demandedProfile);
                     return;
                 }
                 requestContextItems.Add(("https://data.gov.dk/eid/" + demandedProfile, ItemsChoiceType7.AuthnContextClassRef));

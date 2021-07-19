@@ -528,4 +528,7 @@ AppID={1}</value>
   <data name="NsisLoaMissing" xml:space="preserve">
     <value>The SAML token must contain a NSIS Level of Assurance.</value>
   </data>
+  <data name="SamlNoPassiveError" xml:space="preserve">
+    <value>IdP responded with status code NoPassive. A user cannot be signed in with the IsPassiveFlag set when the user does not have a session with the IdP.</value>
+  </data>
 </root>
