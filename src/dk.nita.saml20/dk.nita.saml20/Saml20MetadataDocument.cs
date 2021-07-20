@@ -195,10 +195,10 @@ namespace dk.nita.saml20
 
                 keyEncryption.use = KeyTypes.encryption;
                 keyEncryption.useSpecified = true;
-                keyEncryption.EncryptionMethod = new Schema.XEnc.EncryptionMethod[]
+                keyEncryption.EncryptionMethod = new []
                 {
-                    new Schema.XEnc.EncryptionMethod{Algorithm="http://www.w3.org/2001/04/xmlenc#aes256-cbc" },
-                    new Schema.XEnc.EncryptionMethod{Algorithm="http://www.w3.org/2001/04/xmlenc#rsa-oaep-mgf1p" }
+                    new Schema.XEnc.EncryptionMethod{Algorithm = Saml20Constants.CryptographicAlgorithm.Aes256Cbc},
+                    new Schema.XEnc.EncryptionMethod{Algorithm = Saml20Constants.CryptographicAlgorithm.RsaOaepMgf1p}
                 };
 
                 // Ugly conversion between the .Net framework classes and our classes ... avert your eyes!!
