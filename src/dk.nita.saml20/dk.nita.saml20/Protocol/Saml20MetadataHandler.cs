@@ -34,7 +34,7 @@ namespace dk.nita.saml20.protocol
             }
             catch (ArgumentException)
             {
-                HandleError(context, string.Format(Resources.UnknownEncoding, encoding));
+                HandleError(context, Resources.UnknownEncoding, encoding);
                 return;
             }
 

@@ -1,6 +1,7 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading;
 using System.Web;
@@ -52,19 +53,19 @@ namespace dk.nita.saml20.protocol
         {
             Trace.TraceData(TraceEventType.Error, "Error: " + errorMessage);
 
-            Boolean showError = SAML20FederationConfig.GetConfig().ShowError;
-            String DEFAULT_MESSAGE = "Unable to validate SAML message!";
+            var showError = SAML20FederationConfig.GetConfig().ShowError;
+            const string defaultMessage = "Unable to validate SAML message!";
 
             if (!string.IsNullOrEmpty(ErrorBehaviour) && ErrorBehaviour.Equals(dk.nita.saml20.config.ErrorBehaviour.THROWEXCEPTION.ToString()))
             {
-                var exception = showError ? exceptionCreatorFunc(errorMessage) : exceptionCreatorFunc(DEFAULT_MESSAGE);
+                var exception = showError ? exceptionCreatorFunc(errorMessage) : exceptionCreatorFunc(defaultMessage);
                 throw exception;
             }
             else
             {
-                ErrorPage page = new ErrorPage();
+                var page = new ErrorPage();
                 page.OverrideConfig = overrideConfigSetting;
-                page.ErrorText = (showError) ? errorMessage?.Replace("\n", "<br />") : DEFAULT_MESSAGE;
+                page.ErrorText = showError ? errorMessage?.Replace("\n", "<br />") : defaultMessage;
                 page.ProcessRequest(context);
                 context.Response.End();
             }
@@ -88,10 +89,23 @@ namespace dk.nita.saml20.protocol
         /// Displays an error page.
         /// </summary>
         /// <param name="context">The current HTTP context.</param>
+        /// <param name="format">The format string of the error message</param>
+        /// <param name="args">An object array that contains zero or more objects to format.</param>
+        public void HandleError(HttpContext context, string format, params string[] args)
+        {
+            var htmlEncodedArguments = args.Select(WebUtility.HtmlEncode).Cast<object>().ToArray();
+            var errorMessage = string.Format(format, htmlEncodedArguments);
+            HandleError(context, errorMessage, false, m => new Saml20Exception(m));
+        }
+        
+        /// <summary>
+        /// Displays an error page.
+        /// </summary>
+        /// <param name="context">The current HTTP context.</param>
         /// <param name="errorMessage">The error message.</param>
         public void HandleError(HttpContext context, string errorMessage)
         {
-            HandleError(context, errorMessage, false, (m) => new Saml20Exception(m));
+            HandleError(context, errorMessage, false, m => new Saml20Exception(m));
         }
 
 
@@ -103,7 +117,7 @@ namespace dk.nita.saml20.protocol
         /// <param name="overrideConfigSetting"></param>
         public void HandleError(HttpContext context, string errorMessage, bool overrideConfigSetting)
         {
-            HandleError(context, errorMessage, false, (m) => new Saml20Exception(m));
+            HandleError(context, errorMessage, overrideConfigSetting, m => new Saml20Exception(m));
         }
 
         /// <summary>

@@ -184,9 +184,7 @@ namespace dk.nita.saml20.protocol
                 else
                 {
                     AuditLogging.logEntry(Direction.UNDEFINED, Operation.ARTIFACTRESOLVE, string.Format("Unsupported payload message in ArtifactResponse: {0}, msg: {1}", parser.ArtifactResponse.Any.LocalName, parser.SamlMessage));
-                    HandleError(context,
-                                string.Format("Unsupported payload message in ArtifactResponse: {0}",
-                                              parser.ArtifactResponse.Any.LocalName));
+                    HandleError(context,"Unsupported payload message in ArtifactResponse: {0}", parser.ArtifactResponse.Any.LocalName);
                 }
             }
             else if (parser.IsLogoutReqest())
@@ -255,7 +253,7 @@ namespace dk.nita.saml20.protocol
                 else
                 {
                     AuditLogging.logEntry(Direction.UNDEFINED, Operation.ARTIFACTRESOLVE, string.Format("Unsupported SamlMessage element: {0}, msg: {1}", parser.SamlMessageName, parser.SamlMessage));
-                    HandleError(context, string.Format("Unsupported SamlMessage element: {0}", parser.SamlMessageName));
+                    HandleError(context, "Unsupported SamlMessage element: {0}" , parser.SamlMessageName);
                 }
             }
         }
@@ -422,7 +420,7 @@ namespace dk.nita.saml20.protocol
             {
                 AuditLogging.logEntry(Direction.IN, Operation.LOGOUTRESPONSE,
                                       string.Format("Unsupported request type format, type: {0}", context.Request.RequestType));
-                HandleError(context, string.Format(Resources.UnsupportedRequestType, context.Request.RequestType));
+                HandleError(context, Resources.UnsupportedRequestType, context.Request.RequestType);
             }
 
             XmlDocument doc = new XmlDocument();
@@ -489,7 +487,7 @@ namespace dk.nita.saml20.protocol
                 {
                     AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Cannot find metadata for IdP: " + logoutRequest.Issuer.Value);
                     // Not able to return a response as we do not know the IdP.
-                    HandleError(context, "Cannot find metadata for IdP " + logoutRequest.Issuer.Value);
+                    HandleError(context, "Cannot find metadata for IdP {0}", logoutRequest.Issuer.Value);
                     return;
                 }
 
@@ -523,7 +521,7 @@ namespace dk.nita.saml20.protocol
                 {
                     AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Cannot find metadata for IdP");
                     // Not able to return a response as we do not know the IdP.
-                    HandleError(context, "Cannot find metadata for IdP " + logoutRequest.Issuer.Value);
+                    HandleError(context, "Cannot find metadata for IdP {0}", logoutRequest.Issuer.Value);
                     return;
                 }
 
@@ -544,7 +542,7 @@ namespace dk.nita.saml20.protocol
             {
                 //Error: We don't support HEAD, PUT, CONNECT, TRACE, DELETE and OPTIONS
                 // Not able to return a response as we do not understand the request.
-                HandleError(context, string.Format(Resources.UnsupportedRequestType, context.Request.RequestType));
+                HandleError(context, Resources.UnsupportedRequestType, context.Request.RequestType);
                 return;
             }
 
