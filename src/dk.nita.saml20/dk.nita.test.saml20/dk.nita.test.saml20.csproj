@@ -140,6 +140,7 @@
     <Compile Include="Saml20\Protocol\XmlSignatureUtilsTest.cs" />
     <Compile Include="Saml20\Saml20CoreValidationTest.cs" />
     <Compile Include="Saml20\SamlAssertionAttributesTest.cs" />
+    <Compile Include="Saml20\Schema\BasicPrivilegeProfile\PrivilegeListTypeTest.cs" />
     <Compile Include="Saml20\SignatureTest.cs" />
     <Compile Include="Saml20\TempTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

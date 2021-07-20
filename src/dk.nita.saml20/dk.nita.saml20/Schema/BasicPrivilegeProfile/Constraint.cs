@@ -5,7 +5,7 @@
     /// specifies the restriction and they are always applied to a User-Privilege relation (assignment)
     /// </summary>
     [System.Serializable()]
-    [System.Xml.Serialization.XmlType(Namespace = "http://itst.dk/oiosaml/basic_privilege_profile")]
+    [System.Xml.Serialization.XmlType(Namespace = Constants.XmlNamespace)]
     public partial class Constraint
     {
         /// <summary>

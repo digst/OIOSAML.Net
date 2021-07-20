@@ -3,8 +3,8 @@
     /// <summary>
     /// Representing the PrivilegeGroup in the intermediate model of the basic privilege profile
     /// </summary>
-    [System.Serializable()]
-    [System.Xml.Serialization.XmlType(Namespace = "http://itst.dk/oiosaml/basic_privilege_profile")]
+    [System.Serializable]
+    [System.Xml.Serialization.XmlType(Namespace = Constants.XmlNamespace)]
     public partial class PrivilegeGroupType
     {
         /// <summary>

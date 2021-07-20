@@ -3,9 +3,9 @@
     /// <summary>
     /// Representing the intermediate model of the basic privilege profile
     /// </summary>
-    [System.Serializable()]
-    [System.Xml.Serialization.XmlType(Namespace = "http://itst.dk/oiosaml/basic_privilege_profile")]
-    [System.Xml.Serialization.XmlRoot("PrivilegeList", Namespace = "http://itst.dk/oiosaml/basic_privilege_profile", IsNullable = false)]
+    [System.Serializable]
+    [System.Xml.Serialization.XmlType(Namespace = Constants.XmlNamespace)]
+    [System.Xml.Serialization.XmlRoot("PrivilegeList", Namespace = Constants.XmlNamespace, IsNullable = false)]
     public partial class PrivilegeListType
     {
         /// <summary>
