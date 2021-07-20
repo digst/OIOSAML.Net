@@ -11,7 +11,7 @@
                 <a href="/login.ashx?levelOfAssurance=High&returnUrl=MyPage.aspx">Go to My Page (require high assurance level)</a>
             </li>
               <li>
-                <a href="/login.ashx?profile=Professional&returnUrl=MyPage.aspx">Go to My Page (request (but don't enforce) a Professional attribure profile)</a>
+                <a href="/login.ashx?profile=Professional&returnUrl=MyPage.aspx">Go to My Page (request a Professional attribute profile)</a>
             </li>
         </ul>
     </div>

@@ -1,6 +1,7 @@
 # OIO SAML 3
 
 ## 3.0.1 (planned)
+- NLRFIM-117: Update text used WebSiteDemo when request a professional identity
 - NLRFIM-118: Update XML namespace for OIO BPP to http://digst.dk/oiosaml/basic_privilege_profile cf. profile version 1.2
 - NLRFIM-127: Protect against cross-site scripting for NSIS LoA and profile request parameters in Saml20SignonHandler.cs
 
