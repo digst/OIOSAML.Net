@@ -78,7 +78,7 @@ namespace dk.nita.saml20
             spDescriptor.protocolSupportEnumeration = new string[] { Saml20Constants.PROTOCOL };
             spDescriptor.AuthnRequestsSigned = XmlConvert.ToString(true);
             spDescriptor.WantAssertionsSigned = XmlConvert.ToString(true);
-         
+
             Uri baseURL = new Uri(config.ServiceProvider.Server);
             List<Endpoint> logoutServiceEndpoints = new List<Endpoint>();
             List<IndexedEndpoint> signonServiceEndpoints = new List<IndexedEndpoint>();
@@ -195,6 +195,11 @@ namespace dk.nita.saml20
 
                 keyEncryption.use = KeyTypes.encryption;
                 keyEncryption.useSpecified = true;
+                keyEncryption.EncryptionMethod = new []
+                {
+                    new Schema.XEnc.EncryptionMethod{Algorithm = Saml20Constants.CryptographicAlgorithm.Aes256Cbc},
+                    new Schema.XEnc.EncryptionMethod{Algorithm = Saml20Constants.CryptographicAlgorithm.RsaOaepMgf1p}
+                };
 
                 // Ugly conversion between the .Net framework classes and our classes ... avert your eyes!!
                 keySigning.KeyInfo = Serialization.DeserializeFromXmlString<Schema.XmlDSig.KeyInfo>(keyinfo.GetXml().OuterXml);

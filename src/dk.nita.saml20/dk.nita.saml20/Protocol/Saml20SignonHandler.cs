@@ -826,6 +826,7 @@ namespace dk.nita.saml20.protocol
             {
                 request.Request.RequestedAuthnContext = new RequestedAuthnContext();
                 request.Request.RequestedAuthnContext.Comparison = AuthnContextComparisonType.minimum;
+                request.Request.RequestedAuthnContext.ComparisonSpecified = true;
                 request.Request.RequestedAuthnContext.ItemsElementName = requestContextItems.Select(x => x.type).ToArray();
                 request.Request.RequestedAuthnContext.Items = requestContextItems.Select(x => x.value).ToArray();
             }
