@@ -23,98 +23,98 @@ namespace dk.nita.saml20.Utils
 
         private static bool HasWebKitSameSiteBug(string useragent)
         {
-            return isIosVersion(major: 12, useragent) ||
-                   (isMacosxVersion(major: 10, minor: 14, useragent) &&
-                    (isSafari(useragent) || isMacEmbeddedBrowser(useragent)));
+            return IsIosVersion(major: 12, useragent) ||
+                   (IsMacosxVersion(major: 10, minor: 14, useragent) &&
+                    (IsSafari(useragent) || IsMacEmbeddedBrowser(useragent)));
         }
 
         private static bool DropsUnrecognizedSameSiteCookies(string useragent)
         {
-            if (isUcBrowser(useragent))
+            if (IsUcBrowser(useragent))
             {
-                return !isUcBrowserVersionAtLeast(major: 12, minor: 13, build: 2, useragent);
+                return !IsUcBrowserVersionAtLeast(major: 12, minor: 13, build: 2, useragent);
             }
             else
             {
-                return isChromiumBased(useragent) &&
-                       isChromiumVersionAtLeast(major: 51, useragent) &&
-                       !isChromiumVersionAtLeast(major: 67, useragent);
+                return IsChromiumBased(useragent) &&
+                       IsChromiumVersionAtLeast(major: 51, useragent) &&
+                       !IsChromiumVersionAtLeast(major: 67, useragent);
             }
         }
 
         #region Regex parsing of User-Agent string. (See note above!)
-        private static bool isIosVersion(int major, string useragent)
+        private static bool IsIosVersion(int major, string useragent)
         {
-            string regex = @"\(iP.+; CPU .*OS (\d+)[_\d]*.*\) AppleWebKit\/";
+            const string regex = @"\(iP.+; CPU .*OS (\d+)[_\d]*.*\) AppleWebKit\/";
             // Extract digits from first capturing group.
-            return Regex.Match(useragent, regex).Value == intToString(major);
+            return Regex.Match(useragent, regex).Groups[1].Value == IntToString(major);
         }
 
-        private static bool isMacosxVersion(int major, int minor, string useragent)
+        private static bool IsMacosxVersion(int major, int minor, string useragent)
         {
-            string regex = @"\(Macintosh;.*Mac OS X (\d+)_(\d+)[_\d]*.*\) AppleWebKit\/";
+            const string regex = @"\(Macintosh;.*Mac OS X (\d+)_(\d+)[_\d]*.*\) AppleWebKit\/";
             // Extract digits from first and second capturing groups.
-            return (Regex.Match(useragent, regex).Groups[1].Value == intToString(major)) &&
-                   (Regex.Match(useragent, regex).Groups[2].Value == intToString(minor));
+            return (Regex.Match(useragent, regex).Groups[1].Value == IntToString(major)) &&
+                   (Regex.Match(useragent, regex).Groups[2].Value == IntToString(minor));
         }
 
-        private static bool isSafari(string useragent)
+        private static bool IsSafari(string useragent)
         {
-            string safari_regex = @"Version\/.* Safari\/";
-            return Regex.IsMatch(useragent, safari_regex) &&
-                !isChromiumBased(useragent);
+            const string safariRegex = @"Version\/.* Safari\/";
+            return Regex.IsMatch(useragent, safariRegex) &&
+                   !IsChromiumBased(useragent);
         }
 
-        private static bool isMacEmbeddedBrowser(string useragent)
+        private static bool IsMacEmbeddedBrowser(string useragent)
         {
-            string regex = @"^Mozilla\/[\.\d]+ \(Macintosh;.*Mac OS X [_\d]+\) "
-                             + @"AppleWebKit\/[\.\d]+ \(KHTML, like Gecko\)$";
+            const string regex = @"^Mozilla\/[\.\d]+ \(Macintosh;.*Mac OS X [_\d]+\) "
+                                 + @"AppleWebKit\/[\.\d]+ \(KHTML, like Gecko\)$";
             return Regex.IsMatch(useragent, regex);
         }
 
-        private static bool isChromiumBased(string useragent)
+        private static bool IsChromiumBased(string useragent)
         {
-            string regex = @"Chrom(e|ium)";
+            const string regex = @"Chrom(e|ium)";
             return Regex.IsMatch(useragent, regex);
         }
 
-        private static bool isChromiumVersionAtLeast(int major, string useragent)
+        private static bool IsChromiumVersionAtLeast(int major, string useragent)
         {
-            string regex = @"Chrom[^ \/]+\/(\d+)[\.\d]* ";
+            const string regex = @"Chrom[^ \/]+\/(\d+)[\.\d]* ";
             // Extract digits from first capturing group.
-            int version = stringToInt(Regex.Match(useragent, regex).Groups[1].Value);
+            var version = StringToInt(Regex.Match(useragent, regex).Groups[1].Value);
             return version >= major;
         }
 
-        private static bool isUcBrowser(string useragent)
+        private static bool IsUcBrowser(string useragent)
         {
-            string regex = @"UCBrowser\/";
+            const string regex = @"UCBrowser\/";
             return Regex.IsMatch(useragent, regex);
         }
 
-        private static bool isUcBrowserVersionAtLeast(int major, int minor, int build, string useragent)
+        private static bool IsUcBrowserVersionAtLeast(int major, int minor, int build, string useragent)
         {
-            string regex = @"UCBrowser\/(\d+)\.(\d+)\.(\d+)[\.\d]* ";
+            const string regex = @"UCBrowser\/(\d+)\.(\d+)\.(\d+)[\.\d]* ";
 
             // Extract digits from three capturing groups.
-            int major_version = stringToInt(Regex.Match(useragent, regex).Groups[1].Value);
-            int minor_version = stringToInt(Regex.Match(useragent, regex).Groups[2].Value);
-            int build_version = stringToInt(Regex.Match(useragent, regex).Groups[3].Value);
+            var majorVersion = StringToInt(Regex.Match(useragent, regex).Groups[1].Value);
+            var minorVersion = StringToInt(Regex.Match(useragent, regex).Groups[2].Value);
+            var buildVersion = StringToInt(Regex.Match(useragent, regex).Groups[3].Value);
 
-            if (major_version != major)
-                return major_version > major;
-            if (minor_version != minor)
-                return minor_version > minor;
+            if (majorVersion != major)
+                return majorVersion > major;
+            if (minorVersion != minor)
+                return minorVersion > minor;
 
-            return build_version >= build;
+            return buildVersion >= build;
         }
 
-        private static int stringToInt(string intString)
+        private static int StringToInt(string intString)
         {
             return int.Parse(intString);
         }
 
-        private static string intToString(int number)
+        private static string IntToString(int number)
         {
             return number.ToString();
         }

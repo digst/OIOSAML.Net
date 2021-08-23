@@ -144,6 +144,7 @@
     <Compile Include="Saml20\SignatureTest.cs" />
     <Compile Include="Saml20\TempTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Saml20\Utils\BrowserSupportUtilTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\dk.nita.saml20\dk.nita.saml20.csproj">
