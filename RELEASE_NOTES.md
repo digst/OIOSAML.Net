@@ -1,6 +1,7 @@
 # OIO SAML 3
 
 ## 3.0.1 (planned)
+- NLRFIM-111: Updated documentation for configuration of signing certificates in configuration file.
 - NLRFIM-119: Minor fixes
   - Add EncryptionMethod URLs for RSA-OAEP-MGF1P and AES256-CBC as default in metadata
   - Don't add NSIS LoA Low in IdentityProviderDemo when old AssuranceLevel is used to Assertion
