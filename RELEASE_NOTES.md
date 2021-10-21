@@ -1,6 +1,6 @@
 # OIO SAML 3
 
-## 3.0.1 (planned)
+## 3.0.1
 - NLRFIM-99: Fixing use of regular expression match for iOS user agent in BrowserSupportUtil
 - NLRFIM-111: Updated documentation for configuration of signing certificates in configuration file
 - NLRFIM-119: Minor fixes
