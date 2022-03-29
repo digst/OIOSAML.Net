@@ -132,6 +132,8 @@
   <ItemGroup>
     <Compile Include="Saml20\ArtifactTest.cs" />
     <Compile Include="Saml20\AssertionUtil.cs" />
+    <Compile Include="Saml20\AuthnRequestAppender\AuthnRequestAppenderFactoryTest.cs" />
+    <Compile Include="Saml20\AuthnRequestAppender\AuthnRequestAppenderSample.cs" />
     <Compile Include="Saml20\DKSAML20ProfileValidationTest.cs" />
     <Compile Include="Saml20\EncryptedAssertionTest.cs" />
     <Compile Include="Saml20\PingCompatibilityTest.cs" />

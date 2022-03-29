@@ -54,6 +54,8 @@ namespace dk.nita.saml20.config
             set { _metaDataShaHashingAlgorithm = value; }
         }
 
+       
+        
         /// <summary>
         /// Gets or sets the SessionTimeout configuration
         /// </summary>
@@ -136,6 +138,12 @@ namespace dk.nita.saml20.config
         }
 
         /// <summary>
+        /// AuthnRequestAppender element 
+        /// </summary>
+        [XmlElement(ElementName = "AuthnRequestAppender")]
+        public AuthnRequestAppenderConfig AuthnRequestAppender { get; set; }
+        
+        /// <summary>
         /// Determines the first valid certificate from the configuration
         /// </summary>
         /// <returns></returns>
@@ -165,6 +173,19 @@ namespace dk.nita.saml20.config
             get { return _allowedClockSkewMinutes; }
             set => _allowedClockSkewMinutes = value;
         }
+    }
+
+    /// <summary>
+    /// AuthnRequestAppender configuration element
+    /// </summary>
+    [Serializable]
+    public class AuthnRequestAppenderConfig
+    {
+        /// <summary>
+        /// Full Name of class and assembly implementing IAuthnRequestAppender (FullName, assembly)
+        /// </summary>
+        [XmlAttribute("type")]
+        public string type;
     }
 
     /// <summary>

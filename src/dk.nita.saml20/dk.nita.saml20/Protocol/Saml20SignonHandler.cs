@@ -12,6 +12,7 @@ using System.Web;
 using System.Web.Caching;
 using System.Xml;
 using dk.nita.saml20.Actions;
+using dk.nita.saml20.AuthnRequestAppender;
 using dk.nita.saml20.Bindings;
 using dk.nita.saml20.Bindings.SignatureProviders;
 using dk.nita.saml20.Profiles.DKSaml20.Attributes;
@@ -851,6 +852,8 @@ namespace dk.nita.saml20.protocol
                     request.ProtocolBinding = idpEndpoint.SSOEndpoint.ForceProtocolBinding;
                 }
             }
+
+            AuthnRequestAppenderFactory.GetAppender()?.AppendAction(request, context.Request);
 
             //Save request message id to session
             SessionStore.CurrentSession[SessionConstants.ExpectedInResponseTo] = request.ID;

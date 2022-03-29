@@ -35,6 +35,7 @@
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
     <TargetFrameworkProfile />
+    <LangVersion>8</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -143,6 +144,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AuthnRequestAppender\AuthnRequestAppenderFactory.cs" />
+    <Compile Include="AuthnRequestAppender\IAuthnRequestAppender.cs" />
     <Compile Include="CommonAssemblyInfo.cs" />
     <Compile Include="Actions\Actions.cs" />
     <Compile Include="Actions\CDCRedirectAction.cs" />
