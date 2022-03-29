@@ -1,5 +1,8 @@
 # OIO SAML 3
 
+## 3.0.2
+- NLRFIM-157: Added configurable IAuthnRequestAppender to allow additional modifications by the user of the package just before the AuthnRequest is signed and transferred.
+
 ## 3.0.1
 - NLRFIM-99: Fixing use of regular expression match for iOS user agent in BrowserSupportUtil
 - NLRFIM-111: Updated documentation for configuration of signing certificates in configuration file
