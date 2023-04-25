@@ -141,6 +141,7 @@
     </Reference>
     <Reference Include="System.Web" />
     <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CommonAssemblyInfo.cs" />
@@ -155,6 +156,7 @@
     <Compile Include="Bindings\SignatureProviders\RsaSha512SignatureProvider.cs" />
     <Compile Include="Bindings\SignatureProviders\SignatureProvider.cs" />
     <Compile Include="Bindings\SignatureProviders\SignatureProviderFactory.cs" />
+    <Compile Include="Config\AppSwitchReturnURL.cs" />
     <Compile Include="Config\ShaHashingAlgorithm.cs" />
     <Compile Include="Identity\Saml20PrincipalCache.cs" />
     <Compile Include="ISaml20IdpTokenAccessor.cs" />
@@ -257,6 +259,8 @@
     <Compile Include="Schema\Metadata\RoleDescriptor.cs" />
     <Compile Include="Schema\Metadata\SPSSODescriptor.cs" />
     <Compile Include="Schema\Metadata\SSODescriptor.cs" />
+    <Compile Include="Schema\Protocol\AppSwitch.cs" />
+    <Compile Include="Schema\Protocol\AppSwitchPlatform.cs" />
     <Compile Include="Schema\Protocol\ArtifactResolve.cs" />
     <Compile Include="Schema\Protocol\ArtifactResponse.cs" />
     <Compile Include="Schema\Protocol\AssertionIDRequest.cs" />
@@ -337,6 +341,7 @@
     <Compile Include="Protocol\Saml20MetadataHandler.cs" />
     <Compile Include="Protocol\Saml20SignonHandler.cs" />
     <Compile Include="Utils\ArtifactUtil.cs" />
+    <Compile Include="Utils\AppSwitchSerialization.cs" />
     <Compile Include="Utils\Serialization.cs" />
     <Compile Include="Utils\TimeRestrictionValidation.cs" />
     <Compile Include="Utils\Trace.cs" />
@@ -442,6 +447,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="readme.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="public-extensions-schema.xsd" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Import Project="..\..\..\build\PreBuild.targets.xml" />

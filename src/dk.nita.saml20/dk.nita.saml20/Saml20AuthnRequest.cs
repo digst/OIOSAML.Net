@@ -121,7 +121,7 @@ namespace dk.nita.saml20
             get { return request.ProtocolBinding; }
             set { request.ProtocolBinding = value; }
         }
-
+        
         /// <summary>
         /// Returns the AuthnRequest as an XML document.
         /// </summary>

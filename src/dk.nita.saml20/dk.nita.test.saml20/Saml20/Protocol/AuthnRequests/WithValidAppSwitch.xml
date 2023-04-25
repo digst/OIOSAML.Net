@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<q1:AuthnRequest xmlns:q1="urn:oasis:names:tc:SAML:2.0:protocol" Destination="https://login.test-nemlog-in.dk/adfs/ls/" ID="idd032e5da860641a4bc4cffcebf7df0a0" IsPassive="false" IssueInstant="2023-04-25T08:50:15.9997594Z" Version="2.0">
+
+    <Issuer xmlns="urn:oasis:names:tc:SAML:2.0:assertion">https://saml.oiosaml-net.dk</Issuer>
+
+    <q1:Extensions>
+
+        <AppSwitch xmlns="https://data.gov.dk/eid/saml/extensions" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+            <Platform>Android</Platform>
+
+            <ReturnURL>sp0.test-nemlog-in.dk</ReturnURL>
+
+        </AppSwitch>
+
+    </q1:Extensions>
+
+    <Conditions xmlns="urn:oasis:names:tc:SAML:2.0:assertion">
+
+        <AudienceRestriction>
+
+            <Audience>https://saml.oiosaml-net.dk</Audience>
+
+        </AudienceRestriction>
+
+    </Conditions>
+
+</q1:AuthnRequest>

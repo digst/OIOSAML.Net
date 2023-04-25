@@ -135,11 +135,14 @@
     <Compile Include="Saml20\DKSAML20ProfileValidationTest.cs" />
     <Compile Include="Saml20\EncryptedAssertionTest.cs" />
     <Compile Include="Saml20\PingCompatibilityTest.cs" />
+    <Compile Include="Saml20\Protocol\AppSwitchConfigurationTest.cs" />
     <Compile Include="Saml20\Protocol\HttpRedirectBindingTest.cs" />
+    <Compile Include="Saml20\Protocol\IDPSelectionUtilTest.cs" />
     <Compile Include="Saml20\Protocol\SamlMetadataDocumentTest.cs" />
     <Compile Include="Saml20\Protocol\XmlSignatureUtilsTest.cs" />
     <Compile Include="Saml20\Saml20CoreValidationTest.cs" />
     <Compile Include="Saml20\SamlAssertionAttributesTest.cs" />
+    <Compile Include="Saml20\SamlAuthnRequestTest.cs" />
     <Compile Include="Saml20\SignatureTest.cs" />
     <Compile Include="Saml20\TempTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -154,6 +157,9 @@
     <Content Include="Saml20\Assertions\Assertions.txt" />
     <Content Include="Saml20\Assertions\SHA256Signedtest.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Saml20\Protocol\AuthnRequests\WithValidAppSwitch.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Saml20\Protocol\MetadataDocs\FOBS\tfobs-demo-idp-metadata.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
