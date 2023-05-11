@@ -1,6 +1,7 @@
 using System;
 using System.Web;
 using System.Web.UI;
+using System.Web.UI.HtmlControls;
 using System.Web.UI.WebControls;
 using dk.nita.saml20.config;
 using Saml2.Properties;
@@ -24,7 +25,7 @@ namespace dk.nita.saml20.protocol.pages
             BodyPanel.Controls.Add(new LiteralControl(Resources.ChooseDesc));
             BodyPanel.Controls.Add(new LiteralControl("<br/><br/>"));
             SAML20FederationConfig config = SAML20FederationConfig.GetConfig();
-            
+
             foreach (IDPEndPoint endPoint in config.IDPEndPoints)
             {
                 if (endPoint.metadata != null)
@@ -44,10 +45,18 @@ namespace dk.nita.saml20.protocol.pages
 
                     link.NavigateUrl = endPoint.GetIDPLoginUrl(forceAuthn, isPassive);
                     BodyPanel.Controls.Add(link);
+                    var androidLink = new HyperLink() { Text = $"({Resources.PlatformAndroid})", NavigateUrl = endPoint.GetIDPLoginUrl(forceAuthn, isPassive, "Android")};
+                    androidLink.Attributes.CssStyle.Add("margin-left", "10px;");
+
+                    BodyPanel.Controls.Add(androidLink);
+                    var iosLink = new HyperLink() { Text = $"({Resources.PlatformIOS})", NavigateUrl = endPoint.GetIDPLoginUrl(forceAuthn, isPassive, "iOS")};
+                    iosLink.Attributes.CssStyle.Add("margin-left", "10px;");
+                    BodyPanel.Controls.Add(iosLink);
                     BodyPanel.Controls.Add(new LiteralControl("<br/>"));
-                } else
+                }
+                else
                 {
-                    Label label = new Label();                               
+                    Label label = new Label();
                     label.Text = endPoint.Name;
                     label.Style.Add(HtmlTextWriterStyle.TextDecoration, "line-through");
                     BodyPanel.Controls.Add(label);
@@ -60,6 +69,8 @@ namespace dk.nita.saml20.protocol.pages
                     BodyPanel.Controls.Add(new LiteralControl("<br/>"));
                 }
             }
+
+            BodyPanel.Controls.Add(new LiteralControl("<br/><br/>"));
         }
     }
 }

@@ -3,6 +3,8 @@ using System.Collections.Specialized;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using dk.nita.saml20.Bindings;
+using dk.nita.saml20.Schema.Protocol;
+using dk.nita.saml20.Utils;
 using NUnit.Framework;
 
 namespace dk.nita.test.Saml20.Protocol
@@ -26,6 +28,7 @@ namespace dk.nita.test.Saml20.Protocol
 
             X509Certificate2 cert = new X509Certificate2(@"Saml20\Certificates\pingcertificate.crt");
             Assert.That(parser.CheckSignature(cert.PublicKey.Key));
+            
         }
 
         [Test]
@@ -104,7 +107,7 @@ namespace dk.nita.test.Saml20.Protocol
         public void TestParsing_01()
         {
             HttpRedirectBindingBuilder bindingBuilder = new HttpRedirectBindingBuilder();
-            string request = string.Empty.PadLeft(350, 'A')+"ÆØÅæøå";
+            string request = string.Empty.PadLeft(350, 'A')+"Ã†Ã˜Ã…Ã¦Ã¸Ã¥";
             bindingBuilder.Request = request;
 
             string query = bindingBuilder.ToQuery();

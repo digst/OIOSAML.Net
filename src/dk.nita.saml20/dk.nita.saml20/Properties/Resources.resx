@@ -170,6 +170,12 @@ AppID={1}</value>
   <data name="ChooseDesc" xml:space="preserve">
     <value>Please choose the identity provider of your choice from the list below:</value>
   </data>
+  <data name="PlatformIOS" xml:space="preserve">
+    <value>iOS</value>
+  </data>
+  <data name="PlatformAndroid" xml:space="preserve">
+    <value>Android</value>
+  </data>
   <data name="ChooseIDP" xml:space="preserve">
     <value>Choose Identity Provider</value>
   </data>
@@ -512,5 +518,11 @@ AppID={1}</value>
   </data>
   <data name="UsernameAndPasswordMissing" xml:space="preserve">
     <value>The SAMLtoken cannot be automatically issued when using username/password authentication</value>
+  </data>
+  <data name="AppSwitchReturnUrlRequired" xml:space="preserve">
+    <value>AppSwitchReturnUrl configuration parameter must be set in configuration when appSwitchPlatform URL parameter is specified.</value>
+  </data>
+  <data name="AppSwitchPlatformInvalid" xml:space="preserve">
+    <value>AppSwitch Platform URL parameter contains invalid values. Allowed values are: Android, iOS.</value>
   </data>
 </root>
