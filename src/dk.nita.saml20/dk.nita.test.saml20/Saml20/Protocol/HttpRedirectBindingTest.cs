@@ -107,7 +107,7 @@ namespace dk.nita.test.Saml20.Protocol
         public void TestParsing_01()
         {
             HttpRedirectBindingBuilder bindingBuilder = new HttpRedirectBindingBuilder();
-            string request = string.Empty.PadLeft(350, 'A')+"������";
+            string request = string.Empty.PadLeft(350, 'A')+"ÆØÅæøå";
             bindingBuilder.Request = request;
 
             string query = bindingBuilder.ToQuery();

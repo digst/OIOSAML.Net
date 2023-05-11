@@ -157,6 +157,7 @@
     <Compile Include="Bindings\SignatureProviders\SignatureProvider.cs" />
     <Compile Include="Bindings\SignatureProviders\SignatureProviderFactory.cs" />
     <Compile Include="Config\AppSwitchReturnURL.cs" />
+    <Compile Include="Config\Platform.cs" />
     <Compile Include="Config\ShaHashingAlgorithm.cs" />
     <Compile Include="Identity\Saml20PrincipalCache.cs" />
     <Compile Include="ISaml20IdpTokenAccessor.cs" />
@@ -449,7 +450,7 @@
     <None Include="readme.txt" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="public-extensions-schema.xsd" />
+    <Content Include="Schema\public-extensions-schema.xsd" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Import Project="..\..\..\build\PreBuild.targets.xml" />

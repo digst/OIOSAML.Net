@@ -12,8 +12,8 @@ namespace dk.nita.test.Saml20.Protocol
             var config = SAML20FederationConfig.GetConfig();
             Assert.NotNull(config.AppSwitchReturnURL);
             Assert.AreEqual(2, config.AppSwitchReturnURL.Count);
-            Assert.AreEqual(@"sp0.test-nemlog-in.dk", config.FindAppSwitchReturnUrlForPlatform("Android"));
-            Assert.AreEqual(@"sp1.test-nemlog-in.dk", config.FindAppSwitchReturnUrlForPlatform("iOS"));
+            Assert.AreEqual(@"sp0.test-nemlog-in.dk", config.FindAppSwitchReturnUrlForPlatform(Platform.Android));
+            Assert.AreEqual(@"sp1.test-nemlog-in.dk", config.FindAppSwitchReturnUrlForPlatform(Platform.iOS));
         }
     }
 }

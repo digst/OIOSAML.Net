@@ -125,6 +125,15 @@ namespace Saml2.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to AppSwitch Platform URL parameter contains invalid values. Allowed values are: Android, iOS..
+        /// </summary>
+        internal static string AppSwitchPlatformInvalid {
+            get {
+                return ResourceManager.GetString("AppSwitchPlatformInvalid", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to AppSwitchReturnUrl configuration parameter must be set in configuration when appSwitchPlatform URL parameter is specified..
         /// </summary>
         internal static string AppSwitchReturnUrlRequired {

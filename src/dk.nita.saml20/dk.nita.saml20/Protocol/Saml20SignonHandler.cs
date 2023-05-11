@@ -663,10 +663,18 @@ namespace dk.nita.saml20.protocol
             string appSwitchPlatform = httpRequest.Params[AppSwitchPlatform];
             if (!string.IsNullOrWhiteSpace(appSwitchPlatform))
             {
-                var appSwitchReturnUrl = SAML20FederationConfig.GetConfig().FindAppSwitchReturnUrlForPlatform(appSwitchPlatform);
-                if (string.IsNullOrWhiteSpace(appSwitchReturnUrl))
+                var canParse = Enum.TryParse(appSwitchPlatform, true, out Platform queryStringPlatform);
+                if (!canParse)
                 {
                     string errorMessage = Resources.AppSwitchReturnUrlRequired;
+                    AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST, errorMessage);
+                    HandleError(context, errorMessage);
+                    return;
+                }
+                var appSwitchReturnUrl = SAML20FederationConfig.GetConfig().FindAppSwitchReturnUrlForPlatform(queryStringPlatform);
+                if (string.IsNullOrWhiteSpace(appSwitchReturnUrl))
+                {
+                    string errorMessage = Resources.AppSwitchPlatformInvalid;
                     AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST, errorMessage);
                     HandleError(context, errorMessage);
                     return;

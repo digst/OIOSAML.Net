@@ -156,15 +156,9 @@ namespace dk.nita.saml20.config
         /// </summary>
         /// <param name="appSwitchPlatform">AppSwitch platform. Must be one of two values: 'Android' or 'iOS'.</param>
         /// <returns>String, containing the platform-specific Return URL.</returns>
-        public string FindAppSwitchReturnUrlForPlatform(string appSwitchPlatform)
+        public string FindAppSwitchReturnUrlForPlatform(Platform appSwitchPlatform)
         {
-            if (string.IsNullOrWhiteSpace(appSwitchPlatform))
-            {
-                throw new ArgumentNullException(nameof(appSwitchPlatform));
-            }
-
-            return AppSwitchReturnURL.SingleOrDefault(x =>
-                x.Platform.Trim().ToLowerInvariant() == appSwitchPlatform.Trim().ToLowerInvariant())?.Value;
+           return AppSwitchReturnURL.SingleOrDefault(x => x.Platform == appSwitchPlatform)?.Value;
         }
         /// <summary>
         /// Initializes the config section by initializing the idp-endpoints

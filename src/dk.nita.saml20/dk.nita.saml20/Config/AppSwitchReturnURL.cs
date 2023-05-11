@@ -11,7 +11,7 @@ namespace dk.nita.saml20.config
         /// AppSwitch platform. Can be either Android or iOS.
         /// </summary>
         [XmlAttribute(AttributeName = "platform")]
-        public string Platform;
+        public Platform Platform;
 
         /// <summary>
         /// Value of the return URL.
