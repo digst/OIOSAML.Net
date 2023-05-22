@@ -1,5 +1,8 @@
 # OIO SAML 3
 
+## 3.0.4
+- NLRFIM-169: Support AppSwitch extension on AuthnRequest in Java OIO SAML 3
+
 ## 3.0.2
 - NLRFIM-157: Added configurable IAuthnRequestAppender to allow additional modifications by the user of the package just before the AuthnRequest is signed and transferred.
 
