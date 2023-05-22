@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Xml;
 using System.Xml.Serialization;
@@ -175,7 +176,21 @@ namespace dk.nita.saml20.config
         {
             return IDPEndPoints.Find(delegate (IDPEndPoint ep) { return ep.Id == endPointId; });
         }
+        /// <summary>
+        /// AppSwitchReturnURL collection
+        /// </summary>
+        [XmlElement("AppSwitchReturnURL")]
+        public List<AppSwitchReturnURL> AppSwitchReturnURL { get; set; }
 
+        /// <summary>
+        /// Finds Return URL for the specified <paramref name="appSwitchPlatform"/> in the SAML20Federation section.
+        /// </summary>
+        /// <param name="appSwitchPlatform">AppSwitch platform. Must be one of two values: 'Android' or 'iOS'.</param>
+        /// <returns>String, containing the platform-specific Return URL.</returns>
+        public string FindAppSwitchReturnUrlForPlatform(Platform appSwitchPlatform)
+        {
+           return AppSwitchReturnURL.SingleOrDefault(x => x.Platform == appSwitchPlatform)?.Value;
+        }
         /// <summary>
         /// Initializes the config section by initializing the idp-endpoints
         /// </summary>
@@ -202,7 +217,6 @@ namespace dk.nita.saml20.config
         [XmlAttribute(AttributeName = "localReaderEndpoint")]
         public string LocalReaderEndpoint;
     }
-
 
     /// <summary>
     /// Configuration element that defines settings for generating metadata.
@@ -1034,9 +1048,9 @@ namespace dk.nita.saml20.config
         /// Get a URL that redirects the user to the login-page for this IDPEndPoint
         /// </summary>
         /// <returns></returns>
-        public string GetIDPLoginUrl(bool forceAuthn, bool isPassive, string desiredNsisLoa, string desiredProfile)
+        public string GetIDPLoginUrl(bool forceAuthn, bool isPassive, string desiredNsisLoa, string desiredProfile, string appSwitchPlatform = null)
         {
-            return IDPSelectionUtil.GetIDPLoginUrl(Id, forceAuthn, isPassive, desiredNsisLoa, desiredProfile);
+            return IDPSelectionUtil.GetIDPLoginUrl(Id, forceAuthn, isPassive, desiredNsisLoa, desiredProfile, appSwitchPlatform);
         }
     }
 

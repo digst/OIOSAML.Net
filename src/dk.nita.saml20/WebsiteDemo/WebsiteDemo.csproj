@@ -225,7 +225,7 @@
           <AutoAssignPort>False</AutoAssignPort>
           <DevelopmentServerPort>20004</DevelopmentServerPort>
           <DevelopmentServerVPath>/</DevelopmentServerVPath>
-          <IISUrl>https://localhost:20002</IISUrl>
+          <IISUrl>https://oiosaml-net.dk:20002/</IISUrl>
           <NTLMAuthentication>False</NTLMAuthentication>
           <UseCustomServer>False</UseCustomServer>
           <CustomServerUrl>

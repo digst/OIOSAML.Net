@@ -43,19 +43,22 @@ namespace dk.nita.saml20.Utils
         /// Usually not called directly, but called from IDPEndPoint.GetIDPLoginUrl()
         /// </summary>
         /// <param name="idpId">Id of IDP that an authentication URL is needed for</param>
-        /// <param name="forceAuthn">Specifies wether or not the user is forced to login even if the user is already logged in. True means that the user must login into the federation again even if the user was already logged in.</param>
-        /// <param name="isPassive">Specifies wether or not the user must be promthed with a login screen at IdP if user is not already logged into the federation. True means that the user must not be promthed with a login screen.</param>
+        /// <param name="forceAuthn">Specifies whether or not the user is forced to login even if the user is already logged in. True means that the user must login into the federation again even if the user was already logged in.</param>
+        /// <param name="isPassive">Specifies whether or not the user must be promthed with a login screen at IdP if user is not already logged into the federation. True means that the user must not be promthed with a login screen.</param>
         /// <param name="desiredNsisLoa">Specifies the desired level of assurance.</param>
         /// <param name="desiredProfile">Specifies the desired type of profile (Person or Professional)</param>
+        /// <param name="appSwitchPlatform">AppSwitch platform - either iOS or Android</param>
         /// <returns>A URL that can be used for logging in at the IDP</returns>
-        public static string GetIDPLoginUrl(string idpId, bool forceAuthn, bool isPassive, string desiredNsisLoa, string desiredProfile)
+        public static string GetIDPLoginUrl(string idpId, bool forceAuthn, bool isPassive, string desiredNsisLoa, string desiredProfile, string appSwitchPlatform = null)
         {
-            return string.Format("{0}?{1}={2}&{3}={4}&{5}={6}&{7}={8}&{9}={10}", SAML20FederationConfig.GetConfig().ServiceProvider.SignOnEndpoint.localPath,
+            var defaultUrl =  string.Format("{0}?{1}={2}&{3}={4}&{5}={6}&{7}={8}&{9}={10}", SAML20FederationConfig.GetConfig().ServiceProvider.SignOnEndpoint.localPath,
                 Saml20SignonHandler.IDPChoiceParameterName, HttpUtility.UrlEncode(idpId),
                 Saml20SignonHandler.IDPForceAuthn, forceAuthn.ToString(),
                 Saml20SignonHandler.IDPIsPassive, isPassive.ToString(),
                 Saml20SignonHandler.NsisLoa, desiredNsisLoa,
                 Saml20SignonHandler.Profile, desiredProfile);
+                
+            return string.IsNullOrWhiteSpace(appSwitchPlatform) ? defaultUrl : string.Format("{0}&appSwitchPlatform={1}", defaultUrl, appSwitchPlatform);
         }
     }
 }

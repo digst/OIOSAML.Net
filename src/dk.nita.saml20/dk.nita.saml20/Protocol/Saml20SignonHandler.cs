@@ -28,6 +28,7 @@ using dk.nita.saml20.Schema.Protocol;
 using dk.nita.saml20.Specification;
 using dk.nita.saml20.Utils;
 using Saml2.Properties;
+using Extensions = dk.nita.saml20.Schema.Protocol.Extensions;
 using Trace = dk.nita.saml20.Utils.Trace;
 
 namespace dk.nita.saml20.protocol
@@ -209,6 +210,7 @@ namespace dk.nita.saml20.protocol
             {
                 //Display a page to the user where she can pick the IDP
                 SelectSaml20IDP page = new SelectSaml20IDP();
+                
                 page.ProcessRequest(context);
                 return;
             }
@@ -777,16 +779,43 @@ namespace dk.nita.saml20.protocol
             AuditLogging.IdpId = idpEndpoint.Id;
 
             // Determine which endpoint to use from the configuration file or the endpoint metadata.
-            IDPEndPointElement destination =
-                DetermineEndpointConfiguration(SAMLBinding.REDIRECT, idpEndpoint.SSOEndpoint, idpEndpoint.metadata.SSOEndpoints());
-
-
-
+            IDPEndPointElement destination = DetermineEndpointConfiguration(SAMLBinding.REDIRECT, idpEndpoint.SSOEndpoint, idpEndpoint.metadata.SSOEndpoints());
             request.Destination = destination.Url;
-
-
+            var httpRequest = context.Request;
+            
+            // handle AppSwitch parameter.
+            string appSwitchPlatform = httpRequest.Params[AppSwitchPlatform];
+            if (!string.IsNullOrWhiteSpace(appSwitchPlatform))
+            {
+                var canParse = Enum.TryParse(appSwitchPlatform, true, out Platform queryStringPlatform);
+                if (!canParse)
+                {
+                    string errorMessage = Resources.AppSwitchReturnUrlRequired;
+                    AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST, errorMessage);
+                    HandleError(context, errorMessage);
+                    return;
+                }
+                var appSwitchReturnUrl = SAML20FederationConfig.GetConfig().FindAppSwitchReturnUrlForPlatform(queryStringPlatform);
+                if (string.IsNullOrWhiteSpace(appSwitchReturnUrl))
+                {
+                    string errorMessage = Resources.AppSwitchPlatformInvalid;
+                    AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST, errorMessage);
+                    HandleError(context, errorMessage);
+                    return;
+                }
+                
+                var appSwitch = new AppSwitch
+                {
+                    Platform = (AppSwitchPlatform)Enum.Parse(typeof(AppSwitchPlatform), appSwitchPlatform),
+                    ReturnURL = appSwitchReturnUrl
+                };
+                
+                 var appSwitchXml = appSwitch.ToXmlElement(request.GetXml());
+                 request.Request.Extensions = new Extensions {Any = new [] {appSwitchXml }};
+            }
+            
             bool isPassive;
-            string isPassiveAsString = context.Request.Params[IDPIsPassive];
+            string isPassiveAsString = httpRequest.Params[IDPIsPassive];
             if (bool.TryParse(isPassiveAsString, out isPassive))
             {
                 request.IsPassive = isPassive;
@@ -836,7 +865,7 @@ namespace dk.nita.saml20.protocol
                 request.IsPassive = true;
 
             bool forceAuthn;
-            string forceAuthnAsString = context.Request.Params[IDPForceAuthn];
+            string forceAuthnAsString = httpRequest.Params[IDPForceAuthn];
             if (bool.TryParse(forceAuthnAsString, out forceAuthn))
             {
                 request.ForceAuthn = forceAuthn;
@@ -912,4 +941,5 @@ namespace dk.nita.saml20.protocol
         }
 
     }
+        
 }

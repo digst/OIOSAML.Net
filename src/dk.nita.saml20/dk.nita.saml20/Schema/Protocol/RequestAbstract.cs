@@ -72,6 +72,7 @@ namespace dk.nita.saml20.Schema.Protocol
         /// SAML-defined namespace
         /// </summary>
         /// <value>The extensions.</value>
+        [XmlElement]
         public Extensions Extensions
         {
             get { return extensionsField; }

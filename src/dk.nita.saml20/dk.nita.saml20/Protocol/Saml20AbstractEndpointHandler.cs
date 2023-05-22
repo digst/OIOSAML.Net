@@ -39,6 +39,11 @@ namespace dk.nita.saml20.protocol
         /// </summary>
         public const string Profile = "profile";
         /// <summary>
+        /// URL parameter name do define a platform used in AppSwitch
+        /// </summary>
+        public const string AppSwitchPlatform = "appSwitchPlatform";
+        
+        /// <summary>
         /// Determines if configuration has been validated
         /// </summary>
         public static bool validated = false;

@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<schema
+        targetNamespace="https://data.gov.dk/eid/saml/extensions"
+        xmlns:publicExtensions="https://data.gov.dk/eid/saml/extensions"
+        xmlns="http://www.w3.org/2001/XMLSchema"
+        elementFormDefault="qualified"
+        blockDefault="substitution"
+        version="2.0">
+    <element name="Platform" type="publicExtensions:AppSwitchPlatformType" />
+    <simpleType name="AppSwitchPlatformType">
+        <restriction base="string">
+            <enumeration value="Android" />
+            <enumeration value="iOS" />
+        </restriction>
+    </simpleType>
+    <element name="ReturnURL" type="anyURI" />
+    <element name="AppSwitch" type="publicExtensions:AppSwitchType" />
+    <complexType name="AppSwitchType">
+        <sequence>
+            <element ref="publicExtensions:Platform" />
+            <element ref="publicExtensions:ReturnURL" />
+        </sequence>
+    </complexType>
+</schema>
