@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Security.Principal;
+using dk.nita.saml20.Profiles.BasicPrivilegeProfile;
 using dk.nita.saml20.Schema.Core;
 
 namespace dk.nita.saml20.identity
@@ -23,9 +24,8 @@ namespace dk.nita.saml20.identity
         bool HasAttribute(string attributeName);
 
         /// <summary>
-        /// Returns the value of the persistent pseudonym issued by the IdP if the Service Provider connection 
-        /// is set up with persistent pseudonyms. Otherwise, returns null.
+        /// 
         /// </summary>
-        string PersistentPseudonym { get; }
+        IEnumerable<Privilege> BasicPrivilegeProfile { get; }
     }
 }

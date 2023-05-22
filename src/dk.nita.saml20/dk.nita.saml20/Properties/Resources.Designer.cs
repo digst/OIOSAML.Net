@@ -18,7 +18,7 @@ namespace Saml2.Properties {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class Resources {
@@ -161,11 +161,11 @@ namespace Saml2.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Saml assertion does not have the required assurance level. Assurance level was: {0} and configured minimum assurance level was: {1}..
+        ///   Looks up a localized string similar to The SAML token must contain an assurance level..
         /// </summary>
-        internal static string AssuranceLevelTooLow {
+        internal static string AssuranceLevelMissing {
             get {
-                return ResourceManager.GetString("AssuranceLevelTooLow", resourceCulture);
+                return ResourceManager.GetString("AssuranceLevelMissing", resourceCulture);
             }
         }
         
@@ -355,6 +355,24 @@ namespace Saml2.Properties {
         internal static string DefaultStyle {
             get {
                 return ResourceManager.GetString("DefaultStyle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Received bad Level of Assurance value: &quot;{0}&quot;. Valid values are &quot;Low&quot;, &quot;Substantial&quot;, &quot;High&quot;..
+        /// </summary>
+        internal static string DemandingLevelOfAssuranceError {
+            get {
+                return ResourceManager.GetString("DemandingLevelOfAssuranceError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Received bad profile demand value: &quot;{0}&quot;. Valid values are &quot;Professional&quot;, &quot;Person&quot;..
+        /// </summary>
+        internal static string DemandingProfileError {
+            get {
+                return ResourceManager.GetString("DemandingProfileError", resourceCulture);
             }
         }
         
@@ -773,6 +791,33 @@ namespace Saml2.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The SAML token must contain a NSIS Level of Assurance..
+        /// </summary>
+        internal static string NsisLoaMissing {
+            get {
+                return ResourceManager.GetString("NsisLoaMissing", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to SAML assertion does not have the required Level of Assurance. LoA was: {0} and configured minimum required LoA was: {1}..
+        /// </summary>
+        internal static string NsisLoaTooLow {
+            get {
+                return ResourceManager.GetString("NsisLoaTooLow", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Saml assertion does not have the required NSIS Level of Assurance. LoA was: {0} and demanded minimum required LoA was: {1}..
+        /// </summary>
+        internal static string NsisLoaTooLowAccordingToDemand {
+            get {
+                return ResourceManager.GetString("NsisLoaTooLowAccordingToDemand", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Assertion with OneTimeUse condition detected more than once..
         /// </summary>
         internal static string OneTimeUseReplay {
@@ -1003,6 +1048,15 @@ namespace Saml2.Properties {
         internal static string SamlNameIdentifierInvalidValue {
             get {
                 return ResourceManager.GetString("SamlNameIdentifierInvalidValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to IdP responded with status code NoPassive. A user cannot be signed in with the IsPassiveFlag set when the user does not have a session with the IdP..
+        /// </summary>
+        internal static string SamlNoPassiveError {
+            get {
+                return ResourceManager.GetString("SamlNoPassiveError", resourceCulture);
             }
         }
         

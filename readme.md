@@ -1,10 +1,11 @@
 # Nota bene
 
 Please note that the tagged version in Git does not follow the OIO SAML profile version. The correlation is described below
+*    OIO SAML 2.0.9: Newest NuGet release: 2.0.6
+*    OIO SAML 2.1.0: Newest NuGet release: 2.0.6 (only metadata changes required)
+*    OIO SAML 3.0.2: Newest NuGet release: 3.0.1
 
-*	OIO SAML 2.0.9: Newest NuGet release: 2.0.5
-*	OIO SAML 2.1.0: Newest NuGet release: 2.0.5 (only metadata changes required)
-*	OIO SAML 3.0.2: Newest NuGet release: 3.0.0-alpha.1 (pre-release)
+See content and changes of releases in [release notes](RELEASE_NOTES.md).
 
 # Getting started with OIOSAML.Net
 

@@ -252,6 +252,22 @@ namespace dk.nita.saml20
             /// </summary>
             public const string UnsupportedBinding = "urn:oasis:names:tc:SAML:2.0:status:UnsupportedBinding";
         }
+
+        /// <summary>
+        ///     Unique identifiers for cryptographic algorithms
+        /// </summary>
+        public static class CryptographicAlgorithm
+        {
+            /// <summary>
+            ///     The URL for AES256 used in CBC-mode
+            /// </summary>
+            public static readonly string Aes256Cbc = $"{XENC}aes256-cbc";
+
+            /// <summary>
+            ///     The URL for RSA encryption using OAEP and MGF1P
+            /// </summary>
+            public static readonly string RsaOaepMgf1p = $"{XENC}rsa-oaep-mgf1p";
+        }
     }
 
     /// <summary>

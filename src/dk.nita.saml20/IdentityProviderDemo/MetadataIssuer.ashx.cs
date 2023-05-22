@@ -1,4 +1,5 @@
-﻿using System;
+﻿
+using System;
 using System.Collections.Generic;
 using System.Security.Cryptography.X509Certificates;
 using System.Security.Cryptography.Xml;
@@ -38,7 +39,7 @@ namespace IdentityProviderDemo
             metadata.Items = new object[] { descriptor };
             descriptor.protocolSupportEnumeration = new string[] { Saml20Constants.PROTOCOL };
             descriptor.KeyDescriptor = CreateKeyDescriptors();
-            
+
             { // Signon endpoint
                 Endpoint endpoint = new Endpoint();
                 endpoint.Location = IDPConfig.ServerBaseUrl + "Signon.ashx";
@@ -58,7 +59,7 @@ namespace IdentityProviderDemo
             foreach (string name in IDPConfig.attributes)
             {
                 SamlAttribute att = new SamlAttribute();
-                att.NameFormat = SamlAttribute.NAMEFORMAT_BASIC;
+                att.NameFormat = SamlAttribute.NAMEFORMAT_URI;
                 att.Name = name;
                 atts.Add(att);
             }
@@ -75,7 +76,7 @@ namespace IdentityProviderDemo
             var id = doc.DocumentElement.GetAttribute("ID");
             signatureProvider.SignMetaData(doc, id, cert);
 
-            context.Response.Write( doc.OuterXml );
+            context.Response.Write(doc.OuterXml);
         }
 
         /// <summary>
@@ -90,7 +91,12 @@ namespace IdentityProviderDemo
             KeyInfo keyinfo = new KeyInfo();
             KeyInfoX509Data keyClause = new KeyInfoX509Data(IDPConfig.IDPCertificate, X509IncludeOption.EndCertOnly);
             keyinfo.AddClause(keyClause);
-            
+
+            // For example - add the expired certificate
+            KeyInfo expiredKeyInfo = new KeyInfo();
+            KeyInfoX509Data expiredKeyClause = new KeyInfoX509Data(IDPConfig.ExpiredIDPCertificate, X509IncludeOption.EndCertOnly);
+            expiredKeyInfo.AddClause(expiredKeyClause);
+
             { // Create signing key element.
                 KeyDescriptor key = new KeyDescriptor();
                 keys.Add(key);
@@ -99,12 +105,28 @@ namespace IdentityProviderDemo
                 key.KeyInfo = Serialization.DeserializeFromXmlString<dk.nita.saml20.Schema.XmlDSig.KeyInfo>(keyinfo.GetXml().OuterXml);
             }
 
+            { // Create signing key element (for the expired certificate).
+                KeyDescriptor expiredkey = new KeyDescriptor();
+                keys.Add(expiredkey);
+                expiredkey.use = KeyTypes.signing;
+                expiredkey.useSpecified = true;
+                expiredkey.KeyInfo = Serialization.DeserializeFromXmlString<dk.nita.saml20.Schema.XmlDSig.KeyInfo>(expiredKeyInfo.GetXml().OuterXml);
+            }
+
             { // Create encryption key element
                 KeyDescriptor key = new KeyDescriptor();
                 keys.Add(key);
                 key.use = KeyTypes.encryption;
                 key.useSpecified = true;
                 key.KeyInfo = Serialization.DeserializeFromXmlString<dk.nita.saml20.Schema.XmlDSig.KeyInfo>(keyinfo.GetXml().OuterXml);
+            }
+
+            { // Create encryption key element (for the expired certificate).
+                KeyDescriptor expiredkey = new KeyDescriptor();
+                keys.Add(expiredkey);
+                expiredkey.use = KeyTypes.encryption;
+                expiredkey.useSpecified = true;
+                expiredkey.KeyInfo = Serialization.DeserializeFromXmlString<dk.nita.saml20.Schema.XmlDSig.KeyInfo>(expiredKeyInfo.GetXml().OuterXml);
             }
 
             return keys.ToArray();

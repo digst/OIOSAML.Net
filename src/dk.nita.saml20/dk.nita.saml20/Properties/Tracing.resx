@@ -112,10 +112,10 @@
     <value>2.0</value>
   </resheader>
   <resheader name="reader">
-    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <resheader name="writer">
-    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="ArtifactResolveIn" xml:space="preserve">
     <value>Received an artifact resolve</value>
@@ -203,5 +203,11 @@ Message: {2}</value>
     <value>Certificate with DN "{0}" and thumbprint "{1}" is not valid according to RFC3280. 
 
 Exception was: {2}</value>
+  </data>
+  <data name="DemandingLevelOfAssurance" xml:space="preserve">
+    <value>Demanding level of assurance: "{0}"</value>
+  </data>
+  <data name="DemandingProfile" xml:space="preserve">
+    <value>Demanding profile: "{0}"</value>
   </data>
 </root>

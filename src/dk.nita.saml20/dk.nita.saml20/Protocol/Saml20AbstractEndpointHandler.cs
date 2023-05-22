@@ -9,7 +9,7 @@ using dk.nita.saml20.Logging;
 using dk.nita.saml20.Properties;
 using dk.nita.saml20.Schema.Protocol;
 using dk.nita.saml20.Utils;
-using Trace=dk.nita.saml20.Utils.Trace;
+using Trace = dk.nita.saml20.Utils.Trace;
 
 namespace dk.nita.saml20.protocol
 {
@@ -18,7 +18,6 @@ namespace dk.nita.saml20.protocol
     /// </summary>
     public abstract class Saml20AbstractEndpointHandler : AbstractEndpointHandler
     {
-
         /// <summary>
         /// Parameter name for idp choice
         /// </summary>
@@ -31,7 +30,14 @@ namespace dk.nita.saml20.protocol
         /// Parameter name for idp choice
         /// </summary>
         public const string IDPIsPassive = "isPassive";
-        
+        /// <summary>
+        /// Parameter name for NSIS Level of Assurance
+        /// </summary>
+        public const string NsisLoa = "levelOfAssurance";
+        /// <summary>
+        /// Parameter name for profile type (Person/Professional)
+        /// </summary>
+        public const string Profile = "profile";
         /// <summary>
         /// URL parameter name do define a platform used in AppSwitch
         /// </summary>
@@ -55,7 +61,14 @@ namespace dk.nita.saml20.protocol
             }
             catch (Exception ex)
             {
-                HandleError(context, ex);
+                if (ex is Saml20NsisLoaException)
+                {
+                    HandleError(context, ex.ToString(), (m) => new Saml20NsisLoaException(m));
+                }
+                else
+                {
+                    HandleError(context, ex);
+                }
             }
         }
 
@@ -70,8 +83,8 @@ namespace dk.nita.saml20.protocol
 
             string errorMessage;
             validated = BindingUtility.ValidateConfiguration(out errorMessage);
-            if (!validated)            
-                HandleError(ctx, errorMessage);                        
+            if (!validated)
+                HandleError(ctx, errorMessage);
         }
 
         /// <summary>
@@ -87,15 +100,15 @@ namespace dk.nita.saml20.protocol
         public IDPEndPoint RetrieveIDP(HttpContext context)
         {
             SAML20FederationConfig config = SAML20FederationConfig.GetConfig();
-            
+
             //If idpChoice is set, use it value
             if (!string.IsNullOrEmpty(context.Request.Params[IDPChoiceParameterName]))
             {
                 AuditLogging.logEntry(Direction.IN, Operation.DISCOVER,
                                       "Using IDPChoiceParamater: " + context.Request.Params[IDPChoiceParameterName]);
                 IDPEndPoint endPoint = config.FindEndPoint(context.Request.Params[IDPChoiceParameterName]);
-                if (endPoint != null)                
-                    return endPoint;                
+                if (endPoint != null)
+                    return endPoint;
             }
 
             //If we have a common domain cookie, use it's value
@@ -110,7 +123,7 @@ namespace dk.nita.saml20.protocol
                     {
                         if (Trace.ShouldTrace(TraceEventType.Information))
                             Trace.TraceData(TraceEventType.Information, "IDP read from Common Domain Cookie: " + cdc.PreferredIDP);
-                    
+
                         return endPoint;
                     }
 
@@ -127,7 +140,7 @@ namespace dk.nita.saml20.protocol
 
             // If one of the endpoints are marked with default, use that one
             var defaultIdp = config.Endpoints.IDPEndPoints.Find(idp => idp.Default);
-            if(defaultIdp != null)
+            if (defaultIdp != null)
             {
                 if (Trace.ShouldTrace(TraceEventType.Information))
                     Trace.TraceData(TraceEventType.Information, "Using IdP marked as default: " + defaultIdp.Id);
@@ -136,7 +149,7 @@ namespace dk.nita.saml20.protocol
             }
 
             // In case an Idp selection url has been configured, redirect to that one.
-            if(!string.IsNullOrEmpty(config.Endpoints.idpSelectionUrl))
+            if (!string.IsNullOrEmpty(config.Endpoints.idpSelectionUrl))
             {
                 if (Trace.ShouldTrace(TraceEventType.Information))
                     Trace.TraceData(TraceEventType.Information, "Redirecting to idpSelectionUrl for selection of IDP: " + config.Endpoints.idpSelectionUrl);
@@ -146,7 +159,7 @@ namespace dk.nita.saml20.protocol
 
             // If an IDPSelectionEvent handler is present, request the handler for an IDP endpoint to use.
             var idpEndpoint = IDPSelectionUtil.InvokeIDPSelectionEventHandler(config.Endpoints);
-            if(idpEndpoint != null)
+            if (idpEndpoint != null)
             {
                 return idpEndpoint;
             }
@@ -173,7 +186,8 @@ namespace dk.nita.saml20.protocol
         {
             string errorMessage = string.Format("ErrorCode: {0}. Message: {1}.", status.StatusCode.Value, status.StatusMessage);
 
-            if(status.StatusCode.SubStatusCode != null){
+            if (status.StatusCode.SubStatusCode != null)
+            {
                 switch (status.StatusCode.SubStatusCode.Value)
                 {
                     case Saml20Constants.StatusCodes.AuthnFailed:
@@ -183,9 +197,11 @@ namespace dk.nita.saml20.protocol
                         HandleError(context, errorMessage, false);
                         break;
                 }
-            } else {
+            }
+            else
+            {
                 HandleError(context, errorMessage, false);
-            }                
+            }
         }
 
         /// <summary>
@@ -203,25 +219,28 @@ namespace dk.nita.saml20.protocol
             if (config != null)
             {
                 result.Binding = config.Binding;
-            } else {
+            }
+            else
+            {
                 // Verify that the metadata allows the default binding.
-                bool allowed = metadata.Exists(delegate(IDPEndPointElement el) { return el.Binding == defaultBinding; });
+                bool allowed = metadata.Exists(delegate (IDPEndPointElement el) { return el.Binding == defaultBinding; });
                 if (!allowed)
                 {
                     if (result.Binding == SAMLBinding.POST)
                         result.Binding = SAMLBinding.REDIRECT;
                     else
                         result.Binding = SAMLBinding.POST;
-                }                    
+                }
             }
 
             if (config != null && !string.IsNullOrEmpty(config.Url))
             {
                 result.Url = config.Url;
-            } else
+            }
+            else
             {
                 IDPEndPointElement endpoint =
-                    metadata.Find(delegate(IDPEndPointElement el) { return el.Binding == result.Binding; });
+                    metadata.Find(delegate (IDPEndPointElement el) { return el.Binding == result.Binding; });
 
                 if (endpoint == null)
                     throw new ConfigurationErrorsException(

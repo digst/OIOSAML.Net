@@ -41,6 +41,17 @@ namespace IdentityProviderDemo.Logic
         }
 
         /// <summary>
+        /// An example of an expired certificate of the identity provider.
+        /// </summary>
+        public static X509Certificate2 ExpiredIDPCertificate
+        {
+            get
+            {
+                return GetExpiredCertificate();
+            }
+        }
+
+        /// <summary>
         /// The service providers' metadata.
         /// </summary>
         private static Dictionary<string, Saml20MetadataDocument> MetadataDocs
@@ -196,7 +207,6 @@ namespace IdentityProviderDemo.Logic
             {   "urn:oid:2.5.4.3",                                          // (CommonName)
                 "urn:oid:0.9.2342.19200300.100.1.3",                        // (email)
                 "urn:oid:2.5.4.10",                                         // (OrganisationName)
-                "urn:oid:1.3.6.1.4.1.1466.115.121.1.8",                     // (OCES Cert)
                 "dk:gov:saml:attribute:CvrNumberIdentifier",                // (CVR number)
                 "urn:dk:oes:2009-10:Xform:attribute:Role"                   // (Rolle)
             };
@@ -256,6 +266,25 @@ namespace IdentityProviderDemo.Logic
                     _idpCertificate = coll[0];
                 }
             }
+        }
+
+        private static X509Certificate2 GetExpiredCertificate()
+        {
+            _storeLocation = StoreLocation.LocalMachine;
+            _storeName = StoreName.My;
+
+            X509Store store = new X509Store(_storeName, _storeLocation);
+
+            store.Open(OpenFlags.ReadOnly);
+
+            X509Certificate2Collection coll = store.Certificates.Find(X509FindType.FindByThumbprint, "F4FDA1407AC21D9619E2E58B91D8EFE003C35CFD", false);
+            if (coll.Count == 1)
+            {
+                return coll[0];
+            }
+
+            throw new Exception("Demoidp expired signing certificate not found in the certificate store.");
+
         }
 
         private static void SaveConfig()

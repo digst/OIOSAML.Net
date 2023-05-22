@@ -11,16 +11,16 @@ namespace dk.nita.saml20.Validation
             if (subjectConfirmation.Method == SubjectConfirmation.BEARER_METHOD)
             {
                 if (subjectConfirmation.SubjectConfirmationData == null)
-                    throw new DKSaml20FormatException("The DK-SAML 2.0 Profile requires that the bearer \"SubjectConfirmation\" element contains a \"SubjectConfirmationData\" element.");
+                    throw new DKSaml20FormatException("The SAML profile requires that the bearer \"SubjectConfirmation\" element contains a \"SubjectConfirmationData\" element.");
 
                 if (!Saml20Utils.ValidateRequiredString(subjectConfirmation.SubjectConfirmationData.Recipient))
-                    throw new DKSaml20FormatException("The DK-SAML 2.0 Profile requires that the \"SubjectConfirmationData\" element contains the \"Recipient\" attribute.");
+                    throw new DKSaml20FormatException("The SAML profile requires that the \"SubjectConfirmationData\" element contains the \"Recipient\" attribute.");
 
                 if (!subjectConfirmation.SubjectConfirmationData.NotOnOrAfter.HasValue)
-                    throw new DKSaml20FormatException("The DK-SAML 2.0 Profile requires that the \"SubjectConfirmationData\" element contains the \"NotOnOrAfter\" attribute.");
+                    throw new DKSaml20FormatException("The SAML profile requires that the \"SubjectConfirmationData\" element contains the \"NotOnOrAfter\" attribute.");
 
                 if (subjectConfirmation.SubjectConfirmationData.NotBefore.HasValue)
-                    throw new DKSaml20FormatException("The DK-SAML 2.0 Profile disallows the use of the \"NotBefore\" attribute of the \"SubjectConfirmationData\" element.");
+                    throw new DKSaml20FormatException("The SAML profile disallows the use of the \"NotBefore\" attribute of the \"SubjectConfirmationData\" element.");
             }
         }
     }

@@ -3,8 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using dk.nita.saml20.Schema.Core;
 using dk.nita.saml20.Utils;
-using dk.nita.saml20.Validation;
-using Trace=dk.nita.saml20.Utils.Trace;
+using Trace = dk.nita.saml20.Utils.Trace;
 
 namespace dk.nita.saml20.Validation
 {
@@ -116,8 +115,7 @@ namespace dk.nita.saml20.Validation
 
             foreach (AuthnStatement statement in assertion.GetAuthnStatements())
             {                
-                if (statement.SessionNotOnOrAfter != null
-                    && statement.SessionNotOnOrAfter <= currentUtcTime)
+                if (statement.SessionNotOnOrAfter != null && statement.SessionNotOnOrAfter <= currentUtcTime)
                     throw new Saml20FormatException("AuthnStatement attribute SessionNotOnOrAfter MUST be in the future");
 
                 // TODO: Consider validating that authnStatement.AuthnInstant is in the past

@@ -6,11 +6,11 @@
 <head runat="server">
     <title>Demo IdP</title>
     <style type="text/css">
-        div { width: 100%; margin-bottom: 10px; }
+        div { margin-bottom: 10px; }
     </style>
 </head>
-<body style="width:100%">
-    <form id="form1" runat="server">
+<body>
+    <form id="form1" runat="server" style="padding:0">
     <div>
         <asp:Image runat="server" ID="Branding" ImageUrl="~/images/oiosamlnet_roed.gif" AlternateText="OIOSAML.NET" ></asp:Image>
     </div>

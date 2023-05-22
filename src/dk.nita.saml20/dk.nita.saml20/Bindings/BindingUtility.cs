@@ -19,7 +19,7 @@ namespace dk.nita.saml20.Bindings
         public static bool ValidateConfiguration(out string errorMessage)
         {
             SAML20FederationConfig _config;
-            
+
             try
             {
                 _config = SAML20FederationConfig.GetConfig();
@@ -40,20 +40,22 @@ namespace dk.nita.saml20.Bindings
                         HttpUtility.HtmlEncode(Saml20Resources.MissingServiceProviderId);
                     return false;
                 }
-                if (FederationConfig.GetConfig().SigningCertificate == null)
+                if (FederationConfig.GetConfig().SigningCertificates == null || FederationConfig.GetConfig().SigningCertificates.Count == 0)
                 {
                     errorMessage = HttpUtility.HtmlEncode(Saml20Resources.MissingSigningCertificate);
                     return false;
                 }
                 try
                 {
-                    X509Certificate2 signingCert = FederationConfig.GetConfig().SigningCertificate.GetCertificate();
-                    if (!signingCert.HasPrivateKey)
+                    foreach (Certificate certificate in FederationConfig.GetConfig().SigningCertificates)
                     {
-                        errorMessage = Saml20Resources.SigningCertificateMissingPrivateKey;
-                        return false;
+                        X509Certificate2 signingCert = certificate.GetCertificate();
+                        if (!signingCert.HasPrivateKey)
+                        {
+                            errorMessage = Saml20Resources.SigningCertificateMissingPrivateKey;
+                            return false;
+                        }
                     }
-
                 }
                 catch (Exception ex)
                 {

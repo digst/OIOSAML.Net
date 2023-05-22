@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -11,6 +12,7 @@ using System.Web;
 using System.Web.Caching;
 using System.Xml;
 using dk.nita.saml20.Actions;
+using dk.nita.saml20.AuthnRequestAppender;
 using dk.nita.saml20.Bindings;
 using dk.nita.saml20.Bindings.SignatureProviders;
 using dk.nita.saml20.Profiles.DKSaml20.Attributes;
@@ -43,7 +45,7 @@ namespace dk.nita.saml20.protocol
         /// </summary>
         public Saml20SignonHandler()
         {
-            _certificate = FederationConfig.GetConfig().SigningCertificate.GetCertificate();
+            _certificate = FederationConfig.GetConfig().GetFirstValidCertificate();
 
             // Read the proper redirect url from config
             try
@@ -136,7 +138,7 @@ namespace dk.nita.saml20.protocol
                 AuditLogging.AssertionId = parser.ArtifactResolve.ID;
                 if (!parser.CheckSamlMessageSignature(idp.metadata.Keys))
                 {
-                    HandleError(context, "Invalid Saml message signature");
+                    HandleError(context, "Invalid SAML message signature");
                     AuditLogging.logEntry(Direction.IN, Operation.ARTIFACTRESOLVE, "Could not verify signature", parser.SamlMessage);
                 }
                 builder.RespondToArtifactResolve(idp, parser.ArtifactResolve);
@@ -171,9 +173,7 @@ namespace dk.nita.saml20.protocol
                 else
                 {
                     AuditLogging.logEntry(Direction.IN, Operation.ARTIFACTRESOLVE, string.Format("Unsupported payload message in ArtifactResponse: {0}, msg: {1}", parser.ArtifactResponse.Any.LocalName, parser.SamlMessage));
-                    HandleError(context,
-                                string.Format("Unsupported payload message in ArtifactResponse: {0}",
-                                              parser.ArtifactResponse.Any.LocalName));
+                    HandleError(context,"Unsupported payload message in ArtifactResponse: {0}",parser.ArtifactResponse.Any.LocalName);
                 }
             }
             else
@@ -186,7 +186,7 @@ namespace dk.nita.saml20.protocol
                 else
                 {
                     AuditLogging.logEntry(Direction.IN, Operation.ARTIFACTRESOLVE, string.Format("Unsupported SamlMessage element: {0}, msg: {1}", parser.SamlMessageName, parser.SamlMessage));
-                    HandleError(context, string.Format("Unsupported SamlMessage element: {0}", parser.SamlMessageName));
+                    HandleError(context, "Unsupported SamlMessage element: {0}", parser.SamlMessageName);
                 }
             }
         }
@@ -285,8 +285,7 @@ namespace dk.nita.saml20.protocol
             try
             {
 
-                XmlAttribute inResponseToAttribute =
-                    doc.DocumentElement.Attributes["InResponseTo"];
+                var inResponseToAttribute = doc.DocumentElement.Attributes["InResponseTo"];
 
                 if (inResponseToAttribute == null)
                     throw new Saml20Exception("Received a response message that did not contain an InResponseTo attribute");
@@ -300,7 +299,7 @@ namespace dk.nita.saml20.protocol
                 if (status.StatusCode.Value != Saml20Constants.StatusCodes.Success)
                 {
                     if (status.StatusCode.Value == Saml20Constants.StatusCodes.Responder && status.StatusCode.SubStatusCode != null && Saml20Constants.StatusCodes.NoPassive == status.StatusCode.SubStatusCode.Value)
-                        HandleError(context, "IdP responded with statuscode NoPassive. A user cannot be signed in with the IsPassiveFlag set when the user does not have a session with the IdP.");
+                        HandleError(context, Resources.SamlNoPassiveError);
 
                     HandleError(context, status);
                     return;
@@ -341,9 +340,16 @@ namespace dk.nita.saml20.protocol
                 HandleAssertion(context, assertion);
                 return;
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                HandleError(context, e);
+                if (ex is Saml20NsisLoaException)
+                {
+                    HandleError(context, ex.ToString(), (m) => new Saml20NsisLoaException(m));
+                }
+                else
+                {
+                    HandleError(context, ex);
+                }
                 return;
             }
         }
@@ -392,12 +398,65 @@ namespace dk.nita.saml20.protocol
             HandleAssertion(context, decryptedAssertion.Assertion.DocumentElement);
         }
 
+        /// <summary>
+        /// Decrypts an encrypted assertion if any of the configured certificates contains the correct
+        /// private key to use for decrypting. If no configured certificates can be used to decrypt the
+        /// encrypted assertion, the first exception will be rethrown.
+        /// </summary>
+        /// <param name="elem"></param>
+        /// <returns></returns>
         private static Saml20EncryptedAssertion GetDecryptedAssertion(XmlElement elem)
         {
-            Saml20EncryptedAssertion decryptedAssertion = new Saml20EncryptedAssertion((RSA)FederationConfig.GetConfig().SigningCertificate.GetCertificate().PrivateKey);
-            decryptedAssertion.LoadXml(elem);
-            decryptedAssertion.Decrypt();
-            return decryptedAssertion;
+            var tryDecryptAssertion = new Func<X509Certificate2, Saml20EncryptedAssertion>((certificate) =>
+            {
+                Saml20EncryptedAssertion decryptedAssertion = new Saml20EncryptedAssertion((RSA)certificate.PrivateKey);
+                decryptedAssertion.LoadXml(elem);
+                decryptedAssertion.Decrypt();
+                return decryptedAssertion;
+            });
+
+            var allValidX509Certificates = new List<X509Certificate2>();
+            foreach (var certificate in FederationConfig.GetConfig().SigningCertificates)
+            {
+                var x509Certificates = certificate.GetAllValidX509Certificates();
+                if (x509Certificates == null)
+                    continue;
+
+                foreach (var x in x509Certificates)
+                {
+                    allValidX509Certificates.Add(x);
+                }
+            }
+
+            foreach (var certificate in allValidX509Certificates)
+            {
+                try
+                {
+                    return tryDecryptAssertion(certificate);
+                }
+                catch (Exception)
+                {
+                    foreach (var certificate2 in allValidX509Certificates)
+                    {
+                        if (certificate != certificate2)
+                        {
+                            try
+                            {
+                                return tryDecryptAssertion(certificate2);
+                            }
+                            catch (Exception)
+                            {
+                                continue;
+                            }
+                        }
+                    }
+
+                    throw;
+                }
+            }
+
+            var msg = $"Found no valid certificate configured in the certificate configuration. Make sure at least one valid certificate is configured.";
+            throw new ConfigurationErrorsException(msg);
         }
 
         /// <summary>
@@ -503,32 +562,7 @@ namespace dk.nita.saml20.protocol
                 return;
             }
 
-            // Only check if assertion has the required assurancelevel if it is present.
-            string assuranceLevel = GetAssuranceLevel(assertion);
-            string minimumAssuranceLevel = SAML20FederationConfig.GetConfig().MinimumAssuranceLevel;
-            if (assuranceLevel != null)
-            {
-                // Assurance level is ok if the string matches the configured minimum assurance level. This is in order to support the value "Test". However, normally the value will be an integer
-                if (assuranceLevel != minimumAssuranceLevel)
-                {
-                    // If strings are different it is still ok if the assertion has stronger assurance level than the minimum required.
-                    int assuranceLevelAsInt;
-                    int minimumAssuranceLevelAsInt;
-                    if (!int.TryParse(assuranceLevel, out assuranceLevelAsInt) ||
-                        !int.TryParse(minimumAssuranceLevel, out minimumAssuranceLevelAsInt) ||
-                        assuranceLevelAsInt < minimumAssuranceLevelAsInt)
-                    {
-                        string errorMessage = string.Format(Resources.AssuranceLevelTooLow, assuranceLevel,
-                                                            minimumAssuranceLevel);
-                        AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST,
-                                              errorMessage + " Assertion: " + elem.OuterXml);
-
-                        HandleError(context,
-                                    string.Format(Resources.AssuranceLevelTooLow, assuranceLevel, minimumAssuranceLevel));
-                        return;
-                    }
-                }
-            }
+            if (!ValidateLoA(context, assertion, elem)) return;
 
             CheckConditions(context, assertion);
             AuditLogging.AssertionId = assertion.Id;
@@ -536,6 +570,80 @@ namespace dk.nita.saml20.protocol
                       "Assertion validated succesfully");
 
             DoLogin(context, assertion);
+        }
+
+        /// <summary>
+        /// Validates the LoA of the session to determine if it adheres to the configured requirements of the service provider.
+        /// If validation fails, response is modified to display an error page.
+        /// </summary>
+        /// <returns>True if valid, otherwise false.</returns>
+        private bool ValidateLoA(HttpContext context, Saml20Assertion assertion, XmlElement assertionXml)
+        {
+            // If AssuranceLevel is allowed, and it's present in assertion, validate.
+            var allowAL = SAML20FederationConfig.GetConfig().AllowAssuranceLevel;
+            var assertionAL = GetAssuranceLevel(assertion);
+            if(allowAL && assertionAL != null)
+            {
+                return ValidateAssuranceLevel(assertionAL, context, assertionXml);
+            }
+
+            // If NSIS LoA is missing, invalidate.
+            var assertionNsisLoa = GetNsisLoa(assertion);
+            if (assertionNsisLoa == null)
+            {
+                AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST, Resources.NsisLoaMissing + " Assertion: " + assertionXml.OuterXml);
+                HandleError(context, Resources.NsisLoaMissing);
+                return false;
+            }
+
+            return ValidateNsisLoa(assertionNsisLoa, context, assertionXml);
+        }
+
+        /// <summary>
+        /// Validates if a NSIS LoA is equals to or higher than a minimum required LoA.
+        /// If validation fails, response is modified to display an error page.
+        /// </summary>
+        /// <returns>True if valid, otherwise false (and modified response).</returns>
+        private bool ValidateNsisLoa(string loa, HttpContext context, XmlElement assertionXml)
+        {
+            var demandedNsisLoa = SessionStore.CurrentSession[SessionConstants.ExpectedNsisLoa]?.ToString();
+            var minLoa = demandedNsisLoa ?? SAML20FederationConfig.GetConfig().MinimumNsisLoa;
+            
+            if (loa == minLoa) return true;
+            
+            switch (minLoa)
+            {
+                case "High" when loa != "High":
+                case "Substantial" when loa != "High" && loa != "Substantial":
+                    var msgTemplate = demandedNsisLoa != null ?
+                        Resources.NsisLoaTooLowAccordingToDemand :
+                        Resources.NsisLoaTooLow;
+                    HandleLoaValidationError(msgTemplate, loa, demandedNsisLoa, context, assertionXml);
+                    return false;
+                default:
+                    return true;
+            }
+        }
+
+        /// <summary>
+        /// Validates if a AssuranceLevel is equals to or higher than a minimum required AssuranceLevel.
+        /// If validation fails, response is modified to display an error page.
+        /// </summary>
+        /// <returns>True if valid, otherwise false (and modified response).</returns>
+        private bool ValidateAssuranceLevel(string assouranceLevel, HttpContext context, XmlElement assertionXml)
+        {
+            var minAL = SAML20FederationConfig.GetConfig().MinimumAssuranceLevel;
+            
+            if (assouranceLevel != null &&
+                int.TryParse(assouranceLevel, out var sourceLoaInt) &&
+                int.TryParse(minAL, out var minLoaInt) &&
+                sourceLoaInt >= minLoaInt)
+            {
+                return true;
+            }
+
+            HandleLoaValidationError(Resources.NsisLoaTooLow, assouranceLevel, minAL, context, assertionXml);
+            return false;
         }
 
         internal static IEnumerable<AsymmetricAlgorithm> GetTrustedSigners(ICollection<KeyDescriptor> keys, IDPEndPoint ep, out IEnumerable<string> validationFailureReasons)
@@ -617,10 +725,9 @@ namespace dk.nita.saml20.protocol
                 Trace.TraceData(TraceEventType.Information, string.Format(Tracing.Login, assertion.Subject.Value, assertion.SessionIndex, assertion.Subject.Format));
             }
 
-            string assuranceLevel = GetAssuranceLevel(assertion) ?? "(Unknown)";
+            string assuranceLevel = GetNsisLoa(assertion) ?? GetAssuranceLevel(assertion) ?? "(Unknown)";
 
-            AuditLogging.logEntry(Direction.IN, Operation.LOGIN, string.Format("Subject: {0} NameIDFormat: {1}  Level of authentication: {2}  Session timeout in minutes: {3}", assertion.Subject.Value, assertion.Subject.Format, assuranceLevel, FederationConfig.GetConfig().SessionTimeout));
-
+            AuditLogging.logEntry(Direction.IN, Operation.LOGIN, string.Format("Subject: {0} NameIDFormat: {1}  Level of assurance: {2}  Session timeout in minutes: {3}", assertion.Subject.Value, assertion.Subject.Format, assuranceLevel, FederationConfig.GetConfig().SessionTimeout));
 
             foreach (IAction action in Actions.Actions.GetActions())
             {
@@ -633,7 +740,7 @@ namespace dk.nita.saml20.protocol
         }
 
         /// <summary>
-        /// Retrieves the assurance level from the assertion.
+        /// Retrieves the assurance level (OIOSAML 2) from the assertion.
         /// </summary>
         /// <returns>Returns the assurance level or null if it has not been defined.</returns>
         private string GetAssuranceLevel(Saml20Assertion assertion)
@@ -641,6 +748,23 @@ namespace dk.nita.saml20.protocol
             foreach (var attribute in assertion.Attributes)
             {
                 if (attribute.Name == DKSaml20AssuranceLevelAttribute.NAME
+                    && attribute.AttributeValue != null
+                    && attribute.AttributeValue.Length > 0)
+                    return attribute.AttributeValue[0];
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Retrieves the NSIS level of assurance from the assertion.
+        /// </summary>
+        /// <returns>Returns the NSIS LoA or null if it has not been defined.</returns>
+        private string GetNsisLoa(Saml20Assertion assertion)
+        {
+            foreach (var attribute in assertion.Attributes)
+            {
+                if (attribute.Name == DKSaml20NsisLoaAttribute.NAME
                     && attribute.AttributeValue != null
                     && attribute.AttributeValue.Length > 0)
                     return attribute.AttributeValue[0];
@@ -697,6 +821,46 @@ namespace dk.nita.saml20.protocol
                 request.IsPassive = isPassive;
             }
 
+            var requestContextItems = new List<(string value, ItemsChoiceType7 type)>();
+            if (!string.IsNullOrEmpty(context.Request.Params[NsisLoa]))
+            {
+                var demandedLevelOfAssurance = context.Request.Params[NsisLoa];
+                if (!new[] { "Low", "Substantial", "High" }.Contains(demandedLevelOfAssurance))
+                {
+                    HandleError(context, Resources.DemandingLevelOfAssuranceError, demandedLevelOfAssurance);
+                    return;
+                }
+
+                requestContextItems.Add((DKSaml20NsisLoaAttribute.NAME + "/" + demandedLevelOfAssurance, ItemsChoiceType7.AuthnContextClassRef));
+
+                // Persist demanded LoA in session to be able to verify assertion
+                SessionStore.CurrentSession[SessionConstants.ExpectedNsisLoa] = demandedLevelOfAssurance;
+
+                Trace.TraceData(TraceEventType.Information, string.Format(Tracing.DemandingLevelOfAssurance, demandedLevelOfAssurance));
+            }
+
+            if (!string.IsNullOrEmpty(context.Request.Params[Profile]))
+            {
+                var demandedProfile = context.Request.Params[Profile];
+
+                if (!new[] { "Professional", "Person" }.Contains(demandedProfile))
+                {
+                    HandleError(context, Resources.DemandingProfileError, demandedProfile);
+                    return;
+                }
+                requestContextItems.Add(("https://data.gov.dk/eid/" + demandedProfile, ItemsChoiceType7.AuthnContextClassRef));
+
+                Trace.TraceData(TraceEventType.Information, string.Format(Tracing.DemandingProfile, demandedProfile));
+            }
+            if (requestContextItems.Count > 0)
+            {
+                request.Request.RequestedAuthnContext = new RequestedAuthnContext();
+                request.Request.RequestedAuthnContext.Comparison = AuthnContextComparisonType.minimum;
+                request.Request.RequestedAuthnContext.ComparisonSpecified = true;
+                request.Request.RequestedAuthnContext.ItemsElementName = requestContextItems.Select(x => x.type).ToArray();
+                request.Request.RequestedAuthnContext.Items = requestContextItems.Select(x => x.value).ToArray();
+            }
+
             if (idpEndpoint.IsPassive)
                 request.IsPassive = true;
 
@@ -717,6 +881,8 @@ namespace dk.nita.saml20.protocol
                     request.ProtocolBinding = idpEndpoint.SSOEndpoint.ForceProtocolBinding;
                 }
             }
+
+            AuthnRequestAppenderFactory.GetAppender()?.AppendAction(request, context.Request);
 
             //Save request message id to session
             SessionStore.CurrentSession[SessionConstants.ExpectedInResponseTo] = request.ID;
@@ -747,7 +913,7 @@ namespace dk.nita.saml20.protocol
                 if (string.IsNullOrEmpty(request.ProtocolBinding))
                     request.ProtocolBinding = Saml20Constants.ProtocolBindings.HTTP_Post;
                 XmlDocument req = request.GetXml();
-                var signingCertificate = FederationConfig.GetConfig().SigningCertificate.GetCertificate();
+                var signingCertificate = FederationConfig.GetConfig().GetFirstValidCertificate();
                 var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(shaHashingAlgorithm);
                 signatureProvider.SignAssertion(req, request.ID, signingCertificate);
                 builder.Request = req.OuterXml;

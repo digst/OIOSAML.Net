@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
 using System.Security.Cryptography.Xml;
 using System.Xml;
 using dk.nita.saml20.config;
@@ -127,10 +125,12 @@ namespace dk.nita.saml20
         {
             get
             {
-                foreach (object o in Assertion.Subject.Items)
+                foreach (var o in Assertion.Subject.Items)
                 {
-                    if (o is NameID)
-                        return (NameID)o;
+                    if (o is NameID id)
+                    {
+                        return id;
+                    }
                 }
                 return null;
             }
@@ -334,6 +334,7 @@ namespace dk.nita.saml20
             _quirksMode = quirksMode;
             LoadXml(assertion, trustedSigners);
         }
+
         #endregion
 
         /// <summary>
@@ -388,7 +389,7 @@ namespace dk.nita.saml20
         /// </summary>        
         public bool IsExpired()
         {
-            return DateTime.UtcNow > NotOnOrAfter.AddMinutes(_allowedClockSkewMinutes);
+            return DateTime.UtcNow >= NotOnOrAfter.AddMinutes(_allowedClockSkewMinutes);
         }
 
         /// <summary>

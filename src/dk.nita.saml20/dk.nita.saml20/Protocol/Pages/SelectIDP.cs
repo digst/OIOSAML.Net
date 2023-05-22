@@ -43,7 +43,10 @@ namespace dk.nita.saml20.protocol.pages
                     bool isPassive;
                     bool.TryParse(isPassiveAsString, out isPassive);
 
-                    link.NavigateUrl = endPoint.GetIDPLoginUrl(forceAuthn, isPassive);
+                    string desiredNsisLoa = HttpContext.Current.Request.Params[Saml20SignonHandler.NsisLoa];
+                    string desiredProfile = HttpContext.Current.Request[Saml20SignonHandler.Profile];
+
+                    link.NavigateUrl = endPoint.GetIDPLoginUrl(forceAuthn, isPassive, desiredNsisLoa, desiredProfile);
                     BodyPanel.Controls.Add(link);
                     var androidLink = new HyperLink() { Text = $"({Resources.PlatformAndroid})", NavigateUrl = endPoint.GetIDPLoginUrl(forceAuthn, isPassive, "Android")};
                     androidLink.Attributes.CssStyle.Add("margin-left", "10px;");

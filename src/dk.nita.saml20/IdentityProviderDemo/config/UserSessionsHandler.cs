@@ -40,7 +40,8 @@ namespace IdentityProviderDemo.config
                 HttpContext.Current.Session[LOGGEDINSESSIONSKEY] = serviceproviders;
             }
 
-            serviceproviders.Add(id);
+            if(!serviceproviders.Contains(id))
+                serviceproviders.Add(id);
         }
 
         /// <summary>

@@ -35,6 +35,7 @@
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
     <TargetFrameworkProfile />
+    <LangVersion>8</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -144,6 +145,8 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AuthnRequestAppender\AuthnRequestAppenderFactory.cs" />
+    <Compile Include="AuthnRequestAppender\IAuthnRequestAppender.cs" />
     <Compile Include="CommonAssemblyInfo.cs" />
     <Compile Include="Actions\Actions.cs" />
     <Compile Include="Actions\CDCRedirectAction.cs" />
@@ -159,6 +162,7 @@
     <Compile Include="Config\AppSwitchReturnURL.cs" />
     <Compile Include="Config\Platform.cs" />
     <Compile Include="Config\ShaHashingAlgorithm.cs" />
+    <Compile Include="Exceptions\Saml20NsisLoaException.cs" />
     <Compile Include="Identity\Saml20PrincipalCache.cs" />
     <Compile Include="ISaml20IdpTokenAccessor.cs" />
     <Compile Include="Config\ConfigurationConstants.cs" />
@@ -172,6 +176,11 @@
     <Compile Include="Logging\AuditLogging.cs" />
     <Compile Include="Logging\IAuditLogger.cs" />
     <Compile Include="Logging\TraceAuditLogger.cs" />
+    <Compile Include="Profiles\BasicPrivilegeProfile\Constraint.cs" />
+    <Compile Include="Profiles\BasicPrivilegeProfile\Privilege.cs" />
+    <Compile Include="Profiles\DKSaml20\Attributes\DKSaml20BasicPrivilegeProfileSimpleAttribute.cs" />
+    <Compile Include="Profiles\DKSaml20\Attributes\DKSaml20BasicPrivilegeProfileIntermediateAttribute.cs" />
+    <Compile Include="Profiles\DKSaml20\Attributes\DKSaml20NsisLoaAttribute.cs" />
     <Compile Include="Protocol\Saml20CDCIdPReturnPoint.cs" />
     <Compile Include="Protocol\Saml20CDCReader.cs" />
     <Compile Include="Saml20ArtifactResolve.cs" />
@@ -180,7 +189,6 @@
     <Compile Include="Config\AudienceUris.cs" />
     <Compile Include="Config\Certificate.cs" />
     <Compile Include="Config\FederationConfig.cs" />
-    <Compile Include="Identity\IPersistentPseudonymMapper.cs" />
     <Compile Include="Identity\ISaml20Identity.cs" />
     <Compile Include="Identity\Saml20Identity.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -194,6 +202,10 @@
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
     </Compile>
+    <Compile Include="Schema\BasicPrivilegeProfile\Constants.cs" />
+    <Compile Include="Schema\BasicPrivilegeProfile\Constraint.cs" />
+    <Compile Include="Schema\BasicPrivilegeProfile\PrivilegeGroupType.cs" />
+    <Compile Include="Schema\BasicPrivilegeProfile\PrivilegeListType.cs" />
     <Compile Include="Schema\Core\Enums.cs" />
     <Compile Include="Schema\Core\Action.cs" />
     <Compile Include="Schema\Core\Advice.cs" />
@@ -223,19 +235,16 @@
     <Compile Include="Profiles\DKSaml20\Attributes\DKSaml20CprNumberAttribute.cs" />
     <Compile Include="Profiles\DKSaml20\Attributes\DKSaml20CvrNumberAttribute.cs" />
     <Compile Include="Profiles\DKSaml20\Attributes\DKSaml20EmailAttribute.cs" />
-    <Compile Include="Profiles\DKSaml20\Attributes\DKSaml20OCESPseudonymAttribute.cs" />
     <Compile Include="Profiles\DKSaml20\Attributes\DKSaml20OrganizationNameAttribute.cs" />
     <Compile Include="Profiles\DKSaml20\Attributes\DKSaml20OrganizationUnitAttribute.cs" />
     <Compile Include="Profiles\DKSaml20\Attributes\DKSaml20PidNumberAttribute.cs" />
     <Compile Include="Profiles\DKSaml20\Attributes\DKSaml20PostalAddressAttribute.cs" />
     <Compile Include="Profiles\DKSaml20\Attributes\DKSaml20RidNumberAttribute.cs" />
-    <Compile Include="Profiles\DKSaml20\Attributes\DKSaml20SerialNumberCertificateAttribute.cs" />
     <Compile Include="Profiles\DKSaml20\Attributes\DKSaml20SpecVerAttribute.cs" />
     <Compile Include="Profiles\DKSaml20\Attributes\DKSaml20SurnameAttribute.cs" />
     <Compile Include="Profiles\DKSaml20\Attributes\DKSaml20TitleAttribute.cs" />
     <Compile Include="Profiles\DKSaml20\Attributes\DKSaml20UidAttribute.cs" />
     <Compile Include="Profiles\DKSaml20\Attributes\DKSaml20UniqueAccountKeyAttribute.cs" />
-    <Compile Include="Profiles\DKSaml20\Attributes\DKSaml20UserCertificateAttribute.cs" />
     <Compile Include="Profiles\DKSaml20\DKSaml20FormatException.cs" />
     <Compile Include="Saml20Assertion.cs" />
     <Compile Include="Schema\Metadata\AdditionalMetadataLocation.cs" />
@@ -451,6 +460,9 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Schema\public-extensions-schema.xsd" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="oiosaml_logo.png" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Import Project="..\..\..\build\PreBuild.targets.xml" />

@@ -68,12 +68,12 @@ namespace dk.nita.saml20.Validation
                     AudienceRestriction audienceRestriction = (AudienceRestriction)condition;
                     if (audienceRestriction.Audience == null || audienceRestriction.Audience.Count == 0)
                         throw new DKSaml20FormatException(
-                            "The DK-SAML 2.0 profile requires that an \"AudienceRestriction\" element contains the service provider's unique identifier in an \"Audience\" element.");
+                            "The SAML profile requires that an \"AudienceRestriction\" element contains the service provider's unique identifier in an \"Audience\" element.");
                 }
             }
 
             if (!audienceRestrictionPresent)
-                throw new DKSaml20FormatException("The DK-SAML 2.0 profile requires that an \"AudienceRestriction\" element is present on the saml20Assertion.");
+                throw new DKSaml20FormatException("The SAML profile requires that an \"AudienceRestriction\" element is present on the saml20Assertion.");
         }
 
         /// <summary>
@@ -82,7 +82,7 @@ namespace dk.nita.saml20.Validation
         private void ValidateSubject(Assertion assertion)
         {
             if (assertion.Subject == null)
-                throw new DKSaml20FormatException("The DK-SAML 2.0 profile requires that a \"Subject\" element is present in the saml20Assertion.");
+                throw new DKSaml20FormatException("The SAML profile requires that a \"Subject\" element is present in the saml20Assertion.");
 
             SubjectValidator.ValidateSubject(assertion.Subject);
         }
@@ -96,7 +96,7 @@ namespace dk.nita.saml20.Validation
 
             // Check that the number of statements is correct.
             if (assertion.Items.Length != 2)
-                throw new DKSaml20FormatException("The DK-SAML 2.0 profile requires exactly one \"AuthnStatement\" element and one \"AttributeStatement\" element.");
+                throw new DKSaml20FormatException("The SAML profile requires exactly one \"AuthnStatement\" element and one \"AttributeStatement\" element.");
 
             // Check if it is the correct statements.            
             bool authnStatementPresent = false;
@@ -113,7 +113,7 @@ namespace dk.nita.saml20.Validation
             }
 
             if (!(authnStatementPresent && attributeStatementPresent))
-                throw new DKSaml20FormatException("The DK-SAML 2.0 profile requires exactly one \"AuthnStatement\" element and one \"AttributeStatement\" element.");            
+                throw new DKSaml20FormatException("The SAML profile requires exactly one \"AuthnStatement\" element and one \"AttributeStatement\" element.");            
         }
 
         /// <summary>
@@ -134,7 +134,7 @@ namespace dk.nita.saml20.Validation
         private static void ThrowIssuerNotEntity()
         {
             throw new DKSaml20FormatException(
-                "The DK-SAML 2.0 Profile does not allow the \"Issuer\" element to have any attributes."); 
+                "The SAML profile does not allow the \"Issuer\" element to have any attributes."); 
         }
 
     }

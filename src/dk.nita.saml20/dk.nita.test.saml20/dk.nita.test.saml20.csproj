@@ -132,6 +132,8 @@
   <ItemGroup>
     <Compile Include="Saml20\ArtifactTest.cs" />
     <Compile Include="Saml20\AssertionUtil.cs" />
+    <Compile Include="Saml20\AuthnRequestAppender\AuthnRequestAppenderFactoryTest.cs" />
+    <Compile Include="Saml20\AuthnRequestAppender\AuthnRequestAppenderSample.cs" />
     <Compile Include="Saml20\DKSAML20ProfileValidationTest.cs" />
     <Compile Include="Saml20\EncryptedAssertionTest.cs" />
     <Compile Include="Saml20\PingCompatibilityTest.cs" />
@@ -143,9 +145,11 @@
     <Compile Include="Saml20\Saml20CoreValidationTest.cs" />
     <Compile Include="Saml20\SamlAssertionAttributesTest.cs" />
     <Compile Include="Saml20\SamlAuthnRequestTest.cs" />
+    <Compile Include="Saml20\Schema\BasicPrivilegeProfile\PrivilegeListTypeTest.cs" />
     <Compile Include="Saml20\SignatureTest.cs" />
     <Compile Include="Saml20\TempTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Saml20\Utils\BrowserSupportUtilTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\dk.nita.saml20\dk.nita.saml20.csproj">

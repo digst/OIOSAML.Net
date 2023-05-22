@@ -3,14 +3,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Security.Cryptography;
-using System.Text;
 using System.Web;
 using System.Xml;
-using dk.nita.saml20;
 using dk.nita.saml20.Bindings;
 using dk.nita.saml20.Bindings.SignatureProviders;
 using dk.nita.saml20.Identity;
-using dk.nita.saml20.session;
 using dk.nita.saml20.config;
 using dk.nita.saml20.identity;
 using dk.nita.saml20.Properties;
@@ -180,7 +177,7 @@ namespace dk.nita.saml20
             query.XmlResolver = null;
             query.LoadXml(Serialization.SerializeToXmlString(_attrQuery));
 
-            var signingCertificate = FederationConfig.GetConfig().SigningCertificate.GetCertificate();
+            var signingCertificate = FederationConfig.GetConfig().GetFirstValidCertificate();
             var shaHashingAlgorithm = SignatureProviderFactory.ValidateShaHashingAlgorithm(endPoint.ShaHashingAlgorithm);
             var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(shaHashingAlgorithm);
             signatureProvider.SignAssertion(query, ID, signingCertificate);
@@ -223,7 +220,7 @@ namespace dk.nita.saml20
             {
                 Saml20EncryptedAssertion ass =
                     new Saml20EncryptedAssertion(
-                        (RSA)FederationConfig.GetConfig().SigningCertificate.GetCertificate().PrivateKey);
+                        (RSA)FederationConfig.GetConfig().GetFirstValidCertificate().PrivateKey);
                 ass.LoadXml(xmlAssertion);
                 ass.Decrypt();
                 xmlAssertion = ass.Assertion.DocumentElement;

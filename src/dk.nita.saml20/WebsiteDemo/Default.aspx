@@ -1,26 +1,42 @@
 <%@ Page Language="C#" AutoEventWireup="true" CodeBehind="Default.aspx.cs" MasterPageFile="~/sp.Master" Inherits="WebsiteDemo._Default" Title="Demo Service Provider" %>
-<%@ Import namespace="dk.nita.saml20.config"%>
+
+<%@ Import Namespace="dk.nita.saml20.config" %>
 <asp:Content ID="Content2" ContentPlaceHolderID="ContentPlaceHolder1" runat="server">
     <div>
-        <a href="MyPage.aspx">Go to My Page.</a>
+        <ul>
+            <li>
+                <a href="MyPage.aspx">Go to My Page.</a>
+            </li>
+            <li>
+                <a href="/login.ashx?levelOfAssurance=High&returnUrl=MyPage.aspx">Go to My Page (require high assurance level)</a>
+            </li>
+              <li>
+                <a href="/login.ashx?profile=Professional&returnUrl=MyPage.aspx">Go to My Page (request a Professional attribute profile)</a>
+            </li>
+        </ul>
     </div>
-    <div style="margin-top: 1em; ">
+    <div style="margin-top: 1em;">
         <h3>Metadata</h3>
         <p style="width: 50em;">
-        The identity provider and the service provider must exchange metadata in order to establish SAML connections. 
-        <% if (string.IsNullOrEmpty(SAML20FederationConfig.GetConfig().Endpoints.MetadataLocation)) { %>
+            The identity provider and the service provider must exchange metadata in order to establish SAML connections. 
+        <% if (string.IsNullOrEmpty(SAML20FederationConfig.GetConfig().Endpoints.MetadataLocation))
+            { %>
             You must add the <b>&lt;IDPEndPoints&gt;</b> tag to the <b>"<%= ConfigurationConstants.SectionNames.SAML20Federation %>"</b> section of the
             application's configuration file in order to continue.
-        <% } else if (certificateMissing) { %>
+        <% }
+            else if (certificateMissing)
+            { %>
             <div style="color: Red;">
-            The specified certificate could not be found. Please correct 
+                The specified certificate could not be found. Please correct 
             the certificate information in the "<%= ConfigurationConstants.SectionNames.Federation %>" section of the configuration file.
             </div>
-        <% } else { %>
-            The Identity provider's metadata should be put in the directory <b>"<%= SAML20FederationConfig.GetConfig().Endpoints.MetadataLocation %>"</b>.<br/><br/>
+            <% }
+                else
+                { %>
+            The Identity provider's metadata should be put in the directory <b>"<%= SAML20FederationConfig.GetConfig().Endpoints.MetadataLocation %>"</b>.<br />
+            <br />
             The metadata of the service provider can be downloaded <a href="metadata.ashx">here</a>.            
         <% } %>
-                
-        </p>           
+        </p>
     </div>
 </asp:Content>

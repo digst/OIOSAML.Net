@@ -133,6 +133,7 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AssertionEncryptionUtility\AssertionEncryptionUtility.cs" />
     <Compile Include="config\BaseURL.aspx.cs">
       <DependentUpon>BaseURL.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>

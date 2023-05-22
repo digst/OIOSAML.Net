@@ -10,6 +10,7 @@ using dk.nita.saml20.Schema.Metadata;
 using dk.nita.saml20.Utils;
 using System.Configuration;
 using dk.nita.saml20.Bindings.SignatureProviders;
+using System.Linq;
 
 namespace dk.nita.saml20
 {
@@ -25,16 +26,16 @@ namespace dk.nita.saml20
         /// Initializes a new instance of the <see cref="Saml20MetadataDocument"/> class.
         /// </summary>
         public Saml20MetadataDocument()
-        {}
+        { }
 
         /// <summary>
         /// Initialize the instance with an already existing metadata document.
         /// </summary>        
-        public Saml20MetadataDocument(XmlDocument entityDescriptor) 
+        public Saml20MetadataDocument(XmlDocument entityDescriptor)
             : this()
         {
             if (XmlSignatureUtils.IsSigned(entityDescriptor))
-                if (!XmlSignatureUtils.CheckSignature(entityDescriptor)) 
+                if (!XmlSignatureUtils.CheckSignature(entityDescriptor))
                     throw new Saml20Exception("Metadata signature could not be verified.");
 
             ExtractKeyDescriptors(entityDescriptor);
@@ -55,19 +56,19 @@ namespace dk.nita.saml20
         /// Initializes a new instance of the <see cref="Saml20MetadataDocument"/> class.
         /// </summary>
         /// <param name="config">The config.</param>
-        /// <param name="keyinfo">key information for the service provider certificate.</param>
+        /// <param name="keyinfos">key information for the service provider certificates.</param>
         /// <param name="sign">if set to <c>true</c> the metadata document will be signed.</param>
-        public Saml20MetadataDocument(SAML20FederationConfig config, KeyInfo keyinfo, bool sign)
+        public Saml20MetadataDocument(SAML20FederationConfig config, IEnumerable<KeyInfo> keyinfos, bool sign)
             : this(sign)
         {
-            ConvertToMetadata(config, keyinfo);
+            ConvertToMetadata(config, keyinfos);
         }
         #endregion
 
         /// <summary>
         /// Takes the Safewhere configuration class and converts it to a SAML2.0 metadata document.
         /// </summary>        
-        private void ConvertToMetadata(SAML20FederationConfig config, KeyInfo keyinfo)
+        private void ConvertToMetadata(SAML20FederationConfig config, IEnumerable<KeyInfo> keyinfos)
         {
             EntityDescriptor entity = CreateDefaultEntity();
             entity.entityID = config.ServiceProvider.ID;
@@ -77,27 +78,7 @@ namespace dk.nita.saml20
             spDescriptor.protocolSupportEnumeration = new string[] { Saml20Constants.PROTOCOL };
             spDescriptor.AuthnRequestsSigned = XmlConvert.ToString(true);
             spDescriptor.WantAssertionsSigned = XmlConvert.ToString(true);
-            if(config.ServiceProvider.NameIdFormats.All)
-            {
-                spDescriptor.NameIDFormat = new string[] {Saml20Constants.NameIdentifierFormats.Email,
-                                                          Saml20Constants.NameIdentifierFormats.Entity,
-                                                          Saml20Constants.NameIdentifierFormats.Kerberos,
-                                                          Saml20Constants.NameIdentifierFormats.Persistent,
-                                                          Saml20Constants.NameIdentifierFormats.Transient,
-                                                          Saml20Constants.NameIdentifierFormats.Unspecified,
-                                                          Saml20Constants.NameIdentifierFormats.Windows,
-                                                          Saml20Constants.NameIdentifierFormats.X509SubjectName};
-            }else
-            {
-                spDescriptor.NameIDFormat = new string[config.ServiceProvider.NameIdFormats.NameIdFormats.Count];
-                int count = 0;
-                foreach(NameIdFormatElement elem in config.ServiceProvider.NameIdFormats.NameIdFormats)
-                {
-                    spDescriptor.NameIDFormat[count++] = elem.NameIdFormat;
-                }
-            }
-            
-            
+
             Uri baseURL = new Uri(config.ServiceProvider.Server);
             List<Endpoint> logoutServiceEndpoints = new List<Endpoint>();
             List<IndexedEndpoint> signonServiceEndpoints = new List<IndexedEndpoint>();
@@ -108,7 +89,7 @@ namespace dk.nita.saml20
             foreach (Saml20ServiceEndpoint endpoint in config.ServiceProvider.serviceEndpoints)
             {
                 if (endpoint.endpointType == EndpointType.SIGNON)
-                {                    
+                {
                     IndexedEndpoint loginEndpoint = new IndexedEndpoint();
                     loginEndpoint.index = endpoint.endPointIndex;
                     loginEndpoint.isDefault = true;
@@ -144,7 +125,7 @@ namespace dk.nita.saml20
                     artifactLogoutEndpoint.index = endpoint.endPointIndex;
                     artifactLogoutEndpoint.Location = logoutEndpoint.Location;
                     artifactResolutionEndpoints.Add(artifactLogoutEndpoint);
-                    
+
                     continue;
                 }
 
@@ -158,7 +139,7 @@ namespace dk.nita.saml20
 
                     continue;
                 }
-            }           
+            }
 
             spDescriptor.SingleLogoutService = logoutServiceEndpoints.ToArray();
             spDescriptor.AssertionConsumerService = signonServiceEndpoints.ToArray();
@@ -187,7 +168,7 @@ namespace dk.nita.saml20
                     attConsumingService.RequestedAttribute[i].Name = config.RequestedAttributes.Attributes[i].name;
                     if (config.RequestedAttributes.Attributes[i].IsRequired)
                         attConsumingService.RequestedAttribute[i].isRequired = true;
-                    attConsumingService.RequestedAttribute[i].NameFormat = SamlAttribute.NAMEFORMAT_BASIC;
+                    attConsumingService.RequestedAttribute[i].NameFormat = SamlAttribute.NAMEFORMAT_URI;
                 }
             }
             else
@@ -195,25 +176,36 @@ namespace dk.nita.saml20
                 spDescriptor.AttributeConsumingService = new AttributeConsumingService[0];
             }
 
-            if(config.Metadata != null && config.Metadata.IncludeArtifactEndpoints)
+            if (config.Metadata != null && config.Metadata.IncludeArtifactEndpoints)
                 spDescriptor.ArtifactResolutionService = artifactResolutionEndpoints.ToArray();
 
             entity.Items = new object[] { spDescriptor };
 
-            // Keyinfo
-            KeyDescriptor keySigning = new KeyDescriptor();
-            KeyDescriptor keyEncryption = new KeyDescriptor();
-            spDescriptor.KeyDescriptor = new KeyDescriptor[] { keySigning, keyEncryption };
-            
-            keySigning.use = KeyTypes.signing;
-            keySigning.useSpecified = true;
+            // Keyinfos
+            var KeyDescriptors = new List<KeyDescriptor>();
+            foreach (var keyinfo in keyinfos)
+            {
+                KeyDescriptor keySigning = new KeyDescriptor();
+                KeyDescriptor keyEncryption = new KeyDescriptor();
+                KeyDescriptors.Add(keySigning);
+                KeyDescriptors.Add(keyEncryption);
 
-            keyEncryption.use = KeyTypes.encryption;
-            keyEncryption.useSpecified = true;
-                       
-            // Ugly conversion between the .Net framework classes and our classes ... avert your eyes!!
-            keySigning.KeyInfo = Serialization.DeserializeFromXmlString<Schema.XmlDSig.KeyInfo>(keyinfo.GetXml().OuterXml);            
-            keyEncryption.KeyInfo = keySigning.KeyInfo;
+                keySigning.use = KeyTypes.signing;
+                keySigning.useSpecified = true;
+
+                keyEncryption.use = KeyTypes.encryption;
+                keyEncryption.useSpecified = true;
+                keyEncryption.EncryptionMethod = new []
+                {
+                    new Schema.XEnc.EncryptionMethod{Algorithm = Saml20Constants.CryptographicAlgorithm.Aes256Cbc},
+                    new Schema.XEnc.EncryptionMethod{Algorithm = Saml20Constants.CryptographicAlgorithm.RsaOaepMgf1p}
+                };
+
+                // Ugly conversion between the .Net framework classes and our classes ... avert your eyes!!
+                keySigning.KeyInfo = Serialization.DeserializeFromXmlString<Schema.XmlDSig.KeyInfo>(keyinfo.GetXml().OuterXml);
+                keyEncryption.KeyInfo = keySigning.KeyInfo;
+            }
+            spDescriptor.KeyDescriptor = KeyDescriptors.ToArray();
 
             // apply the <Organization> element
             if (config.ServiceProvider.Organization != null)
@@ -233,25 +225,25 @@ namespace dk.nita.saml20
                     return Saml20Constants.ProtocolBindings.HTTP_Post;
                 case SAMLBinding.REDIRECT:
                     return Saml20Constants.ProtocolBindings.HTTP_Redirect;
-                case SAMLBinding.SOAP :
+                case SAMLBinding.SOAP:
                     return Saml20Constants.ProtocolBindings.HTTP_SOAP;
                 case SAMLBinding.NOT_SET:
-                    return defaultValue;                    
+                    return defaultValue;
                 default:
                     throw new ConfigurationErrorsException(String.Format("Unsupported SAML binding {0}", Enum.GetName(typeof(SAMLBinding), samlBinding)));
-                    
-            } 
-            
+
+            }
+
         }
 
         /// <summary>
         /// Extract KeyDescriptors from the metadata document represented by this instance.
         /// </summary>
         private void ExtractKeyDescriptors()
-        {            
+        {
             if (_keys != null)
                 return;
-            
+
             if (_entity != null)
             {
                 _keys = new List<KeyDescriptor>();
@@ -259,7 +251,7 @@ namespace dk.nita.saml20
                 {
                     if (item is RoleDescriptor)
                     {
-                        RoleDescriptor rd = (RoleDescriptor) item;
+                        RoleDescriptor rd = (RoleDescriptor)item;
                         foreach (KeyDescriptor keyDescriptor in rd.KeyDescriptor)
                             _keys.Add(keyDescriptor);
                     }
@@ -271,12 +263,12 @@ namespace dk.nita.saml20
         /// Retrieves the key descriptors contained in the document
         /// </summary>
         private void ExtractKeyDescriptors(XmlDocument doc)
-        {            
+        {
             XmlNodeList list = doc.GetElementsByTagName(KeyDescriptor.ELEMENT_NAME, Saml20Constants.METADATA);
             _keys = new List<KeyDescriptor>(list.Count);
 
-            foreach (XmlNode node in list)            
-                _keys.Add(Serialization.DeserializeFromXmlString<KeyDescriptor>(node.OuterXml));                        
+            foreach (XmlNode node in list)
+                _keys.Add(Serialization.DeserializeFromXmlString<KeyDescriptor>(node.OuterXml));
         }
 
         #region Properties
@@ -292,7 +284,7 @@ namespace dk.nita.saml20
             {
                 if (_keys == null)
                     ExtractKeyDescriptors();
-                
+
                 return _keys;
             }
         }
@@ -311,7 +303,7 @@ namespace dk.nita.saml20
         {
             if (_SSOEndpoints == null)
                 ExtractEndpoints();
-            
+
             return _SSOEndpoints;
         }
 
@@ -334,9 +326,9 @@ namespace dk.nita.saml20
         public IDPEndPointElement SLOEndpoint(SAMLBinding binding)
         {
             return SLOEndpoints().Find(
-                delegate(IDPEndPointElement endp) { return endp.Binding == binding; });
+                delegate (IDPEndPointElement endp) { return endp.Binding == binding; });
         }
-        
+
         /// <summary>
         /// Get the first SSO endpoint that supports the given binding.
         /// </summary>        
@@ -344,7 +336,7 @@ namespace dk.nita.saml20
         public IDPEndPointElement SSOEndpoint(SAMLBinding binding)
         {
             return SSOEndpoints().Find(
-                delegate(IDPEndPointElement endp) { return endp.Binding == binding; });
+                delegate (IDPEndPointElement endp) { return endp.Binding == binding; });
         }
 
 
@@ -377,13 +369,13 @@ namespace dk.nita.saml20
                     if (item is IDPSSODescriptor)
                     {
                         IDPSSODescriptor descriptor = (IDPSSODescriptor)item;
-                        foreach (Endpoint endpoint in descriptor.SingleSignOnService)                        
+                        foreach (Endpoint endpoint in descriptor.SingleSignOnService)
                             _SSOEndpoints.Add(new IDPEndPointElement(endpoint));
                     }
 
                     if (item is SSODescriptor)
                     {
-                        SSODescriptor descriptor = (SSODescriptor) item;
+                        SSODescriptor descriptor = (SSODescriptor)item;
 
                         if (descriptor.SingleLogoutService != null)
                         {
@@ -402,14 +394,14 @@ namespace dk.nita.saml20
 
                     if (item is SPSSODescriptor)
                     {
-                        SPSSODescriptor descriptor = (SPSSODescriptor) item;
+                        SPSSODescriptor descriptor = (SPSSODescriptor)item;
                         foreach (IndexedEndpoint endpoint in descriptor.AssertionConsumerService)
                             _AssertionConsumerServiceEndpoints.Add(new IDPEndPointElement(endpoint));
                     }
 
-                    if(item is AttributeAuthorityDescriptor)
+                    if (item is AttributeAuthorityDescriptor)
                     {
-                        AttributeAuthorityDescriptor aad = (AttributeAuthorityDescriptor) item;
+                        AttributeAuthorityDescriptor aad = (AttributeAuthorityDescriptor)item;
                         _attributeQueryEndpoints.AddRange(aad.AttributeService);
                     }
                 }
@@ -422,7 +414,7 @@ namespace dk.nita.saml20
         /// <returns>A list containing the keys. If no key is marked with the given usage, the method returns an empty list.</returns>
         public List<KeyDescriptor> GetKeys(KeyTypes usage)
         {
-            return Keys.FindAll(delegate(KeyDescriptor desc) { return desc.use == usage; });
+            return Keys.FindAll(delegate (KeyDescriptor desc) { return desc.use == usage; });
         }
 
         /// <summary>
@@ -434,7 +426,7 @@ namespace dk.nita.saml20
             {
                 if (_entity != null)
                     return _entity.entityID;
-                
+
                 throw new InvalidOperationException("This instance does not contain a metadata document");
             }
         }
@@ -475,7 +467,7 @@ namespace dk.nita.saml20
         public string GetARSEndpoint(ushort index)
         {
             IndexedEndpoint ep = _ARSEndpoints[index];
-            if(ep != null)
+            if (ep != null)
             {
                 return ep.Location;
             }
@@ -492,10 +484,10 @@ namespace dk.nita.saml20
         public string GetAttributeQueryEndpointLocation()
         {
             List<Endpoint> endpoints = GetAttributeQueryEndpoints();
-            
-            if(endpoints.Count == 0)            
+
+            if (endpoints.Count == 0)
                 throw new Saml20Exception("The identity provider does not support attribute queries.");
-            
+
             return endpoints[0].Location;
         }
 
@@ -521,14 +513,14 @@ namespace dk.nita.saml20
         {
             XmlDocument doc = new XmlDocument();
             doc.XmlResolver = null;
-            doc.PreserveWhitespace = true;            
-            
-            doc.LoadXml( Serialization.SerializeToXmlString(_entity));
-            
+            doc.PreserveWhitespace = true;
+
+            doc.LoadXml(Serialization.SerializeToXmlString(_entity));
+
             // Add the correct encoding to the head element.
-            if (doc.FirstChild is XmlDeclaration)            
-                ((XmlDeclaration) doc.FirstChild).Encoding = enc.WebName;
-            else            
+            if (doc.FirstChild is XmlDeclaration)
+                ((XmlDeclaration)doc.FirstChild).Encoding = enc.WebName;
+            else
                 doc.PrependChild(doc.CreateXmlDeclaration("1.0", enc.WebName, null));
 
             if (Sign)
@@ -537,7 +529,7 @@ namespace dk.nita.saml20
                 var validatedMetaDataShaHashingAlgorithm = SignatureProviderFactory.ValidateShaHashingAlgorithm(metaDataShaHashingAlgorithm);
                 var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(validatedMetaDataShaHashingAlgorithm);
 
-                var cert = FederationConfig.GetConfig().SigningCertificate.GetCertificate();
+                var cert = FederationConfig.GetConfig().GetFirstValidCertificate();
                 signatureProvider.SignMetaData(doc, doc.DocumentElement.GetAttribute("ID"), cert);
             }
 
@@ -552,7 +544,7 @@ namespace dk.nita.saml20
         {
             if (_entity != null)
                 throw new InvalidOperationException("An entity is already created in this document.");
-            _entity = GetDefaultEntityInstance();            
+            _entity = GetDefaultEntityInstance();
             return _entity;
         }
 
@@ -564,4 +556,4 @@ namespace dk.nita.saml20
         }
     }
 }
- 
+
