@@ -48,11 +48,11 @@ namespace dk.nita.saml20.protocol.pages
 
                     link.NavigateUrl = endPoint.GetIDPLoginUrl(forceAuthn, isPassive, desiredNsisLoa, desiredProfile);
                     BodyPanel.Controls.Add(link);
-                    var androidLink = new HyperLink() { Text = $"({Resources.PlatformAndroid})", NavigateUrl = endPoint.GetIDPLoginUrl(forceAuthn, isPassive, "Android")};
+                    var androidLink = new HyperLink() { Text = $"({Resources.PlatformAndroid})", NavigateUrl = endPoint.GetIDPLoginUrl(forceAuthn, isPassive, desiredNsisLoa, desiredProfile, "Android")};
                     androidLink.Attributes.CssStyle.Add("margin-left", "10px;");
 
                     BodyPanel.Controls.Add(androidLink);
-                    var iosLink = new HyperLink() { Text = $"({Resources.PlatformIOS})", NavigateUrl = endPoint.GetIDPLoginUrl(forceAuthn, isPassive, "iOS")};
+                    var iosLink = new HyperLink() { Text = $"({Resources.PlatformIOS})", NavigateUrl = endPoint.GetIDPLoginUrl(forceAuthn, isPassive, desiredNsisLoa, desiredProfile, "iOS")};
                     iosLink.Attributes.CssStyle.Add("margin-left", "10px;");
                     BodyPanel.Controls.Add(iosLink);
                     BodyPanel.Controls.Add(new LiteralControl("<br/>"));
