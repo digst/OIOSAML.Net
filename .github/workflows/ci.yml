@@ -1,0 +1,59 @@
+# REF-10: Continuous integration for OIOSAML.Net
+#
+# Builds the dk.nita.saml20 solution and runs the NUnit test suite.
+# Runs on Windows because the projects target .NET Framework 4.7.2 and
+# build with MSBuild (there is no cross-platform `dotnet build` path).
+name: CI
+
+on:
+  push:
+    branches: [master, develop, 'feature/**']
+  pull_request:
+    branches: [master, develop]
+  workflow_dispatch:
+
+env:
+  SOLUTION: src/dk.nita.saml20/dk.nita.saml20.sln
+  # Solution filter that builds every project except IdentityProviderDemo
+  # (WebsiteDemo is intentionally kept in the build).
+  BUILD_FILTER: src/dk.nita.saml20/dk.nita.saml20.ci.slnf
+  CONFIGURATION: Release
+  PLATFORM: Any CPU
+
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v2
+
+      - name: Restore NuGet packages
+        run: nuget restore "$env:SOLUTION"
+
+      - name: Build (all projects except IdentityProviderDemo)
+        run: msbuild "$env:BUILD_FILTER" /m /p:Configuration="$env:CONFIGURATION" /p:Platform="$env:PLATFORM"
+
+      # The test project references NUnit 2.6.4, so use the matching
+      # NUnit 2.6.4 console runner to execute the compiled test assembly.
+      - name: Install NUnit 2.6.4 console runner
+        run: nuget install NUnit.Runners -Version 2.6.4 -OutputDirectory tools
+
+      - name: Run tests
+        run: >
+          tools/NUnit.Runners.2.6.4/tools/nunit-console.exe
+          "src/dk.nita.saml20/dk.nita.test.saml20/bin/Release/dk.nita.test.saml20.dll"
+          /xml:TestResult.xml
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nunit-test-results
+          path: TestResult.xml

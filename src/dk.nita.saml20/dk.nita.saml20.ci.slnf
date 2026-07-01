@@ -1,0 +1,13 @@
+{
+  "solution": {
+    "path": "dk.nita.saml20.sln",
+    "projects": [
+      "dk.nita.saml20\\dk.nita.saml20.csproj",
+      "dk.nita.saml20.ext.audit.log4net\\dk.nita.saml20.ext.audit.log4net.csproj",
+      "dk.nita.saml20.ext.sessionstore.sqlserver\\dk.nita.saml20.ext.sessionstore.sqlserver.csproj",
+      "dk.nita.test.saml20\\dk.nita.test.saml20.csproj",
+      "IntegrationTest\\IntegrationTest.csproj",
+      "WebsiteDemo\\WebsiteDemo.csproj"
+    ]
+  }
+}
