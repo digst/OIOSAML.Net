@@ -479,6 +479,8 @@ namespace dk.nita.saml20.config
         private void HandleUpdateIdp(string filename)
         {
             var metadataDoc = ParseFile(filename);
+            if (metadataDoc == null)
+                return; // Not a SAML 2.0 metadata file - ignore it instead of failing.
             // First we try and find the endpoint based on the entity id in the metadata
             var endp = FindEndPoint(metadataDoc.EntityId);
             if (endp == null && _fileToEntity.ContainsKey(filename))
@@ -501,6 +503,8 @@ namespace dk.nita.saml20.config
             if (!_fileToEntity.ContainsKey(filename))
             {
                 var metadataDoc = ParseFile(filename);
+                if (metadataDoc == null)
+                    return; // Not a SAML 2.0 metadata file (e.g. a README placed in the metadata directory) - ignore it instead of failing.
                 var endp = FindEndPoint(metadataDoc.EntityId);
                 if (endp == null) // If the endpoint does not exist, create it.
                 {
