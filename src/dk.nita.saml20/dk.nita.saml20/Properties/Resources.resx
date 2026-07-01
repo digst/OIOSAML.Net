@@ -334,7 +334,7 @@ AppID={1}</value>
     <value>The specified metadata directory "{0}" could not be located.</value>
   </data>
   <data name="MetadataNotFound" xml:space="preserve">
-    <value>Metadata not found for idp endpoint with id {0}</value>
+    <value>No metadata was found for the configured IDPEndpoint with id "{0}". Verify that the id matches the entityID of a metadata file in the configured metadata directory (a misspelled id is the most common cause).</value>
   </data>
   <data name="NoAttributeValuePresent" xml:space="preserve">
     <value>Xml error: attribute {0} of element {1}: {2} must have a value.</value>
