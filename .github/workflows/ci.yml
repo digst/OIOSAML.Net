@@ -14,6 +14,9 @@ on:
 
 env:
   SOLUTION: src/dk.nita.saml20/dk.nita.saml20.sln
+  # Solution filter that builds every project except IdentityProviderDemo
+  # (WebsiteDemo is intentionally kept in the build).
+  BUILD_FILTER: src/dk.nita.saml20/dk.nita.saml20.ci.slnf
   CONFIGURATION: Release
   PLATFORM: Any CPU
 
@@ -34,8 +37,8 @@ jobs:
       - name: Restore NuGet packages
         run: nuget restore "$env:SOLUTION"
 
-      - name: Build solution
-        run: msbuild "$env:SOLUTION" /m /p:Configuration="$env:CONFIGURATION" /p:Platform="$env:PLATFORM"
+      - name: Build (all projects except IdentityProviderDemo)
+        run: msbuild "$env:BUILD_FILTER" /m /p:Configuration="$env:CONFIGURATION" /p:Platform="$env:PLATFORM"
 
       # The test project references NUnit 2.6.4, so use the matching
       # NUnit 2.6.4 console runner to execute the compiled test assembly.
