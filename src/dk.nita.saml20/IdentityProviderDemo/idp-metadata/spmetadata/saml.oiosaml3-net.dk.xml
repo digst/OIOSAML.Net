@@ -28,7 +28,7 @@
       <q1:RequestedAttribute Name="https://data.gov.dk/concept/core/nsis/loa" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" isRequired="true" />
       <q1:RequestedAttribute Name="https://data.gov.dk/concept/core/nsis/ial" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" />
       <q1:RequestedAttribute Name="https://data.gov.dk/concept/core/nsis/aal" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" />
-      <q1:RequestedAttribute Name="https://data.gov.dk/model/core/eid/fulName" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" />
+      <q1:RequestedAttribute Name="https://data.gov.dk/model/core/eid/fullName" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" />
       <q1:RequestedAttribute Name="https://data.gov.dk/model/core/eid/firstName" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" />
       <q1:RequestedAttribute Name="https://data.gov.dk/model/core/eid/lastName" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" />
       <q1:RequestedAttribute Name="https://data.gov.dk/model/core/eid/email" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" />
