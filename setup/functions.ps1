@@ -98,3 +98,60 @@ function Set-CertificatePermission
         throw "Could not locate the private key file for certificate $pfxThumbPrint (checked both the CNG and CSP key stores). The certificate's key provider metadata may be inconsistent - re-import the certificate cleanly.";
     }
 }
+
+function Set-CertificateChainTrust
+{
+    # Ensures the CA chain contained in a PFX is trusted for X.509 chain building: the root CA is placed
+    # in Trusted Root (LocalMachine\Root) and intermediate CAs in Intermediate CA (LocalMachine\CA).
+    # Import-PfxCertificate drops all CA certificates - including the root - into the Intermediate CA store,
+    # where a root is not a trust anchor, so any misplaced root copy is removed from Intermediate CA.
+    # Without this, DefaultCertificateSpecification (chain + online revocation) rejects the certificate
+    # because the chain terminates in an untrusted root (see GitHub issue #70).
+    param
+    (
+        [Parameter(Position=1, Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$pfxPath,
+
+        [Parameter(Position=2, Mandatory=$true)]
+        [ValidateNotNull()]
+        [System.Security.SecureString]$pfxPassword
+    )
+
+    $plainPassword = (New-Object System.Net.NetworkCredential('', $pfxPassword)).Password
+
+    $chain = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2Collection
+    $chain.Import($pfxPath, $plainPassword, 'DefaultKeySet')
+
+    $intermediateStore = New-Object System.Security.Cryptography.X509Certificates.X509Store('CA', 'LocalMachine')
+    $rootStore         = New-Object System.Security.Cryptography.X509Certificates.X509Store('Root', 'LocalMachine')
+    $intermediateStore.Open('ReadWrite')
+    $rootStore.Open('ReadWrite')
+    try
+    {
+        foreach ($cert in $chain)
+        {
+            if ($cert.HasPrivateKey) { continue }  # leaf (end-entity) is imported separately into My
+
+            if ($cert.Subject -eq $cert.Issuer)
+            {
+                # Self-signed => root CA. Trust it, then remove any misplaced copy from Intermediate CA.
+                $rootStore.Add($cert);
+                $misplaced = $intermediateStore.Certificates.Find('FindByThumbprint', $cert.Thumbprint, $false);
+                foreach ($m in $misplaced) { $intermediateStore.Remove($m) }
+                write-host "Trusted root CA '$($cert.Subject)' ($($cert.Thumbprint)) in Trusted Root Certification Authorities"
+            }
+            else
+            {
+                # Intermediate CA
+                $intermediateStore.Add($cert);
+                write-host "Installed intermediate CA '$($cert.Subject)' ($($cert.Thumbprint)) in Intermediate Certification Authorities"
+            }
+        }
+    }
+    finally
+    {
+        $intermediateStore.Close()
+        $rootStore.Close()
+    }
+}
