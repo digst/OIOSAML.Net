@@ -128,6 +128,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Default.aspx" />
+    <Content Include="idp-metadata\oiosaml3-idp-inttest-25-11-28.xml" />
     <Content Include="idp-metadata\test-devtest4-idp-metadata.xml" />
     <Content Include="idp-metadata\local_demo_idp.xml" />
     <Content Include="Web.config">

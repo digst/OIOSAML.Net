@@ -409,7 +409,7 @@ namespace dk.nita.saml20.protocol
         {
             var tryDecryptAssertion = new Func<X509Certificate2, Saml20EncryptedAssertion>((certificate) =>
             {
-                Saml20EncryptedAssertion decryptedAssertion = new Saml20EncryptedAssertion((RSA)certificate.PrivateKey);
+                Saml20EncryptedAssertion decryptedAssertion = new Saml20EncryptedAssertion(certificate.GetRSAPrivateKey());
                 decryptedAssertion.LoadXml(elem);
                 decryptedAssertion.Decrypt();
                 return decryptedAssertion;
@@ -893,7 +893,7 @@ namespace dk.nita.saml20.protocol
                 Trace.TraceData(TraceEventType.Information, string.Format(Tracing.SendAuthnRequest, Saml20Constants.ProtocolBindings.HTTP_Redirect, idpEndpoint.Id));
 
                 HttpRedirectBindingBuilder builder = new HttpRedirectBindingBuilder();
-                builder.signingKey = _certificate.PrivateKey;
+                builder.signingKey = _certificate.GetRSAPrivateKey();
                 builder.Request = request.GetXml().OuterXml;
                 builder.ShaHashingAlgorithm = shaHashingAlgorithm;
                 string s = request.Destination + "?" + builder.ToQuery();
