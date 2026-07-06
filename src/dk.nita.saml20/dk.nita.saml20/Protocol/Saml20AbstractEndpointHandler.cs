@@ -9,6 +9,7 @@ using dk.nita.saml20.Logging;
 using dk.nita.saml20.Properties;
 using dk.nita.saml20.Schema.Protocol;
 using dk.nita.saml20.Utils;
+using Saml2.Properties;
 using Trace = dk.nita.saml20.Utils.Trace;
 
 namespace dk.nita.saml20.protocol
@@ -142,6 +143,11 @@ namespace dk.nita.saml20.protocol
             var defaultIdp = config.Endpoints.IDPEndPoints.Find(idp => idp.Default);
             if (defaultIdp != null)
             {
+                // A configured endpoint has no metadata when no metadata file matches its id (typically a misspelled
+                // id). Fail with a clear message instead of the opaque NullReferenceException that follows downstream.
+                if (defaultIdp.metadata == null)
+                    throw new Saml20Exception(string.Format(Resources.MetadataNotFound, defaultIdp.Id));
+
                 if (Trace.ShouldTrace(TraceEventType.Information))
                     Trace.TraceData(TraceEventType.Information, "Using IdP marked as default: " + defaultIdp.Id);
 
