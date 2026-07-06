@@ -78,8 +78,9 @@ namespace dk.nita.saml20.Bindings
             set
             {
                 // Check if the key is of a supported type. [SAMLBind] sect. 3.4.4.1 specifies this.
-                if (!(value is RSACryptoServiceProvider || value == null))
-                    throw new ArgumentException("Signing key must be an instance of RSACryptoServiceProvider.");
+                // Accept any RSA implementation (RSACryptoServiceProvider for legacy CSP keys, RSACng for CNG keys).
+                if (!(value is RSA || value == null))
+                    throw new ArgumentException("Signing key must be an instance of RSA.");
                 _signingKey = value;
             }
 
