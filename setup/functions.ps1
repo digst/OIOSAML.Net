@@ -43,29 +43,120 @@ function Set-CertificatePermission
 
     $cert = Get-ChildItem -Path cert:\LocalMachine\My | Where-Object -FilterScript { $PSItem.ThumbPrint -eq $pfxThumbPrint; };
 
+    if ($null -eq $cert)
+    {
+        throw "Certificate with thumbprint $pfxThumbPrint was not found in Cert:\LocalMachine\My";
+    }
+
     # Specify the user, the permissions and the permission type
     $permission = "$($serviceAccount)","Read,FullControl","Allow"
     $accessRule = New-Object -TypeName System.Security.AccessControl.FileSystemAccessRule -ArgumentList $permission;
 
-    # Location of the machine related keys
-    $keyPath = $env:ProgramData + "\Microsoft\Crypto\RSA\MachineKeys\";
-    $keyName = $cert.PrivateKey.CspKeyContainerInfo.UniqueKeyContainerName;
-    $keyFullPath = $keyPath + $keyName;
+    # Resolve the private key file in a provider-agnostic way so this works for both modern CNG keys
+    # and legacy CryptoAPI (CSP) keys. Depending on how the certificate was imported, the key may be
+    # stored under CNG (Microsoft\Crypto\Keys) or legacy CSP (Microsoft\Crypto\RSA\MachineKeys).
+    # The old code used $cert.PrivateKey.CspKeyContainerInfo directly, which throws for CNG-stored keys.
+    # Collect every candidate location and apply the ACL to whichever file actually exists.
+    $candidateFiles = New-Object System.Collections.Generic.List[string];
 
+    # CNG keys: Microsoft\Crypto\Keys, container file name = CngKey.UniqueName
     try
     {
-        # Get the current acl of the private key
-        # This is the line that fails!
-        $acl = Get-Acl -Path $keyFullPath;
-
-        # Add the new ace to the acl of the private key
-        $acl.AddAccessRule($accessRule);
-
-        # Write back the new acl
-        Set-Acl -Path $keyFullPath -AclObject $acl;
+        $cngRsa = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($cert);
+        if ($cngRsa -is [System.Security.Cryptography.RSACng] -and -not [string]::IsNullOrEmpty($cngRsa.Key.UniqueName))
+        {
+            $candidateFiles.Add($env:ProgramData + "\Microsoft\Crypto\Keys\" + $cngRsa.Key.UniqueName);
+        }
     }
-    catch
+    catch { }
+
+    # Legacy CSP keys: Microsoft\Crypto\RSA\MachineKeys, container file name = UniqueKeyContainerName
+    try
     {
-        throw $_;
+        $cspRsa = $cert.PrivateKey;
+        if ($null -ne $cspRsa -and $null -ne $cspRsa.CspKeyContainerInfo -and -not [string]::IsNullOrEmpty($cspRsa.CspKeyContainerInfo.UniqueKeyContainerName))
+        {
+            $candidateFiles.Add($env:ProgramData + "\Microsoft\Crypto\RSA\MachineKeys\" + $cspRsa.CspKeyContainerInfo.UniqueKeyContainerName);
+        }
+    }
+    catch { }
+
+    $applied = $false;
+    foreach ($keyFullPath in ($candidateFiles | Select-Object -Unique))
+    {
+        if (Test-Path -Path $keyFullPath)
+        {
+            $acl = Get-Acl -Path $keyFullPath;
+            $acl.AddAccessRule($accessRule);
+            Set-Acl -Path $keyFullPath -AclObject $acl;
+            $applied = $true;
+        }
+    }
+
+    if (-not $applied)
+    {
+        throw "Could not locate the private key file for certificate $pfxThumbPrint (checked both the CNG and CSP key stores). The certificate's key provider metadata may be inconsistent - re-import the certificate cleanly.";
+    }
+}
+
+function Set-CertificateChainTrust
+{
+    # Ensures the CA chain contained in a PFX is trusted for X.509 chain building: the root CA is placed
+    # in Trusted Root (LocalMachine\Root) and intermediate CAs in Intermediate CA (LocalMachine\CA).
+    # Import-PfxCertificate drops all CA certificates - including the root - into the Intermediate CA store,
+    # where a root is not a trust anchor, so any misplaced root copy is removed from Intermediate CA.
+    # Without this, DefaultCertificateSpecification (chain + online revocation) rejects the certificate
+    # because the chain terminates in an untrusted root (see GitHub issue #70).
+    param
+    (
+        [Parameter(Position=1, Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$pfxPath,
+
+        [Parameter(Position=2, Mandatory=$true)]
+        [ValidateNotNull()]
+        [System.Security.SecureString]$pfxPassword
+    )
+
+    $plainPassword = (New-Object System.Net.NetworkCredential('', $pfxPassword)).Password
+
+    # X509Certificate2Collection.Import is a raw .NET call and resolves relative paths against the process
+    # working directory, not PowerShell's current location (Set-Location / $PSScriptRoot). Resolve to an
+    # absolute path first so a relative $pfxPath works the same way as the Import-PfxCertificate calls do.
+    $resolvedPfxPath = (Resolve-Path -Path $pfxPath).ProviderPath
+
+    $chain = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2Collection
+    $chain.Import($resolvedPfxPath, $plainPassword, 'DefaultKeySet')
+
+    $intermediateStore = New-Object System.Security.Cryptography.X509Certificates.X509Store('CA', 'LocalMachine')
+    $rootStore         = New-Object System.Security.Cryptography.X509Certificates.X509Store('Root', 'LocalMachine')
+    $intermediateStore.Open('ReadWrite')
+    $rootStore.Open('ReadWrite')
+    try
+    {
+        foreach ($cert in $chain)
+        {
+            if ($cert.HasPrivateKey) { continue }  # leaf (end-entity) is imported separately into My
+
+            if ($cert.Subject -eq $cert.Issuer)
+            {
+                # Self-signed => root CA. Trust it, then remove any misplaced copy from Intermediate CA.
+                $rootStore.Add($cert);
+                $misplaced = $intermediateStore.Certificates.Find('FindByThumbprint', $cert.Thumbprint, $false);
+                foreach ($m in $misplaced) { $intermediateStore.Remove($m) }
+                write-host "Trusted root CA '$($cert.Subject)' ($($cert.Thumbprint)) in Trusted Root Certification Authorities"
+            }
+            else
+            {
+                # Intermediate CA
+                $intermediateStore.Add($cert);
+                write-host "Installed intermediate CA '$($cert.Subject)' ($($cert.Thumbprint)) in Intermediate Certification Authorities"
+            }
+        }
+    }
+    finally
+    {
+        $intermediateStore.Close()
+        $rootStore.Close()
     }
 }
