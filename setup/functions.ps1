@@ -120,8 +120,13 @@ function Set-CertificateChainTrust
 
     $plainPassword = (New-Object System.Net.NetworkCredential('', $pfxPassword)).Password
 
+    # X509Certificate2Collection.Import is a raw .NET call and resolves relative paths against the process
+    # working directory, not PowerShell's current location (Set-Location / $PSScriptRoot). Resolve to an
+    # absolute path first so a relative $pfxPath works the same way as the Import-PfxCertificate calls do.
+    $resolvedPfxPath = (Resolve-Path -Path $pfxPath).ProviderPath
+
     $chain = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2Collection
-    $chain.Import($pfxPath, $plainPassword, 'DefaultKeySet')
+    $chain.Import($resolvedPfxPath, $plainPassword, 'DefaultKeySet')
 
     $intermediateStore = New-Object System.Security.Cryptography.X509Certificates.X509Store('CA', 'LocalMachine')
     $rootStore         = New-Object System.Security.Cryptography.X509Certificates.X509Store('Root', 'LocalMachine')
