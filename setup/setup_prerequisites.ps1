@@ -33,6 +33,9 @@ $serviceprovidercertificate = Import-PfxCertificate '..\certificates\serviceprov
 write-host "Installed serviceprovider's signing certificate $($serviceprovidercertificate.Thumbprint) in LocalMachine\My and LocalMachine\TrustedPeople. This ensures the certificate is trusted on your machine and browser"
 write-host "This certificate is used by the demo website (service provider) as its current signing certificate"
 
+write-host "Trusting the serviceprovider certificate's CA chain so X.509 chain building succeeds (see GitHub issue #70)"
+Set-CertificateChainTrust '..\certificates\serviceprovider.p12' $certpassword2
+
 #If you need to redo sslcert binding, the following statements will delete previously creates ones
 #"http delete sslcert ipport=0.0.0.0:20001" | netsh
 #"http delete sslcert ipport=0.0.0.0:20002" | netsh
