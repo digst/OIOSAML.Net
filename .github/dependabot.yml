@@ -1,0 +1,22 @@
+version: 2
+updates:
+  # The NuGet updater finds every project through the solution in this directory.
+  - package-ecosystem: nuget
+    directory: "/src/dk.nita.saml20"
+    schedule:
+      interval: weekly
+    ignore:
+      # CI runs the tests with the NUnit 2.6.4 console runner; NUnit 3 and later need a different runner and test changes.
+      - dependency-name: "NUnit*"
+        update-types: ["version-update:semver-major"]
+    groups:
+      # One PR for all minor and patch updates; major updates and security updates get their own.
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
