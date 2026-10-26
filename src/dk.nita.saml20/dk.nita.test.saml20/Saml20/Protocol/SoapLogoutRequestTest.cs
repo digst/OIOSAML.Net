@@ -10,6 +10,12 @@ namespace dk.nita.test.Saml20.Protocol
     {
         private readonly List<string> _audit = new List<string>();
 
+        [SetUp]
+        public void ClearAudit()
+        {
+            _audit.Clear();
+        }
+
         private string Status(bool isSigned, bool isIdpKnown, bool isSignatureValid, string userId)
         {
             return Saml20LogoutHandler.SoapLogoutRequestStatus(isSigned, isIdpKnown, () => isSignatureValid, userId, _audit.Add);
