@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Web;
 using System.Web.Security;
@@ -302,7 +303,7 @@ namespace dk.nita.saml20.protocol
             if (destination.Binding == SAMLBinding.REDIRECT)
             {
                 HttpRedirectBindingBuilder builder = new HttpRedirectBindingBuilder();
-                builder.signingKey = FederationConfig.GetConfig().GetFirstValidCertificate().PrivateKey;
+                builder.signingKey = FederationConfig.GetConfig().GetFirstValidCertificate().GetRSAPrivateKey();
                 request.Destination = destination.Url;
                 request.Reason = Saml20Constants.Reasons.User;
                 request.SubjectToLogOut.Value = Saml20PrincipalCache.GetSaml20AssertionLite().Subject.Value;
@@ -589,7 +590,7 @@ namespace dk.nita.saml20.protocol
                 HttpRedirectBindingBuilder builder = new HttpRedirectBindingBuilder();
                 builder.RelayState = context.Request.Params["RelayState"];
                 builder.Response = response.GetXml().OuterXml;
-                builder.signingKey = FederationConfig.GetConfig().GetFirstValidCertificate().PrivateKey;
+                builder.signingKey = FederationConfig.GetConfig().GetFirstValidCertificate().GetRSAPrivateKey();
                 builder.ShaHashingAlgorithm = shaHashingAlgorithm;
                 string s = destination.Url + "?" + builder.ToQuery();
                 context.Response.Redirect(s, true);
