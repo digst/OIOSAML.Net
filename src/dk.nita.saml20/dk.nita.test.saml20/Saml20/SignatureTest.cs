@@ -57,7 +57,7 @@ namespace dk.nita.test.Saml20
         /// Attempts to deserialize an invalid Saml-token. Tests that the Assertion class immediately "explodes".
         /// </summary>
         [Test]
-        [ExpectedException(typeof(Saml20Exception), ExpectedMessage = "Signature could not be verified.")]
+        [ExpectedException(typeof(InvalidOperationException), ExpectedMessage = "is not allowed [OIO-ALG-01]", MatchType = MessageMatch.Contains)]
         public void TestDKSaml20TokenVerification_02()
         {
             AssertionUtil.DeserializeToken(@"Saml20\Assertions\EvilSaml2Assertion_01");
@@ -67,7 +67,7 @@ namespace dk.nita.test.Saml20
         /// Attempts to deserialize an invalid Saml-token. Tests that the Assertion class immediately "explodes".
         /// </summary>
         [Test]
-        [ExpectedException(typeof(Saml20Exception), ExpectedMessage = "Signature could not be verified.")]
+        [ExpectedException(typeof(InvalidOperationException), ExpectedMessage = "is not allowed [OIO-ALG-01]", MatchType = MessageMatch.Contains)]
         public void TestDKSaml20TokenVerification_03()
         {
             AssertionUtil.DeserializeToken(@"Saml20\Assertions\EvilSaml2Assertion_02");
@@ -77,7 +77,7 @@ namespace dk.nita.test.Saml20
         /// Attempts to deserialize an invalid Saml-token. Tests that the Assertion class immediately "explodes".
         /// </summary>
         [Test]
-        [ExpectedException(typeof(Saml20Exception), ExpectedMessage = "Signature could not be verified.")]
+        [ExpectedException(typeof(InvalidOperationException), ExpectedMessage = "is not allowed [OIO-ALG-01]", MatchType = MessageMatch.Contains)]
         public void TestDKSaml20TokenVerification_04()
         {
             AssertionUtil.DeserializeToken(@"Saml20\Assertions\EvilSaml2Assertion_03");

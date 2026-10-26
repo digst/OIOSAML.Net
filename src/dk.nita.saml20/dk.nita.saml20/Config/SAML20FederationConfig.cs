@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Xml;
 using System.Xml.Serialization;
+using dk.nita.saml20.Bindings.SignatureProviders;
 using dk.nita.saml20.Schema.Metadata;
 using dk.nita.saml20.Utils;
 using Saml2.Properties;
@@ -1000,13 +1001,13 @@ namespace dk.nita.saml20.config
         public bool Default;
 
         /// <summary>
-        /// When using RSA keys SHA256 is the default for signing SAML requests. This allows for backwards compatibility if the Identity Provider only support RSA SHA1
+        /// The hash algorithm for signing SAML requests to this IdP: SHA256 (the default) or SHA512. SHA1 is not allowed [OIO-ALG-01].
         /// </summary>
         [XmlAttribute(AttributeName = "ShaHashingAlgorithm")]
         public string ShaHashingAlgorithm
         {
             get { return _shaHashingAlgorithm; }
-            set { _shaHashingAlgorithm = value; }
+            set { _shaHashingAlgorithm = SignatureProviderFactory.ValidateShaHashingAlgorithm(value).ToString(); }
         }
 
         /// <summary>

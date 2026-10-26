@@ -90,7 +90,7 @@ namespace dk.nita.saml20.Bindings
         /// <summary>
         /// When using RSA keys, use SHA1 instead of SHA256
         /// </summary>
-        public ShaHashingAlgorithm ShaHashingAlgorithm { get; set; }
+        public ShaHashingAlgorithm ShaHashingAlgorithm { get; set; } = ShaHashingAlgorithm.SHA256;
 
         #endregion
 

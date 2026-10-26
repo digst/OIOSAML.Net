@@ -27,7 +27,8 @@ namespace dk.nita.test.Saml20.Protocol
             HttpRedirectBindingParser parser = new HttpRedirectBindingParser(url);
 
             X509Certificate2 cert = new X509Certificate2(@"Saml20\Certificates\pingcertificate.crt");
-            Assert.That(parser.CheckSignature(cert.PublicKey.Key));
+            // Signed with RSA-SHA1, which is not accepted [OIO-ALG-01].
+            Assert.Throws<InvalidOperationException>(() => parser.CheckSignature(cert.PublicKey.Key));
             
         }
 
@@ -40,7 +41,8 @@ namespace dk.nita.test.Saml20.Protocol
 
             HttpRedirectBindingParser parser = new HttpRedirectBindingParser(url);
             X509Certificate2 cert = new X509Certificate2(@"Saml20\Certificates\SafewhereTest_SFS.pfx", "test1234");
-            Assert.That(parser.CheckSignature(cert.PublicKey.Key));
+            // Signed with RSA-SHA1, which is not accepted [OIO-ALG-01].
+            Assert.Throws<InvalidOperationException>(() => parser.CheckSignature(cert.PublicKey.Key));
         }
 
         /// <summary>

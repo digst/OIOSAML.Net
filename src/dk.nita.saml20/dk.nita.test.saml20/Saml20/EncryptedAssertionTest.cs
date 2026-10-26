@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Security.Cryptography.Xml;
@@ -148,116 +149,141 @@ namespace dk.nita.test.Saml20
         }        
 
         /// <summary>
-        /// Attempts to decrypt the assertion in the file "EncryptedAssertion_01".
+        /// The sample assertions are encrypted with algorithms that [OIO-ALG-01] doesn't allow, so they are refused.
         /// </summary>
+        [TestCase(@"Saml20\Assertions\EncryptedAssertion_01", Description = "AES-256-CBC with RSA-1.5 key transport")]
+        [TestCase(@"Saml20\Assertions\EncryptedAssertion_02", Description = "AES-256-CBC with RSA-1.5, key next to the data")]
+        [TestCase(@"Saml20\Assertions\EncryptedAssertion_03", Description = "no key transport algorithm")]
+        [TestCase(@"Saml20\Assertions\EncryptedAssertion_04", Description = "3DES")]
+        [TestCase(@"Saml20\Assertions\EncryptedAssertion_05", Description = "AES-192-CBC")]
+        public void AssertionEncryptedWithAnAlgorithmThatIsNotAllowedIsRefused(string file)
+        {
+            XmlDocument doc = new XmlDocument();
+            doc.Load(File.OpenRead(file));
+            X509Certificate2 cert = new X509Certificate2(@"Saml20\Certificates\sts_dev_certificate.pfx", "test1234");
+
+            Saml20EncryptedAssertion encryptedAssertion = new Saml20EncryptedAssertion((RSA)cert.PrivateKey, doc);
+
+            Assert.Throws<Saml20Exception>(() => encryptedAssertion.Decrypt());
+            Assert.IsNull(encryptedAssertion.Assertion);
+        }
+
+        private static readonly X509Certificate2 SpCertificate = new X509Certificate2(@"Saml20\Certificates\sts_dev_certificate.pfx", "test1234");
+
+        /// <summary>
+        /// Encrypts content as an EncryptedAssertion for the test SP certificate.
+        /// </summary>
+        private static XmlDocument EncryptAssertion(string content, string dataAlgorithm, string keyAlgorithm, string oaepDigest = null)
+        {
+            SymmetricAlgorithm key;
+            if (dataAlgorithm == EncryptedXml.XmlEncTripleDESUrl)
+            {
+                key = TripleDES.Create();
+            }
+            else
+            {
+                key = new RijndaelManaged();
+                key.KeySize = dataAlgorithm == EncryptedXml.XmlEncAES128Url ? 128 : dataAlgorithm == EncryptedXml.XmlEncAES192Url ? 192 : 256;
+            }
+            key.GenerateKey();
+
+            var encryptedData = new EncryptedData
+            {
+                Type = EncryptedXml.XmlEncElementUrl,
+                EncryptionMethod = new EncryptionMethod(dataAlgorithm),
+                CipherData = new CipherData(new EncryptedXml().EncryptData(System.Text.Encoding.UTF8.GetBytes(content), key)),
+            };
+
+            var rsa = SpCertificate.GetRSAPublicKey();
+            var encryptedKey = new EncryptedKey
+            {
+                EncryptionMethod = keyAlgorithm == null ? null : new EncryptionMethod(keyAlgorithm),
+                CipherData = new CipherData(EncryptedXml.EncryptKey(key.Key, rsa, keyAlgorithm == EncryptedXml.XmlEncRSAOAEPUrl)),
+            };
+            encryptedData.KeyInfo = new KeyInfo();
+            encryptedData.KeyInfo.AddClause(new KeyInfoEncryptedKey(encryptedKey));
+
+            var doc = new XmlDocument { PreserveWhitespace = true };
+            var root = doc.CreateElement("saml", "EncryptedAssertion", Saml20Constants.ASSERTION);
+            doc.AppendChild(root);
+            root.AppendChild(doc.ImportNode(encryptedData.GetXml(), true));
+
+            if (oaepDigest != null)
+            {
+                var method = (XmlElement)root.GetElementsByTagName("EncryptionMethod", Saml20Constants.XENC).Cast<XmlElement>()
+                    .Single(m => m.GetAttribute("Algorithm") == keyAlgorithm);
+                var digest = doc.CreateElement("ds", "DigestMethod", Saml20Constants.XMLDSIG);
+                digest.SetAttribute("Algorithm", oaepDigest);
+                method.AppendChild(digest);
+            }
+
+            return doc;
+        }
+
+        private static Saml20EncryptedAssertion Decrypt(XmlDocument encrypted)
+        {
+            var encryptedAssertion = new Saml20EncryptedAssertion(SpCertificate.GetRSAPrivateKey(), encrypted);
+            encryptedAssertion.Decrypt();
+            return encryptedAssertion;
+        }
+
+        private static string TestAssertion => AssertionUtil.GetTestAssertion_01().DocumentElement.OuterXml;
+
+        [TestCase(EncryptedXml.XmlEncAES128Url)]
+        [TestCase(EncryptedXml.XmlEncAES256Url)]
+        public void AssertionEncryptedWithAesCbcAndRsaOaepIsDecrypted(string dataAlgorithm)
+        {
+            var decrypted = Decrypt(EncryptAssertion(TestAssertion, dataAlgorithm, EncryptedXml.XmlEncRSAOAEPUrl));
+
+            Assert.AreEqual(Assertion.ELEMENT_NAME, decrypted.Assertion.DocumentElement.LocalName);
+        }
+
         [Test]
-        public void TestAssertionDecryption_01()
+        public void RsaOaepWithItsDefaultSha1DigestIsDecrypted()
         {
-            // Load the assertion
-            XmlDocument doc = new XmlDocument();
-            doc.Load(File.OpenRead(@"Saml20\Assertions\EncryptedAssertion_01"));
+            var decrypted = Decrypt(EncryptAssertion(TestAssertion, EncryptedXml.XmlEncAES256Url, EncryptedXml.XmlEncRSAOAEPUrl, SignedXml.XmlDsigSHA1Url));
 
-            // Find the transport key.
-            X509Certificate2 cert = new X509Certificate2(@"Saml20\Certificates\sts_dev_certificate.pfx", "test1234");
-
-            Saml20EncryptedAssertion encryptedAssertion = new Saml20EncryptedAssertion((RSA) cert.PrivateKey, doc);
-            Assert.IsNull(encryptedAssertion.Assertion); // Check that it does not contain an assertion prior to decryption.
-            encryptedAssertion.Decrypt();
-            Assert.IsNotNull(encryptedAssertion.Assertion);
-            Saml20Assertion assertion = CreateDKSaml20TokenFromAssertion(encryptedAssertion);
+            Assert.IsNotNull(decrypted.Assertion);
         }
 
-
-        /// <summary>
-        /// Test that the <code>Saml20EncryptedAssertion</code> class is capable of finding keys that are "peer" included,
-        /// ie. the &lt;EncryptedKey&gt; element is a sibling of the &lt;EncryptedData&gt; element.
-        /// </summary>
-        [Test]        
-        public void TestAssertionDecryption_02()
+        [TestCase(EncryptedXml.XmlEncAES256Url, EncryptedXml.XmlEncRSA15Url, Description = "RSA-1.5 key transport")]
+        [TestCase(EncryptedXml.XmlEncAES256Url, null, Description = "no key transport algorithm")]
+        [TestCase(EncryptedXml.XmlEncTripleDESUrl, EncryptedXml.XmlEncRSAOAEPUrl, Description = "3DES")]
+        [TestCase(EncryptedXml.XmlEncAES192Url, EncryptedXml.XmlEncRSAOAEPUrl, Description = "AES-192-CBC")]
+        public void AlgorithmThatIsNotAllowedIsRefused(string dataAlgorithm, string keyAlgorithm)
         {
-            // Load the assertion
-            XmlDocument doc = new XmlDocument();
-            doc.Load(File.OpenRead(@"Saml20\Assertions\EncryptedAssertion_02"));
-
-            // Find the transport key.
-            X509Certificate2 cert = new X509Certificate2(@"Saml20\Certificates\sts_dev_certificate.pfx", "test1234");
-
-            Saml20EncryptedAssertion encryptedAssertion = new Saml20EncryptedAssertion((RSA)cert.PrivateKey, doc);
-            Assert.IsNull(encryptedAssertion.Assertion); // Check that it does not contain an assertion prior to decryption.
-            encryptedAssertion.Decrypt();
-            Assert.IsNotNull(encryptedAssertion.Assertion);
-        }        
-        
-        /// <summary>
-        /// Test that the <code>Saml20EncryptedAssertion</code> class is capable of finding keys that are "peer" included,
-        /// ie. the &lt;EncryptedKey&gt; element is a sibling of the &lt;EncryptedData&gt; element.
-        /// </summary>
-        [Test]        
-        public void TestAssertionDecryption_03()
-        {
-            // Load the assertion
-            XmlDocument doc = new XmlDocument();
-            doc.Load(File.OpenRead(@"Saml20\Assertions\EncryptedAssertion_03"));
-
-            // Find the transport key.
-            X509Certificate2 cert = new X509Certificate2(@"Saml20\Certificates\sts_dev_certificate.pfx", "test1234");
-
-            Saml20EncryptedAssertion encryptedAssertion = new Saml20EncryptedAssertion((RSA)cert.PrivateKey, doc);
-            Assert.IsNull(encryptedAssertion.Assertion); // Check that it does not contain an assertion prior to decryption.
-            encryptedAssertion.Decrypt();
-            Assert.IsNotNull(encryptedAssertion.Assertion);
+            Assert.Throws<Saml20Exception>(() => Decrypt(EncryptAssertion(TestAssertion, dataAlgorithm, keyAlgorithm)));
         }
 
-        /// <summary>
-        /// Test that the <code>Saml20EncryptedAssertion</code> class is capable using 3DES keys for the session key and OAEP-padding for 
-        /// the encryption of the session key.
-        /// </summary>
         [Test]
-        public void TestAssertionDecryption_04()
+        public void RsaOaepWithAnotherDigestIsRefused()
         {
-            // Load the assertion
-            XmlDocument doc = new XmlDocument();
-            doc.Load(File.OpenRead(@"Saml20\Assertions\EncryptedAssertion_04"));
-
-            // Find the transport key.
-            X509Certificate2 cert = new X509Certificate2(@"Saml20\Certificates\sts_dev_certificate.pfx", "test1234");
-
-            Saml20EncryptedAssertion encryptedAssertion = new Saml20EncryptedAssertion((RSA)cert.PrivateKey, doc);
-            Assert.IsNull(encryptedAssertion.Assertion); // Check that it does not contain an assertion prior to decryption.
-            encryptedAssertion.Decrypt();
-            Assert.IsNotNull(encryptedAssertion.Assertion);
-            XmlNodeList list;
-
-            // Perform some rudimentary tests on the output.
-            list = encryptedAssertion.Assertion.GetElementsByTagName(Assertion.ELEMENT_NAME, Saml20Constants.ASSERTION);
-            Assert.AreEqual(1, list.Count);
+            Assert.Throws<Saml20Exception>(() => Decrypt(EncryptAssertion(TestAssertion, EncryptedXml.XmlEncAES256Url, EncryptedXml.XmlEncRSAOAEPUrl, SignedXml.XmlDsigSHA256Url)));
         }
 
-        /// <summary>
-        /// Test that the <code>Saml20EncryptedAssertion</code> class is capable using 3DES keys for the session key and OAEP-padding for 
-        /// the encryption of the session key.
-        /// </summary>
         [Test]
-        public void TestAssertionDecryption_05()
+        public void DecryptedContentWithADtdIsRefused()
         {
-            // Load the assertion
-            XmlDocument doc = new XmlDocument();
-            doc.Load(File.OpenRead(@"Saml20\Assertions\EncryptedAssertion_05"));
+            var content = "<!DOCTYPE Assertion [<!ENTITY e \"x\">]>" + TestAssertion;
 
-            // Find the transport key.
-            X509Certificate2 cert = new X509Certificate2(@"Saml20\Certificates\sts_dev_certificate.pfx", "test1234");
-
-            Saml20EncryptedAssertion encryptedAssertion = new Saml20EncryptedAssertion((RSA)cert.PrivateKey, doc);
-            Assert.IsNull(encryptedAssertion.Assertion); // Check that it does not contain an assertion prior to decryption.
-            encryptedAssertion.Decrypt();
-            Assert.IsNotNull(encryptedAssertion.Assertion);
-            XmlNodeList list;
-
-            // Perform some rudimentary tests on the output.
-            list = encryptedAssertion.Assertion.GetElementsByTagName(Assertion.ELEMENT_NAME, Saml20Constants.ASSERTION);
-            Assert.AreEqual(1, list.Count);
+            Assert.Throws<Saml20FormatException>(() => Decrypt(EncryptAssertion(content, EncryptedXml.XmlEncAES256Url, EncryptedXml.XmlEncRSAOAEPUrl)));
         }
 
+        [Test]
+        public void DecryptedContentWithMoreThanOneAssertionIsRefused()
+        {
+            var assertion = AssertionUtil.GetTestAssertion_01();
+            var nested = assertion.ImportNode(AssertionUtil.GetTestAssertion_01().DocumentElement, true);
+            assertion.DocumentElement.AppendChild(nested);
+
+            Assert.Throws<Saml20FormatException>(() => Decrypt(EncryptAssertion(assertion.DocumentElement.OuterXml, EncryptedXml.XmlEncAES256Url, EncryptedXml.XmlEncRSAOAEPUrl)));
+        }
+
+        [Test]
+        public void DecryptedContentThatIsNotAnAssertionIsRefused()
+        {
+            Assert.Throws<Saml20FormatException>(() => Decrypt(EncryptAssertion("<foo/>", EncryptedXml.XmlEncAES256Url, EncryptedXml.XmlEncRSAOAEPUrl)));
+        }
 
         /// <summary>
         /// Tests that it is possible to specify the algorithm of the session key.

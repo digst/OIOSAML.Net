@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Security.Cryptography.X509Certificates;
 using System.Xml.Serialization;
+using dk.nita.saml20.Bindings.SignatureProviders;
 using dk.nita.saml20.Session;
 
 namespace dk.nita.saml20.config
@@ -45,13 +46,13 @@ namespace dk.nita.saml20.config
         private string _metaDataShaHashingAlgorithm = ShaHashingAlgorithm.SHA256.ToString();
 
         /// <summary>
-        /// SHA256 is the default for signing meta data. This allows for backwards compatibility if the Identity Provider only supports RSA SHA1
+        /// The hash algorithm for signing metadata: SHA256 (the default) or SHA512. SHA1 is not allowed [OIO-ALG-01].
         /// </summary>
         [XmlElement(ElementName = "MetaDataShaHashingAlgorithm")]
         public string MetaDataShaHashingAlgorithm
         {
             get { return _metaDataShaHashingAlgorithm; }
-            set { _metaDataShaHashingAlgorithm = value; }
+            set { _metaDataShaHashingAlgorithm = SignatureProviderFactory.ValidateShaHashingAlgorithm(value).ToString(); }
         }
 
        

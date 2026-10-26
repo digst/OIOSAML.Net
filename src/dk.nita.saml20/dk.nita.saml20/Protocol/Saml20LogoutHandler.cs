@@ -424,10 +424,7 @@ namespace dk.nita.saml20.protocol
                 HandleError(context, Resources.UnsupportedRequestType, context.Request.RequestType);
             }
 
-            XmlDocument doc = new XmlDocument();
-            doc.XmlResolver = null;
-            doc.PreserveWhitespace = true;
-            doc.LoadXml(message);
+            XmlDocument doc = SafeXml.Load(message);
 
             XmlElement statElem =
                 (XmlElement)doc.GetElementsByTagName(Status.ELEMENT_NAME, Saml20Constants.PROTOCOL)[0];

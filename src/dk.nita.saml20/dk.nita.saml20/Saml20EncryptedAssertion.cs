@@ -16,10 +16,15 @@ namespace dk.nita.saml20
     public class Saml20EncryptedAssertion
     {
         /// <summary>
-        /// Whether to use OAEP (Optimal Asymmetric Encryption Padding) by default, if no EncryptionMethod is specified 
-        /// on the &lt;EncryptedKey&gt; element.
+        /// The algorithms an assertion may be encrypted with [OIO-ALG-01], as far as .NET Framework supports them:
+        /// AES-CBC for the assertion, RSA-OAEP with SHA-1 and MGF1 for the key.
         /// </summary>
-        private const bool USE_OAEP_DEFAULT = false;
+        internal static readonly string[] AllowedDataEncryptionAlgorithms = { EncryptedXml.XmlEncAES128Url, EncryptedXml.XmlEncAES256Url };
+
+        /// <summary>
+        /// The key transport algorithm an assertion's key may be encrypted with [OIO-ALG-01].
+        /// </summary>
+        internal const string AllowedKeyTransportAlgorithm = EncryptedXml.XmlEncRSAOAEPUrl;
 
         /// <summary>
         /// The assertion that is stored within the encrypted assertion.
@@ -146,16 +151,12 @@ namespace dk.nita.saml20
             EncryptedData encryptedData = new EncryptedData();
             encryptedData.LoadXml(encryptedDataElement);
 
-            SymmetricAlgorithm sessionKey;
-            if (encryptedData.EncryptionMethod != null)
-            {
-                _sessionKeyAlgorithm = encryptedData.EncryptionMethod.KeyAlgorithm;
-                sessionKey = ExtractSessionKey(_encryptedAssertion, encryptedData.EncryptionMethod.KeyAlgorithm);
-            }
-            else
-            {
-                sessionKey = ExtractSessionKey(_encryptedAssertion);
-            }
+            var dataAlgorithm = encryptedData.EncryptionMethod?.KeyAlgorithm;
+            if (Array.IndexOf(AllowedDataEncryptionAlgorithms, dataAlgorithm) < 0)
+                throw new Saml20Exception($"The assertion is encrypted with an algorithm that is not allowed: '{dataAlgorithm}' [OIO-ALG-01].");
+
+            _sessionKeyAlgorithm = dataAlgorithm;
+            SymmetricAlgorithm sessionKey = ExtractSessionKey(_encryptedAssertion, dataAlgorithm);
 
             /*
              * NOTE: 
@@ -166,27 +167,24 @@ namespace dk.nita.saml20
             EncryptedXml encryptedXml = new EncryptedXml();
             byte[] plaintext = encryptedXml.DecryptData(encryptedData, sessionKey);
 
-            _assertion = new XmlDocument();
-            _assertion.XmlResolver = null;
-            _assertion.PreserveWhitespace = true;
-
             try
             {
-                _assertion.Load(new StringReader(Encoding.UTF8.GetString(plaintext)));
+                _assertion = SafeXml.Load(Encoding.UTF8.GetString(plaintext));
             }
             catch (XmlException e)
             {
                 _assertion = null;
                 throw new Saml20FormatException("Unable to parse the decrypted assertion.", e);
             }
-        }
 
-        /// <summary>
-        /// An overloaded version of ExtractSessionKey that does not require a keyAlgorithm.
-        /// </summary>
-        private SymmetricAlgorithm ExtractSessionKey(XmlDocument encryptedAssertionDoc)
-        {
-            return ExtractSessionKey(encryptedAssertionDoc, string.Empty);
+            // The decrypted document must be exactly one assertion.
+            if (_assertion.DocumentElement.LocalName != Schema.Core.Assertion.ELEMENT_NAME
+                || _assertion.DocumentElement.NamespaceURI != Saml20Constants.ASSERTION
+                || _assertion.GetElementsByTagName(Schema.Core.Assertion.ELEMENT_NAME, Saml20Constants.ASSERTION).Count != 1)
+            {
+                _assertion = null;
+                throw new Saml20FormatException("The decrypted content is not exactly one assertion.");
+            }
         }
 
         /// <summary>
@@ -232,19 +230,19 @@ namespace dk.nita.saml20
             EncryptedKey encryptedKey = new EncryptedKey();
             encryptedKey.LoadXml(encryptedKeyElement);
 
-            bool useOAEP = USE_OAEP_DEFAULT;
-            if (encryptedKey.EncryptionMethod != null)
-            {
-                if (encryptedKey.EncryptionMethod.KeyAlgorithm == EncryptedXml.XmlEncRSAOAEPUrl)
-                    useOAEP = true;
-                else
-                    useOAEP = false;
-            }
+            var keyTransportAlgorithm = encryptedKey.EncryptionMethod?.KeyAlgorithm;
+            if (keyTransportAlgorithm != AllowedKeyTransportAlgorithm)
+                throw new Saml20Exception($"The assertion's key is encrypted with an algorithm that is not allowed: '{keyTransportAlgorithm}' [OIO-ALG-01].");
+
+            // EncryptedXml decrypts RSA-OAEP with SHA-1, so only that digest (the default) can be accepted.
+            var digestMethod = (XmlElement)encryptedKeyElement.GetElementsByTagName("DigestMethod", Saml20Constants.XMLDSIG).Item(0);
+            if (digestMethod != null && digestMethod.GetAttribute("Algorithm") != SignedXml.XmlDsigSHA1Url)
+                throw new Saml20Exception($"The assertion's key uses an RSA-OAEP digest that is not supported: '{digestMethod.GetAttribute("Algorithm")}'.");
 
             if (encryptedKey.CipherData.CipherValue != null)
             {
                 SymmetricAlgorithm key = GetKeyInstance(keyAlgorithm);
-                key.Key = EncryptedXml.DecryptKey(encryptedKey.CipherData.CipherValue, TransportKey, useOAEP);
+                key.Key = EncryptedXml.DecryptKey(encryptedKey.CipherData.CipherValue, TransportKey, true);
                 return key;
             }
 
@@ -262,25 +260,16 @@ namespace dk.nita.saml20
             SymmetricAlgorithm result;
             switch (algorithm)
             {
-                case EncryptedXml.XmlEncTripleDESUrl:
-                    result = TripleDES.Create();
-                    break;
                 case EncryptedXml.XmlEncAES128Url:
                     result = new RijndaelManaged();
                     result.KeySize = 128;
-                    break;
-                case EncryptedXml.XmlEncAES192Url:
-                    result = new RijndaelManaged();
-                    result.KeySize = 192;
                     break;
                 case EncryptedXml.XmlEncAES256Url:
                     result = new RijndaelManaged();
                     result.KeySize = 256;
                     break;
                 default:
-                    result = new RijndaelManaged();
-                    result.KeySize = 256;
-                    break;
+                    throw new Saml20Exception($"The assertion is encrypted with an algorithm that is not allowed: '{algorithm}' [OIO-ALG-01].");
             }
             return result;
         }

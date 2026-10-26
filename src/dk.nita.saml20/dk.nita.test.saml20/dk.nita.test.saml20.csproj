@@ -137,6 +137,7 @@
     <Compile Include="Saml20\DKSAML20ProfileValidationTest.cs" />
     <Compile Include="Saml20\EncryptedAssertionTest.cs" />
     <Compile Include="Saml20\PingCompatibilityTest.cs" />
+    <Compile Include="Saml20\Protocol\AlgorithmAndXmlHardeningTest.cs" />
     <Compile Include="Saml20\Protocol\AppSwitchConfigurationTest.cs" />
     <Compile Include="Saml20\Protocol\HttpRedirectBindingTest.cs" />
     <Compile Include="Saml20\Protocol\IDPSelectionUtilTest.cs" />

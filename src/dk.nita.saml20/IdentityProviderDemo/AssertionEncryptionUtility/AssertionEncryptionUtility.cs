@@ -127,8 +127,8 @@ namespace IdentityProviderDemo.AssertionEncryptionUtility
             encryptedData.KeyInfo = new KeyInfo();
 
             EncryptedKey encryptedKey = new EncryptedKey();
-            encryptedKey.EncryptionMethod = new EncryptionMethod(EncryptedXml.XmlEncRSA15Url);
-            encryptedKey.CipherData = new CipherData(EncryptedXml.EncryptKey(SessionKey.Key, TransportKey, false));
+            encryptedKey.EncryptionMethod = new EncryptionMethod(EncryptedXml.XmlEncRSAOAEPUrl);
+            encryptedKey.CipherData = new CipherData(EncryptedXml.EncryptKey(SessionKey.Key, TransportKey, true));
             encryptedData.KeyInfo.AddClause(new KeyInfoEncryptedKey(encryptedKey));
 
             // Create an empty EncryptedAssertion to hook into.

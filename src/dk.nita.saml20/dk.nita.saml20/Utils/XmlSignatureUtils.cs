@@ -117,7 +117,7 @@ namespace dk.nita.saml20.Utils
         public static bool CheckSignature(XmlDocument doc, AsymmetricAlgorithm alg)
         {
             CheckDocument(doc);
-            SignedXml signedXml = RetrieveSignature(doc);
+            SignedXml signedXml = RetrieveProtocolSignature(doc.DocumentElement);
             return signedXml.CheckSignature(alg);
         }
 
@@ -129,7 +129,7 @@ namespace dk.nita.saml20.Utils
         /// <exception cref="InvalidOperationException">if the XmlDocument instance does not contain a signed XML element.</exception>
         public static bool CheckSignature(XmlElement el, AsymmetricAlgorithm alg)
         {
-            SignedXml signedXml = RetrieveSignature(el);
+            SignedXml signedXml = RetrieveProtocolSignature(el);
             return signedXml.CheckSignature(alg);
         }
 
@@ -327,6 +327,72 @@ namespace dk.nita.saml20.Utils
 
             // verify that the inlined signature has a valid reference uri
             VerifyRererenceURI(signedXml, el.GetAttribute("ID"));
+
+            return signedXml;
+        }
+
+        /// <summary>
+        /// The signature algorithms allowed on SAML messages [OIO-ALG-01].
+        /// </summary>
+        internal static readonly string[] AllowedSignatureAlgorithms =
+        {
+            SignedXml.XmlDsigRSASHA256Url,
+            "http://www.w3.org/2001/04/xmldsig-more#rsa-sha384",
+            SignedXml.XmlDsigRSASHA512Url,
+        };
+
+        /// <summary>
+        /// The digest algorithms allowed on SAML messages [OIO-ALG-01].
+        /// </summary>
+        internal static readonly string[] AllowedDigestAlgorithms =
+        {
+            SignedXml.XmlDsigSHA256Url,
+            "http://www.w3.org/2001/04/xmldsig-more#sha384",
+            SignedXml.XmlDsigSHA512Url,
+        };
+
+        /// <summary>
+        /// Digs the &lt;Signature&gt; element out of a SAML message or assertion, which must sign exactly that element:
+        /// the Signature is a direct child of it, has exactly one Reference, to its ID, and uses allowed algorithms.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">if the element has no such signature.</exception>
+        internal static SignedXml RetrieveProtocolSignature(XmlElement el)
+        {
+            CheckDocument(el);
+
+            var id = el.GetAttribute("ID");
+            if (string.IsNullOrEmpty(id))
+                throw new InvalidOperationException("The signed element has no ID.");
+
+            XmlElement signature = null;
+            foreach (XmlNode child in el.ChildNodes)
+            {
+                if (child is XmlElement candidate && candidate.LocalName == Signature.ELEMENT_NAME && candidate.NamespaceURI == Saml20Constants.XMLDSIG)
+                {
+                    if (signature != null)
+                        throw new InvalidOperationException("The element has more than one signature.");
+                    signature = candidate;
+                }
+            }
+
+            if (signature == null)
+                throw new InvalidOperationException("Document does not contain a signature to verify.");
+
+            SignedXml signedXml = new SignedXml(el);
+            signedXml.LoadXml(signature);
+
+            if (signedXml.SignedInfo.References.Count != 1)
+                throw new InvalidOperationException("The signature must have exactly one reference.");
+
+            var reference = (Reference)signedXml.SignedInfo.References[0];
+            if (reference.Uri != "#" + id)
+                throw new InvalidOperationException("The signature reference '" + reference.Uri + "' does not match the ID of the signed element.");
+
+            if (Array.IndexOf(AllowedSignatureAlgorithms, signedXml.SignedInfo.SignatureMethod) < 0)
+                throw new InvalidOperationException("The signature algorithm '" + signedXml.SignedInfo.SignatureMethod + "' is not allowed [OIO-ALG-01].");
+
+            if (Array.IndexOf(AllowedDigestAlgorithms, reference.DigestMethod) < 0)
+                throw new InvalidOperationException("The digest algorithm '" + reference.DigestMethod + "' is not allowed [OIO-ALG-01].");
 
             return signedXml;
         }
