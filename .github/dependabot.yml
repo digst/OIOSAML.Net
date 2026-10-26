@@ -6,9 +6,15 @@ updates:
     schedule:
       interval: weekly
     ignore:
-      # CI runs the tests with the NUnit 2.6.4 console runner; NUnit 3 and later need a different runner and test changes.
+      # The tests reference NUnit 2.6.4 through packages.config and CI runs the matching 2.6.4 console runner.
+      # Dependabot updates the project by adding a PackageReference, which mixes the two package formats.
       - dependency-name: "NUnit*"
-        update-types: ["version-update:semver-major"]
+      # Used only by IntegrationTest, a manual Selenium suite against the running demo that CI doesn't run.
+      # Update these together by hand if the suite is revived.
+      - dependency-name: "Selenium.*"
+      - dependency-name: "xunit*"
+      - dependency-name: "Microsoft.NET.Test.Sdk"
+      - dependency-name: "coverlet.collector"
     groups:
       # One PR for all minor and patch updates; major updates and security updates get their own.
       minor-and-patch:
