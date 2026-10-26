@@ -165,4 +165,7 @@
   <data name="MissingMetadata" xml:space="preserve">
     <value>Metadata not found for idpEndpoint with id {0}</value>
   </data>
+  <data name="MissingServiceProviderServer" xml:space="preserve">
+    <value>Missing or invalid server attribute on the &lt;ServiceProvider&gt; element in configuration file. It must be the absolute base URL of the service provider: it is used for the metadata and to check the Recipient of assertions.</value>
+  </data>
 </root>

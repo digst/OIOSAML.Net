@@ -161,10 +161,10 @@ namespace dk.nita.saml20.protocol
                 Trace.TraceData(TraceEventType.Information, Tracing.ArtifactResponseIn);
 
                 // Only accept an ArtifactResponse as the response to an ArtifactResolve sent by this service provider.
-                if (artifactResolveId == null || parser.ArtifactResponse.InResponseTo != artifactResolveId)
+                if (!AnswersArtifactResolve(artifactResolveId, parser.ArtifactResponse.InResponseTo))
                 {
-                    AuditLogging.logEntry(Direction.IN, Operation.ARTIFACTRESOLVE, "ArtifactResponse rejected: it does not answer an ArtifactResolve sent by this service provider");
-                    HandleError(context, "Unexpected ArtifactResponse");
+                    AuditLogging.logEntry(Direction.IN, Operation.ARTIFACTRESOLVE, "ArtifactResponse rejected: " + Resources.UnexpectedArtifactResponse);
+                    HandleError(context, Resources.UnexpectedArtifactResponse);
                     return;
                 }
 

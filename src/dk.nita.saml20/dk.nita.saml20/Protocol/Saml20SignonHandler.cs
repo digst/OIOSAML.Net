@@ -40,6 +40,22 @@ namespace dk.nita.saml20.protocol
     {
         private const string ReplayCacheKeyPrefix = "dk.nita.saml20.assertion:";
 
+        /// <summary>
+        /// The AuthnRequest a response must answer: its ID and the IdP it was sent to.
+        /// </summary>
+        private readonly struct PendingAuthnRequest
+        {
+            internal PendingAuthnRequest(string requestId, string idpId)
+            {
+                RequestId = requestId;
+                IdpId = idpId;
+            }
+
+            internal string RequestId { get; }
+
+            internal string IdpId { get; }
+        }
+
         private readonly X509Certificate2 _certificate;
 
         /// <summary>
@@ -156,10 +172,10 @@ namespace dk.nita.saml20.protocol
                 Trace.TraceData(TraceEventType.Information, Tracing.ArtifactResponseIn);
 
                 // Only accept an ArtifactResponse as the response to an ArtifactResolve sent by this service provider.
-                if (artifactResolveId == null || parser.ArtifactResponse.InResponseTo != artifactResolveId)
+                if (!AnswersArtifactResolve(artifactResolveId, parser.ArtifactResponse.InResponseTo))
                 {
-                    AuditLogging.logEntry(Direction.IN, Operation.ARTIFACTRESOLVE, "ArtifactResponse rejected: it does not answer an ArtifactResolve sent by this service provider");
-                    HandleError(context, "Unexpected ArtifactResponse");
+                    AuditLogging.logEntry(Direction.IN, Operation.ARTIFACTRESOLVE, "ArtifactResponse rejected: " + Resources.UnexpectedArtifactResponse);
+                    HandleError(context, Resources.UnexpectedArtifactResponse);
                     return;
                 }
 
@@ -268,9 +284,9 @@ namespace dk.nita.saml20.protocol
         {
             XmlElement assertion = GetAssertion(response, out var isEncrypted);
             if (assertion == null)
-                throw new Saml20Exception("The response must contain exactly one EncryptedAssertion.");
+                throw new Saml20Exception(Resources.EncryptedAssertionMissing);
             if (!isEncrypted)
-                throw new Saml20Exception("The response contains an unencrypted Assertion; only an EncryptedAssertion is accepted.");
+                throw new Saml20Exception(Resources.AssertionNotEncrypted);
             return assertion;
         }
 
@@ -337,7 +353,7 @@ namespace dk.nita.saml20.protocol
                 // Check if an encoding-override exists for the IdP endpoint in question
                 string issuer = GetIssuer(assertion);
                 IDPEndPoint endpoint = RetrieveIDPConfiguration(issuer);
-                if (!string.IsNullOrEmpty(endpoint.ResponseEncoding))
+                if (endpoint != null && !string.IsNullOrEmpty(endpoint.ResponseEncoding))
                 {
                     Encoding encodingOverride = null;
                     try
@@ -378,7 +394,7 @@ namespace dk.nita.saml20.protocol
         /// Consumes the pending AuthnRequest of the session and checks that the response answers it.
         /// </summary>
         /// <returns>The ID of the AuthnRequest and the ID of the IdP it was sent to.</returns>
-        private static (string RequestId, string IdpId) CheckReplayAttack(HttpContext context, string inResponseTo)
+        private static PendingAuthnRequest CheckReplayAttack(HttpContext context, string inResponseTo)
         {
             if (string.IsNullOrEmpty(inResponseTo))
                 throw new Saml20Exception("Empty InResponseTo from IdP is not allowed.");
@@ -398,7 +414,7 @@ namespace dk.nita.saml20.protocol
                 throw new Saml20Exception("Replay attack.");
             }
 
-            return (expectedInResponseTo, expectedIdpId);
+            return new PendingAuthnRequest(expectedInResponseTo, expectedIdpId);
         }
 
         private static XmlDocument GetDecodedSamlResponse(HttpContext context, Encoding encoding)
@@ -419,7 +435,7 @@ namespace dk.nita.saml20.protocol
         /// <summary>
         /// Decrypts an encrypted assertion, and sends the result to the HandleAssertion method.
         /// </summary>
-        private void HandleEncryptedAssertion(HttpContext context, XmlElement elem, (string RequestId, string IdpId) pendingRequest)
+        private void HandleEncryptedAssertion(HttpContext context, XmlElement elem, PendingAuthnRequest pendingRequest)
         {
             Trace.TraceMethodCalled(GetType(), "HandleEncryptedAssertion()");
             Saml20EncryptedAssertion decryptedAssertion = GetDecryptedAssertion(elem);
@@ -529,7 +545,7 @@ namespace dk.nita.saml20.protocol
         /// <summary>
         /// Deserializes an assertion, verifies its signature and logs in the user if the assertion is valid.
         /// </summary>
-        private void HandleAssertion(HttpContext context, XmlElement elem, (string RequestId, string IdpId) pendingRequest)
+        private void HandleAssertion(HttpContext context, XmlElement elem, PendingAuthnRequest pendingRequest)
         {
             Trace.TraceMethodCalled(GetType(), "HandleAssertion");
 
@@ -552,9 +568,9 @@ namespace dk.nita.saml20.protocol
             if (endp.Id != pendingRequest.IdpId)
             {
                 AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST,
-                          $"Assertion from IdP {endp.Id}, but the AuthnRequest was sent to {pendingRequest.IdpId}");
+                          string.Format(Resources.AssertionFromOtherIdP, endp.Id, pendingRequest.IdpId));
 
-                HandleError(context, Resources.UnknownLoginIDP);
+                HandleError(context, Resources.AssertionFromOtherIdP, endp.Id, pendingRequest.IdpId);
                 return;
             }
 
@@ -587,15 +603,18 @@ namespace dk.nita.saml20.protocol
             }
 
             // The signed bearer confirmation binds the assertion to the AuthnRequest and to this service provider's ACS.
-            var confirmationFailure = CheckBearerConfirmation(assertion.Assertion, pendingRequest.RequestId, AssertionConsumerServiceUrls(SAML20FederationConfig.GetConfig().ServiceProvider));
+            var confirmationFailure = CheckBearerConfirmation(assertion.Assertion, pendingRequest.RequestId,
+                AssertionConsumerServiceUrls(SAML20FederationConfig.GetConfig().ServiceProvider), out var confirmation);
             if (confirmationFailure != null)
             {
                 AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST, "Assertion rejected: " + confirmationFailure);
-                HandleError(context, confirmationFailure);
+                HandleError(context, "{0}", confirmationFailure);
                 return;
             }
 
-            if (assertion.IsExpired())
+            // The assertion is valid until the NotOnOrAfter of the bearer confirmation that matched, plus the allowed clock skew.
+            var validUntil = confirmation.NotOnOrAfter.Value.AddMinutes(FederationConfig.GetConfig().AllowedClockSkewMinutes);
+            if (DateTime.UtcNow >= validUntil)
             {
                 AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST,
                 "Assertion expired, assertion: " + elem.OuterXml);
@@ -606,7 +625,13 @@ namespace dk.nita.saml20.protocol
 
             if (!ValidateLoA(context, assertion, elem)) return;
 
-            CheckConditions(context, assertion);
+            if (!TryRegisterAssertion(assertion.Id, validUntil))
+            {
+                AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST, "Assertion rejected: " + Resources.AssertionReplayed);
+                HandleError(context, Resources.AssertionReplayed);
+                return;
+            }
+
             AuditLogging.AssertionId = assertion.Id;
             AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST,
                       "Assertion validated succesfully");
@@ -744,21 +769,35 @@ namespace dk.nita.saml20.protocol
         /// Checks that the assertion has a bearer SubjectConfirmation whose signed SubjectConfirmationData answers the
         /// AuthnRequest (InResponseTo) and is addressed to one of this service provider's assertion consumer services (Recipient).
         /// </summary>
-        /// <returns>null if such a confirmation exists, otherwise the reason for rejecting the assertion.</returns>
-        internal static string CheckBearerConfirmation(Assertion assertion, string expectedRequestId, ICollection<Uri> assertionConsumerServiceUrls)
+        /// <param name="assertion">The assertion, after its signature has been verified.</param>
+        /// <param name="expectedRequestId">The ID of the AuthnRequest of the session.</param>
+        /// <param name="assertionConsumerServiceUrls">The service provider's assertion consumer service URLs.</param>
+        /// <param name="confirmation">The bearer SubjectConfirmationData that matched, which has a NotOnOrAfter; null if none did.</param>
+        /// <returns>null if such a confirmation exists, otherwise the reason for rejecting the assertion [OIO-IDP-17].</returns>
+        internal static string CheckBearerConfirmation(Assertion assertion, string expectedRequestId, ICollection<Uri> assertionConsumerServiceUrls, out SubjectConfirmationData confirmation)
         {
-            var bearerData = (assertion.Subject?.Items ?? new object[0])
+            confirmation = null;
+            var answering = (assertion.Subject?.Items ?? new object[0])
                 .OfType<SubjectConfirmation>()
                 .Where(c => c.Method == SubjectConfirmation.BEARER_METHOD && c.SubjectConfirmationData != null)
                 .Select(c => c.SubjectConfirmationData)
+                .Where(d => !string.IsNullOrEmpty(expectedRequestId) && d.InResponseTo == expectedRequestId)
                 .ToList();
 
-            if (!bearerData.Any(d => !string.IsNullOrEmpty(expectedRequestId) && d.InResponseTo == expectedRequestId))
-                return $"The bearer SubjectConfirmationData does not answer the AuthnRequest {expectedRequestId}.";
+            if (!answering.Any())
+                return string.Format(Resources.AssertionNotForRequest, expectedRequestId);
 
-            if (!bearerData.Any(d => d.InResponseTo == expectedRequestId && IsAssertionConsumerService(d.Recipient, assertionConsumerServiceUrls)))
-                return "The bearer SubjectConfirmationData Recipient is not an assertion consumer service of this service provider.";
+            var matched = answering.FirstOrDefault(d => IsAssertionConsumerService(d.Recipient, assertionConsumerServiceUrls));
+            if (matched == null)
+            {
+                var received = string.Join(", ", answering.Select(d => d.Recipient ?? "(none)"));
+                return string.Format(Resources.AssertionRecipientMismatch, received, string.Join(", ", assertionConsumerServiceUrls));
+            }
 
+            if (!matched.NotOnOrAfter.HasValue)
+                return Resources.AssertionNotOnOrAfterMissing;
+
+            confirmation = matched;
             return null;
         }
 
@@ -772,24 +811,21 @@ namespace dk.nita.saml20.protocol
         /// </summary>
         internal static ICollection<Uri> AssertionConsumerServiceUrls(ServiceProviderElement serviceProvider)
         {
-            var baseUrl = new Uri(serviceProvider.Server);
             return serviceProvider.serviceEndpoints
                 .Where(e => e.endpointType == EndpointType.SIGNON)
-                .Select(e => new Uri(baseUrl, e.localPath))
+                .Select(serviceProvider.GetEndpointUrl)
                 .ToList();
         }
 
-        private void CheckConditions(HttpContext context, Saml20Assertion assertion)
+        /// <summary>
+        /// Remembers the ID of an accepted assertion until it can no longer be valid, so that it is accepted only once.
+        /// The cache is per process; the signed InResponseTo ties an assertion to one session across servers.
+        /// </summary>
+        /// <returns>false if the ID is already remembered: the assertion has been used before.</returns>
+        internal static bool TryRegisterAssertion(string assertionId, DateTime validUntil)
         {
-            // Every assertion is accepted only once, until it can no longer be valid.
-            var expires = assertion.NotOnOrAfter == DateTime.MaxValue
-                ? DateTime.UtcNow.AddHours(1)
-                : assertion.NotOnOrAfter.AddMinutes(FederationConfig.GetConfig().AllowedClockSkewMinutes);
-            if (HttpRuntime.Cache.Add(ReplayCacheKeyPrefix + assertion.Id, string.Empty, null, expires, Cache.NoSlidingExpiration, CacheItemPriority.NotRemovable, null) != null)
-            {
-                AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST, "Assertion rejected: it has already been used");
-                HandleError(context, "The assertion has already been used.");
-            }
+            return HttpRuntime.Cache.Add(ReplayCacheKeyPrefix + assertionId, string.Empty, null, validUntil,
+                Cache.NoSlidingExpiration, CacheItemPriority.NotRemovable, null) == null;
         }
 
         private void DoLogin(HttpContext context, Saml20Assertion assertion)

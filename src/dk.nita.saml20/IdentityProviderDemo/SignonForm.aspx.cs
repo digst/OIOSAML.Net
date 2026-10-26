@@ -196,8 +196,11 @@ namespace IdentityProviderDemo
             var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(ShaHashingAlgorithm.SHA256);
             EncryptedAssertion encryptedAssertion = null;
 
+            // OIOSAML requires the assertion to be encrypted; the service provider refuses a plain one.
             var keyDescriptors = metadataDocument.Keys.Where(x => x.use == KeyTypes.encryption);
-            if (keyDescriptors.Any())
+            if (!keyDescriptors.Any())
+                throw new Exception($"The metadata of '{entityId}' has no encryption key, so the assertion can't be encrypted.");
+
             {
                  foreach (KeyDescriptor keyDescriptor in keyDescriptors)
                 {
@@ -235,27 +238,13 @@ namespace IdentityProviderDemo
                     throw new Exception("Could not encrypt. No valid certificates found.");
             }
 
-            if(encryptedAssertion!= null)
-            {
-                response.Items = new object[] { encryptedAssertion };
-
-            }
-            else
-            {
-                response.Items = new object[] { assertion };
-            }
+            response.Items = new object[] { encryptedAssertion };
          
             // Serialize the response.
             XmlDocument responseDoc = new XmlDocument();
             responseDoc.XmlResolver = null;
             responseDoc.PreserveWhitespace = true;
             responseDoc.LoadXml(Serialization.SerializeToXmlString(response));
-
-            if (encryptedAssertion == null)
-            {
-                // Sign the assertion inside the response message.
-                signatureProvider.SignAssertion(responseDoc, assertion.ID, IDPConfig.IDPCertificate);
-            }
 
             HttpPostBindingBuilder builder = new HttpPostBindingBuilder(endpoint);
             builder.Action = SAMLAction.SAMLResponse;
