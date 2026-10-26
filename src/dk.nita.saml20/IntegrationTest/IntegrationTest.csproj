@@ -12,7 +12,7 @@
         <PackageReference Include="DotNetSeleniumExtras.WaitHelpers" Version="3.11.0" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.5.0" />
         <PackageReference Include="Selenium.WebDriver" Version="3.141.0" />
-        <PackageReference Include="Selenium.WebDriver.ChromeDriver" Version="88.0.4324.9600" />
+        <PackageReference Include="Selenium.WebDriver.ChromeDriver" Version="156.0.8078.4700" />
         <PackageReference Include="xunit" Version="2.4.0" />
         <PackageReference Include="xunit.runner.visualstudio" Version="2.4.0" />
         <PackageReference Include="coverlet.collector" Version="1.2.0" />
