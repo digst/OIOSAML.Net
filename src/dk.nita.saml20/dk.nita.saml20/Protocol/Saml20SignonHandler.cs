@@ -672,7 +672,8 @@ namespace dk.nita.saml20.protocol
                     }
 
                     AsymmetricAlgorithm key = XmlSignatureUtils.ExtractKey(clause);
-                    result.Add(key);
+                    if (key != null)
+                        result.Add(key);
                 }
 
             }
