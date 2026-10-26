@@ -77,7 +77,7 @@ namespace dk.nita.test.Saml20
                 {
                     KeyInfoEncryptedKey keyInfoEncryptedKey = (KeyInfoEncryptedKey) keyInfoClause;
                     EncryptedKey encryptedKey = keyInfoEncryptedKey.EncryptedKey;
-                    symmetricKey = new RijndaelManaged();
+                    symmetricKey = Aes.Create();
                                         
                     symmetricKey.Key =
                         EncryptedXml.DecryptKey(encryptedKey.CipherData.CipherValue, (RSA) cert.PrivateKey, false);
@@ -111,7 +111,7 @@ namespace dk.nita.test.Saml20
             encryptedData.EncryptionMethod = new EncryptionMethod(EncryptedXml.XmlEncAES256Url);
 
             // Create a symmetric key. 
-            RijndaelManaged aes = new RijndaelManaged();
+            Aes aes = Aes.Create();
             aes.KeySize = 256;
             aes.GenerateKey();
 
@@ -182,7 +182,7 @@ namespace dk.nita.test.Saml20
             }
             else
             {
-                key = new RijndaelManaged();
+                key = Aes.Create();
                 key.KeySize = dataAlgorithm == EncryptedXml.XmlEncAES128Url ? 128 : dataAlgorithm == EncryptedXml.XmlEncAES192Url ? 192 : 256;
             }
             key.GenerateKey();

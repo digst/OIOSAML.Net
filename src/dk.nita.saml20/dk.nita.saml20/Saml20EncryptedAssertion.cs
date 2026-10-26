@@ -261,11 +261,11 @@ namespace dk.nita.saml20
             switch (algorithm)
             {
                 case EncryptedXml.XmlEncAES128Url:
-                    result = new RijndaelManaged();
+                    result = Aes.Create();
                     result.KeySize = 128;
                     break;
                 case EncryptedXml.XmlEncAES256Url:
-                    result = new RijndaelManaged();
+                    result = Aes.Create();
                     result.KeySize = 256;
                     break;
                 default:
