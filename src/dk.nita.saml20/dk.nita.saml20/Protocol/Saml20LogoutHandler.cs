@@ -63,7 +63,7 @@ namespace dk.nita.saml20.protocol
                 //so we just check for the existence of the header field.
                 if (Array.Exists(context.Request.Headers.AllKeys, delegate (string s) { return s == SOAPConstants.SOAPAction; }))
                 {
-                    HandleSOAP(context, context.Request.InputStream);
+                    HandleSOAP(context, context.Request.InputStream, null);
                     return;
                 }
 
@@ -118,12 +118,18 @@ namespace dk.nita.saml20.protocol
         {
             HttpArtifactBindingBuilder builder = new HttpArtifactBindingBuilder(context);
 
-            Stream inputStream = builder.ResolveArtifact();
+            Stream inputStream = builder.ResolveArtifact(out var artifactResolveId);
 
-            HandleSOAP(context, inputStream);
+            HandleSOAP(context, inputStream, artifactResolveId);
         }
 
-        private void HandleSOAP(HttpContext context, Stream inputStream)
+        /// <summary>
+        /// Handles a SOAP message: a request received over SOAP, or the response to an ArtifactResolve sent by this service provider.
+        /// </summary>
+        /// <param name="context">The current HTTP context.</param>
+        /// <param name="inputStream">The SOAP message.</param>
+        /// <param name="artifactResolveId">The ID of the ArtifactResolve this service provider sent, when the message is its response; null for a request received over SOAP.</param>
+        private void HandleSOAP(HttpContext context, Stream inputStream, string artifactResolveId)
         {
             Trace.TraceMethodCalled(GetType(), "HandleSOAP");
 
@@ -153,6 +159,14 @@ namespace dk.nita.saml20.protocol
             else if (parser.IsArtifactResponse())
             {
                 Trace.TraceData(TraceEventType.Information, Tracing.ArtifactResponseIn);
+
+                // Only accept an ArtifactResponse as the response to an ArtifactResolve sent by this service provider.
+                if (artifactResolveId == null || parser.ArtifactResponse.InResponseTo != artifactResolveId)
+                {
+                    AuditLogging.logEntry(Direction.IN, Operation.ARTIFACTRESOLVE, "ArtifactResponse rejected: it does not answer an ArtifactResolve sent by this service provider");
+                    HandleError(context, "Unexpected ArtifactResponse");
+                    return;
+                }
 
                 Status status = parser.ArtifactResponse.Status;
                 if (status.StatusCode.Value != Saml20Constants.StatusCodes.Success)

@@ -38,6 +38,8 @@ namespace dk.nita.saml20.protocol
     /// </summary>
     public class Saml20SignonHandler : Saml20AbstractEndpointHandler
     {
+        private const string ReplayCacheKeyPrefix = "dk.nita.saml20.assertion:";
+
         private readonly X509Certificate2 _certificate;
 
         /// <summary>
@@ -76,7 +78,7 @@ namespace dk.nita.saml20.protocol
             {
                 SessionStore.AssertSessionExists();
 
-                HandleSOAP(context, context.Request.InputStream);
+                HandleSOAP(context, context.Request.InputStream, null);
                 return;
             }
 
@@ -119,11 +121,17 @@ namespace dk.nita.saml20.protocol
         private void HandleArtifact(HttpContext context)
         {
             HttpArtifactBindingBuilder builder = new HttpArtifactBindingBuilder(context);
-            Stream inputStream = builder.ResolveArtifact();
-            HandleSOAP(context, inputStream);
+            Stream inputStream = builder.ResolveArtifact(out var artifactResolveId);
+            HandleSOAP(context, inputStream, artifactResolveId);
         }
 
-        private void HandleSOAP(HttpContext context, Stream inputStream)
+        /// <summary>
+        /// Handles a SOAP message: a request received over SOAP, or the response to an ArtifactResolve sent by this service provider.
+        /// </summary>
+        /// <param name="context">The current HTTP context.</param>
+        /// <param name="inputStream">The SOAP message.</param>
+        /// <param name="artifactResolveId">The ID of the ArtifactResolve this service provider sent, when the message is its response; null for a request received over SOAP.</param>
+        private void HandleSOAP(HttpContext context, Stream inputStream, string artifactResolveId)
         {
             Trace.TraceMethodCalled(GetType(), "HandleSOAP");
             HttpArtifactBindingParser parser = new HttpArtifactBindingParser(inputStream);
@@ -147,6 +155,14 @@ namespace dk.nita.saml20.protocol
             {
                 Trace.TraceData(TraceEventType.Information, Tracing.ArtifactResponseIn);
 
+                // Only accept an ArtifactResponse as the response to an ArtifactResolve sent by this service provider.
+                if (artifactResolveId == null || parser.ArtifactResponse.InResponseTo != artifactResolveId)
+                {
+                    AuditLogging.logEntry(Direction.IN, Operation.ARTIFACTRESOLVE, "ArtifactResponse rejected: it does not answer an ArtifactResolve sent by this service provider");
+                    HandleError(context, "Unexpected ArtifactResponse");
+                    return;
+                }
+
                 Status status = parser.ArtifactResponse.Status;
                 if (status.StatusCode.Value != Saml20Constants.StatusCodes.Success)
                 {
@@ -156,19 +172,17 @@ namespace dk.nita.saml20.protocol
                 }
                 if (parser.ArtifactResponse.Any.LocalName == Response.ELEMENT_NAME)
                 {
-                    bool isEncrypted;
-                    XmlElement assertion = GetAssertion(parser.ArtifactResponse.Any, out isEncrypted);
-                    if (assertion == null)
-                        HandleError(context, "Missing assertion");
-                    if (isEncrypted)
+                    XmlElement response = parser.ArtifactResponse.Any;
+                    var pendingRequest = CheckReplayAttack(context, response.GetAttribute("InResponseTo"));
+
+                    Status responseStatus = GetStatusElement(response);
+                    if (responseStatus.StatusCode.Value != Saml20Constants.StatusCodes.Success)
                     {
-                        HandleEncryptedAssertion(context, assertion);
-                    }
-                    else
-                    {
-                        HandleAssertion(context, assertion);
+                        HandleError(context, responseStatus);
+                        return;
                     }
 
+                    HandleEncryptedAssertion(context, GetEncryptedAssertion(response), pendingRequest);
                 }
                 else
                 {
@@ -239,12 +253,25 @@ namespace dk.nita.saml20.protocol
             }
         }
 
-        private Status GetStatusElement(XmlDocument doc)
+        private Status GetStatusElement(XmlElement response)
         {
             XmlElement statElem =
-                (XmlElement)doc.GetElementsByTagName(Status.ELEMENT_NAME, Saml20Constants.PROTOCOL)[0];
+                (XmlElement)response.GetElementsByTagName(Status.ELEMENT_NAME, Saml20Constants.PROTOCOL)[0];
 
             return Serialization.DeserializeFromXmlString<Status>(statElem.OuterXml);
+        }
+
+        /// <summary>
+        /// Returns the single EncryptedAssertion of a response. The profile requires encrypted assertions, so a plain Assertion is rejected.
+        /// </summary>
+        internal static XmlElement GetEncryptedAssertion(XmlElement response)
+        {
+            XmlElement assertion = GetAssertion(response, out var isEncrypted);
+            if (assertion == null)
+                throw new Saml20Exception("The response must contain exactly one EncryptedAssertion.");
+            if (!isEncrypted)
+                throw new Saml20Exception("The response contains an unencrypted Assertion; only an EncryptedAssertion is accepted.");
+            return assertion;
         }
 
         internal static XmlElement GetAssertion(XmlElement el, out bool isEncrypted)
@@ -292,9 +319,9 @@ namespace dk.nita.saml20.protocol
 
                 string inResponseTo = inResponseToAttribute.Value;
 
-                CheckReplayAttack(context, inResponseTo);
+                var pendingRequest = CheckReplayAttack(context, inResponseTo);
 
-                Status status = GetStatusElement(doc);
+                Status status = GetStatusElement(doc.DocumentElement);
 
                 if (status.StatusCode.Value != Saml20Constants.StatusCodes.Success)
                 {
@@ -305,14 +332,7 @@ namespace dk.nita.saml20.protocol
                     return;
                 }
 
-                // Determine whether the assertion should be decrypted before being validated.
-
-                bool isEncrypted;
-                XmlElement assertion = GetAssertion(doc.DocumentElement, out isEncrypted);
-                if (isEncrypted)
-                {
-                    assertion = GetDecryptedAssertion(assertion).Assertion.DocumentElement;
-                }
+                XmlElement assertion = GetDecryptedAssertion(GetEncryptedAssertion(doc.DocumentElement)).Assertion.DocumentElement;
 
                 // Check if an encoding-override exists for the IdP endpoint in question
                 string issuer = GetIssuer(assertion);
@@ -333,11 +353,11 @@ namespace dk.nita.saml20.protocol
                     if (encodingOverride.CodePage != defaultEncoding.CodePage)
                     {
                         XmlDocument doc1 = GetDecodedSamlResponse(context, encodingOverride);
-                        assertion = GetAssertion(doc1.DocumentElement, out isEncrypted);
+                        assertion = GetDecryptedAssertion(GetEncryptedAssertion(doc1.DocumentElement)).Assertion.DocumentElement;
                     }
                 }
 
-                HandleAssertion(context, assertion);
+                HandleAssertion(context, assertion, pendingRequest);
                 return;
             }
             catch (Exception ex)
@@ -354,13 +374,19 @@ namespace dk.nita.saml20.protocol
             }
         }
 
-        private static void CheckReplayAttack(HttpContext context, string inResponseTo)
+        /// <summary>
+        /// Consumes the pending AuthnRequest of the session and checks that the response answers it.
+        /// </summary>
+        /// <returns>The ID of the AuthnRequest and the ID of the IdP it was sent to.</returns>
+        private static (string RequestId, string IdpId) CheckReplayAttack(HttpContext context, string inResponseTo)
         {
             if (string.IsNullOrEmpty(inResponseTo))
                 throw new Saml20Exception("Empty InResponseTo from IdP is not allowed.");
 
             var expectedInResponseToSessionState = SessionStore.CurrentSession[SessionConstants.ExpectedInResponseTo];
+            var expectedIdpId = SessionStore.CurrentSession[SessionConstants.ExpectedIdpId]?.ToString();
             SessionStore.CurrentSession[SessionConstants.ExpectedInResponseTo] = null; // Ensure that no more responses can be received.
+            SessionStore.CurrentSession[SessionConstants.ExpectedIdpId] = null;
 
             string expectedInResponseTo = expectedInResponseToSessionState?.ToString();
             if (string.IsNullOrEmpty(expectedInResponseTo))
@@ -371,6 +397,8 @@ namespace dk.nita.saml20.protocol
                 AuditLogging.logEntry(Direction.IN, Operation.LOGIN, string.Format("Unexpected value {0} for InResponseTo, expected {1}, possible replay attack!", inResponseTo, expectedInResponseTo));
                 throw new Saml20Exception("Replay attack.");
             }
+
+            return (expectedInResponseTo, expectedIdpId);
         }
 
         private static XmlDocument GetDecodedSamlResponse(HttpContext context, Encoding encoding)
@@ -391,11 +419,11 @@ namespace dk.nita.saml20.protocol
         /// <summary>
         /// Decrypts an encrypted assertion, and sends the result to the HandleAssertion method.
         /// </summary>
-        private void HandleEncryptedAssertion(HttpContext context, XmlElement elem)
+        private void HandleEncryptedAssertion(HttpContext context, XmlElement elem, (string RequestId, string IdpId) pendingRequest)
         {
             Trace.TraceMethodCalled(GetType(), "HandleEncryptedAssertion()");
             Saml20EncryptedAssertion decryptedAssertion = GetDecryptedAssertion(elem);
-            HandleAssertion(context, decryptedAssertion.Assertion.DocumentElement);
+            HandleAssertion(context, decryptedAssertion.Assertion.DocumentElement, pendingRequest);
         }
 
         /// <summary>
@@ -501,7 +529,7 @@ namespace dk.nita.saml20.protocol
         /// <summary>
         /// Deserializes an assertion, verifies its signature and logs in the user if the assertion is valid.
         /// </summary>
-        private void HandleAssertion(HttpContext context, XmlElement elem)
+        private void HandleAssertion(HttpContext context, XmlElement elem, (string RequestId, string IdpId) pendingRequest)
         {
             Trace.TraceMethodCalled(GetType(), "HandleAssertion");
 
@@ -509,28 +537,33 @@ namespace dk.nita.saml20.protocol
 
             IDPEndPoint endp = RetrieveIDPConfiguration(issuer);
 
-            AuditLogging.IdpId = endp.Id;
-
-            PreHandleAssertion(context, elem, endp);
-
-            bool quirksMode = false;
-
-            if (endp != null)
-            {
-                quirksMode = endp.QuirksMode;
-            }
-
-            Saml20Assertion assertion = new Saml20Assertion(elem, null, quirksMode);
-            assertion.Validate(DateTime.UtcNow);
-
             if (endp == null || endp.metadata == null)
             {
                 AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST,
-                          "Unknown login IDP, assertion: " + elem);
+                          "Unknown login IDP, issuer: " + issuer);
 
                 HandleError(context, Resources.UnknownLoginIDP);
                 return;
             }
+
+            AuditLogging.IdpId = endp.Id;
+
+            // The assertion must come from the IdP the AuthnRequest was sent to.
+            if (endp.Id != pendingRequest.IdpId)
+            {
+                AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST,
+                          $"Assertion from IdP {endp.Id}, but the AuthnRequest was sent to {pendingRequest.IdpId}");
+
+                HandleError(context, Resources.UnknownLoginIDP);
+                return;
+            }
+
+            PreHandleAssertion(context, elem, endp);
+
+            bool quirksMode = endp.QuirksMode;
+
+            Saml20Assertion assertion = new Saml20Assertion(elem, null, quirksMode);
+            assertion.Validate(DateTime.UtcNow);
 
             if (!endp.OmitAssertionSignatureCheck)
             {
@@ -551,6 +584,15 @@ namespace dk.nita.saml20.protocol
                     HandleError(context, errorMessage);
                     return;
                 }
+            }
+
+            // The signed bearer confirmation binds the assertion to the AuthnRequest and to this service provider's ACS.
+            var confirmationFailure = CheckBearerConfirmation(assertion.Assertion, pendingRequest.RequestId, AssertionConsumerServiceUrls(SAML20FederationConfig.GetConfig().ServiceProvider));
+            if (confirmationFailure != null)
+            {
+                AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST, "Assertion rejected: " + confirmationFailure);
+                HandleError(context, confirmationFailure);
+                return;
             }
 
             if (assertion.IsExpired())
@@ -698,18 +740,55 @@ namespace dk.nita.saml20.protocol
             return true;
         }
 
+        /// <summary>
+        /// Checks that the assertion has a bearer SubjectConfirmation whose signed SubjectConfirmationData answers the
+        /// AuthnRequest (InResponseTo) and is addressed to one of this service provider's assertion consumer services (Recipient).
+        /// </summary>
+        /// <returns>null if such a confirmation exists, otherwise the reason for rejecting the assertion.</returns>
+        internal static string CheckBearerConfirmation(Assertion assertion, string expectedRequestId, ICollection<Uri> assertionConsumerServiceUrls)
+        {
+            var bearerData = (assertion.Subject?.Items ?? new object[0])
+                .OfType<SubjectConfirmation>()
+                .Where(c => c.Method == SubjectConfirmation.BEARER_METHOD && c.SubjectConfirmationData != null)
+                .Select(c => c.SubjectConfirmationData)
+                .ToList();
+
+            if (!bearerData.Any(d => !string.IsNullOrEmpty(expectedRequestId) && d.InResponseTo == expectedRequestId))
+                return $"The bearer SubjectConfirmationData does not answer the AuthnRequest {expectedRequestId}.";
+
+            if (!bearerData.Any(d => d.InResponseTo == expectedRequestId && IsAssertionConsumerService(d.Recipient, assertionConsumerServiceUrls)))
+                return "The bearer SubjectConfirmationData Recipient is not an assertion consumer service of this service provider.";
+
+            return null;
+        }
+
+        private static bool IsAssertionConsumerService(string recipient, ICollection<Uri> assertionConsumerServiceUrls)
+        {
+            return Uri.TryCreate(recipient, UriKind.Absolute, out var recipientUrl) && assertionConsumerServiceUrls.Contains(recipientUrl);
+        }
+
+        /// <summary>
+        /// The assertion consumer service URLs, as published in the service provider's metadata.
+        /// </summary>
+        internal static ICollection<Uri> AssertionConsumerServiceUrls(ServiceProviderElement serviceProvider)
+        {
+            var baseUrl = new Uri(serviceProvider.Server);
+            return serviceProvider.serviceEndpoints
+                .Where(e => e.endpointType == EndpointType.SIGNON)
+                .Select(e => new Uri(baseUrl, e.localPath))
+                .ToList();
+        }
+
         private void CheckConditions(HttpContext context, Saml20Assertion assertion)
         {
-            if (assertion.IsOneTimeUse)
+            // Every assertion is accepted only once, until it can no longer be valid.
+            var expires = assertion.NotOnOrAfter == DateTime.MaxValue
+                ? DateTime.UtcNow.AddHours(1)
+                : assertion.NotOnOrAfter.AddMinutes(FederationConfig.GetConfig().AllowedClockSkewMinutes);
+            if (HttpRuntime.Cache.Add(ReplayCacheKeyPrefix + assertion.Id, string.Empty, null, expires, Cache.NoSlidingExpiration, CacheItemPriority.NotRemovable, null) != null)
             {
-                if (context.Cache[assertion.Id] != null)
-                {
-                    HandleError(context, Resources.OneTimeUseReplay);
-                }
-                else
-                {
-                    context.Cache.Insert(assertion.Id, string.Empty, null, assertion.NotOnOrAfter, Cache.NoSlidingExpiration);
-                }
+                AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST, "Assertion rejected: it has already been used");
+                HandleError(context, "The assertion has already been used.");
             }
         }
 
@@ -884,8 +963,9 @@ namespace dk.nita.saml20.protocol
 
             AuthnRequestAppenderFactory.GetAppender()?.AppendAction(request, context.Request);
 
-            //Save request message id to session
+            //Save request message id and the IdP to session
             SessionStore.CurrentSession[SessionConstants.ExpectedInResponseTo] = request.ID;
+            SessionStore.CurrentSession[SessionConstants.ExpectedIdpId] = idpEndpoint.Id;
 
             var shaHashingAlgorithm = SignatureProviderFactory.ValidateShaHashingAlgorithm(idpEndpoint.ShaHashingAlgorithm);
             if (destination.Binding == SAMLBinding.REDIRECT)

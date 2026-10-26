@@ -191,7 +191,7 @@ namespace IdentityProviderDemo
             response.Status.StatusCode.Value = Saml20Constants.StatusCodes.Success;
 
             var nameIdFormat = metadataDocument.Entity.Items.OfType<SPSSODescriptor>().SingleOrDefault()?.NameIDFormat.SingleOrDefault() ?? Saml20Constants.NameIdentifierFormats.Persistent;
-            Assertion assertion = CreateAssertion(user, entityId, nameIdFormat);
+            Assertion assertion = CreateAssertion(user, entityId, endpoint.Url, request.ID, nameIdFormat);
 
             var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(ShaHashingAlgorithm.SHA256);
             EncryptedAssertion encryptedAssertion = null;
@@ -275,7 +275,7 @@ namespace IdentityProviderDemo
             Context.Response.Cookies.Add(cdc);
         }
         
-        private Assertion CreateAssertion(User user, string receiver, string nameIdFormat)
+        private Assertion CreateAssertion(User user, string receiver, string recipient, string inResponseTo, string nameIdFormat)
         {
             Assertion assertion = new Assertion();
 
@@ -291,7 +291,8 @@ namespace IdentityProviderDemo
                 subjectConfirmation.Method = SubjectConfirmation.BEARER_METHOD;
                 subjectConfirmation.SubjectConfirmationData = new SubjectConfirmationData();
                 subjectConfirmation.SubjectConfirmationData.NotOnOrAfter = DateTime.Now.AddHours(1);
-                subjectConfirmation.SubjectConfirmationData.Recipient = receiver;
+                subjectConfirmation.SubjectConfirmationData.Recipient = recipient;
+                subjectConfirmation.SubjectConfirmationData.InResponseTo = inResponseTo;
 
                 NameID nameId = new NameID();
                 nameId.Format = nameIdFormat;
