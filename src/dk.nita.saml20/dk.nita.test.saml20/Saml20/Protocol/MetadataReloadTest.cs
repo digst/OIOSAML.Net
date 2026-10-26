@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading;
 using dk.nita.saml20;
 using dk.nita.saml20.config;
 using dk.nita.saml20.Schema.Metadata;
@@ -198,6 +199,25 @@ namespace dk.nita.test.Saml20.Protocol
 
             Assert.AreNotSame(before, _endpoints.IDPEndPoints);
             Assert.AreEqual(1, before.Count);
+        }
+
+        [Test]
+        public void FileWatcherReloadsAfterAKeyRotation()
+        {
+            var old = Write("nemlogin-old.xml", Metadata(IdpEntityId, Key("signing", Certificate())));
+            _endpoints.Initialize();
+            var oldMetadata = Idp().metadata;
+
+            var newCertificate = Certificate();
+            Write("nemlogin-new.xml", Metadata(IdpEntityId, Key("signing", newCertificate)));
+            File.Delete(old);
+
+            var deadline = DateTime.UtcNow.AddSeconds(15);
+            while (ReferenceEquals(Idp().metadata, oldMetadata) && DateTime.UtcNow < deadline)
+                Thread.Sleep(100);
+
+            Assert.AreNotSame(oldMetadata, Idp().metadata, "The file watcher did not reload the metadata.");
+            Assert.AreEqual(newCertificate, CertificateOf(Idp().metadata.GetKeys(KeyTypes.signing).Single()));
         }
 
         [TestCase("signing", 1)]
