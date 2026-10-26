@@ -14,6 +14,11 @@ namespace dk.nita.saml20.Profiles.DKSaml20.Attributes
         public const string NAME = "https://data.gov.dk/concept/core/nsis/loa";
 
         /// <summary>
+        /// The NSIS levels of assurance, from lowest to highest.
+        /// </summary>
+        private static readonly string[] Levels = { "Low", "Substantial", "High" };
+
+        /// <summary>
         /// Creates an attribute with the specified value.
         /// </summary>
         /// <param name="value">The value.</param>
@@ -22,8 +27,6 @@ namespace dk.nita.saml20.Profiles.DKSaml20.Attributes
         {
             return Create(NAME, null, value);
         }
-
-        private static readonly string[] Levels = { "Low", "Substantial", "High" };
 
         /// <summary>
         /// Whether the value is one of the NSIS levels of assurance: Low, Substantial or High.

@@ -195,20 +195,16 @@ namespace dk.nita.saml20.protocol
 
                 Saml20LogoutResponse response = new Saml20LogoutResponse();
 
-                if (idp.metadata != null)
-                    ValidateNotOnOrAfter(context, parser.LogoutRequest);
-
-                var userId = parser.GetNameID()?.Value;
-                response.StatusCode = SoapLogoutRequestStatus(
+                var (statusCode, subStatusCode) = HandleSoapLogoutRequest(
                     parser.IsSigned(),
                     idp.metadata != null,
                     () => parser.CheckSignature(idp.metadata.GetKeys(KeyTypes.signing)),
-                    userId,
+                    () => IsExpired(parser.LogoutRequest),
+                    parser.GetNameID()?.Value,
+                    userId => DoSoapLogout(context, userId),
                     message => AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, message + ", issuer: " + parser.Issuer + ", msg: " + parser.SamlMessage.OuterXml));
-
-                // Only a signed request from a known IdP, with a valid signature, logs the user out.
-                if (response.StatusCode == Saml20Constants.StatusCodes.Success)
-                    DoSoapLogout(context, userId);
+                response.StatusCode = statusCode;
+                response.SubStatusCode = subStatusCode;
 
                 LogoutRequest req = parser.LogoutRequest;
 
@@ -459,7 +455,7 @@ namespace dk.nita.saml20.protocol
                 if (!parser.IsSigned)
                 {
                     AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Signature not present, msg: " + parser.Message);
-                    response.StatusCode = Saml20Constants.StatusCodes.RequestDenied;
+                    Deny(response);
                 }
 
                 logoutRequest = parser.LogoutRequest;
@@ -480,7 +476,7 @@ namespace dk.nita.saml20.protocol
                 if (!parser.VerifySignature(metadata.GetKeys(KeyTypes.signing)))
                 {
                     AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Request has been denied. Invalid signature redirect-binding, msg: " + parser.Message);
-                    response.StatusCode = Saml20Constants.StatusCodes.RequestDenied;
+                    Deny(response);
                 }
 
                 message = parser.Message;
@@ -494,7 +490,7 @@ namespace dk.nita.saml20.protocol
                 if (!parser.IsSigned())
                 {
                     AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Signature not present, msg: " + parser.Message);
-                    response.StatusCode = Saml20Constants.StatusCodes.RequestDenied;
+                    Deny(response);
                 }
 
                 logoutRequest = parser.LogoutRequest;
@@ -515,7 +511,7 @@ namespace dk.nita.saml20.protocol
                 if (!parser.CheckSignature(metadata.GetKeys(KeyTypes.signing)))
                 {
                     AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Request has been denied. Invalid signature post-binding, msg: " + parser.Message);
-                    response.StatusCode = Saml20Constants.StatusCodes.RequestDenied;
+                    Deny(response);
                 }
 
                 message = parser.Message;
@@ -543,7 +539,7 @@ namespace dk.nita.saml20.protocol
                 if (idpId != null && idpId.ToString() != idpRequest)
                 {
                     AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, string.Format(Resources.IdPMismatchBetweenRequestAndSession, idpId, idpRequest), message);
-                    response.StatusCode = Saml20Constants.StatusCodes.RequestDenied;
+                    Deny(response);
                 }
             }
             else
@@ -594,42 +590,74 @@ namespace dk.nita.saml20.protocol
             }
         }
         
+        private static readonly (string StatusCode, string SubStatusCode) Denied =
+            (Saml20Constants.StatusCodes.Requester, Saml20Constants.StatusCodes.RequestDenied);
+
         /// <summary>
-        /// Decides the status of a LogoutRequest received over SOAP. The user may only be logged out when the status is Success.
+        /// Handles a LogoutRequest received over SOAP. The user is logged out only when the request is signed by a known IdP
+        /// with a valid signature, has not expired and names a user.
         /// </summary>
         /// <param name="isSigned">Whether the request carries a signature.</param>
         /// <param name="isIdpKnown">Whether metadata exists for the issuing IdP.</param>
         /// <param name="isSignatureValid">Verifies the signature against the IdP's signing keys; only called for a signed request from a known IdP.</param>
+        /// <param name="isExpired">Whether the request's NotOnOrAfter has passed; only called once the signature is valid.</param>
         /// <param name="userId">The NameID of the user to log out.</param>
+        /// <param name="logOut">Logs the user out.</param>
         /// <param name="audit">Writes an audit log entry for a denied request.</param>
-        internal static string SoapLogoutRequestStatus(bool isSigned, bool isIdpKnown, Func<bool> isSignatureValid, string userId, Action<string> audit)
+        /// <returns>The status codes for the LogoutResponse: Success, or Requester with the reason as second-level status code.</returns>
+        internal static (string StatusCode, string SubStatusCode) HandleSoapLogoutRequest(bool isSigned, bool isIdpKnown, Func<bool> isSignatureValid,
+            Func<bool> isExpired, string userId, Action<string> logOut, Action<string> audit)
         {
             if (!isSigned)
             {
                 audit("Request has been denied. Signature not present in SOAP logout request");
-                return Saml20Constants.StatusCodes.RequestDenied;
+                return Denied;
             }
 
             if (!isIdpKnown)
             {
-                // Not able to process the request as we do not know the IdP.
                 audit("Request has been denied. Cannot find metadata for IdP");
-                return Saml20Constants.StatusCodes.NoAvailableIDP;
+                return Denied;
             }
 
             if (!isSignatureValid())
             {
                 audit("Request has been denied. Invalid signature SOAP logout");
-                return Saml20Constants.StatusCodes.RequestDenied;
+                return Denied;
+            }
+
+            if (isExpired())
+            {
+                audit("Request has been denied. The SOAP logout request has expired");
+                return Denied;
             }
 
             if (string.IsNullOrEmpty(userId))
             {
                 audit("Request has been denied. No user ID was supplied in SOAP logout request");
-                return Saml20Constants.StatusCodes.NoAuthnContext;
+                return (Saml20Constants.StatusCodes.Requester, Saml20Constants.StatusCodes.UnknownPrincipal);
             }
 
-            return Saml20Constants.StatusCodes.Success;
+            logOut(userId);
+            return (Saml20Constants.StatusCodes.Success, null);
+        }
+
+        /// <summary>
+        /// Denies a LogoutRequest: top-level status Requester, with RequestDenied as the reason.
+        /// </summary>
+        private static void Deny(Saml20LogoutResponse response)
+        {
+            response.StatusCode = Denied.StatusCode;
+            response.SubStatusCode = Denied.SubStatusCode;
+        }
+
+        /// <summary>
+        /// Whether the <see cref="LogoutRequest"/> has expired: its NotOnOrAfter, if any, plus the allowed clock skew has passed.
+        /// </summary>
+        internal static bool IsExpired(LogoutRequest logoutRequest)
+        {
+            return logoutRequest.NotOnOrAfter.HasValue
+                && logoutRequest.NotOnOrAfter.Value.AddMinutes(FederationConfig.GetConfig().AllowedClockSkewMinutes) <= DateTime.UtcNow;
         }
 
         /// <summary>
@@ -642,21 +670,12 @@ namespace dk.nita.saml20.protocol
         /// <exception cref="Saml20Exception">Throws Saml20Exception if validation fails, and config is set to throw exception.</exception>
         private void ValidateNotOnOrAfter(HttpContext context, LogoutRequest logoutRequest)
         {
-            if (!logoutRequest.NotOnOrAfter.HasValue)
+            if (!IsExpired(logoutRequest))
             {
                 return;
             }
 
-            var notOnOrAfter = logoutRequest.NotOnOrAfter.Value;
-            var allowedClockSkewTime = FederationConfig.GetConfig().AllowedClockSkewMinutes;
-            var now = DateTime.UtcNow;
-
-            if (notOnOrAfter.AddMinutes(allowedClockSkewTime) > now)
-            {
-                return;
-            }
-
-            var errormessage = $"Logout request expired. NotOnOrAfter={notOnOrAfter}, RequestReceived={now}";
+            var errormessage = $"Logout request expired. NotOnOrAfter={logoutRequest.NotOnOrAfter}, RequestReceived={DateTime.UtcNow}";
             AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, errormessage);
             HandleError(context, errormessage);
         }

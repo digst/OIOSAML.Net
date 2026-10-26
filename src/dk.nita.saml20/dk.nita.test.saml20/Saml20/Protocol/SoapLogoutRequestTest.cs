@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Xml;
 using dk.nita.saml20;
 using dk.nita.saml20.protocol;
 using NUnit.Framework;
@@ -9,58 +10,104 @@ namespace dk.nita.test.Saml20.Protocol
     public class SoapLogoutRequestTest
     {
         private readonly List<string> _audit = new List<string>();
+        private readonly List<string> _loggedOut = new List<string>();
 
         [SetUp]
-        public void ClearAudit()
+        public void Clear()
         {
             _audit.Clear();
+            _loggedOut.Clear();
         }
 
-        private string Status(bool isSigned, bool isIdpKnown, bool isSignatureValid, string userId)
+        private (string StatusCode, string SubStatusCode) Handle(bool isSigned = true, bool isIdpKnown = true, bool isSignatureValid = true, bool isExpired = false, string userId = "user")
         {
-            return Saml20LogoutHandler.SoapLogoutRequestStatus(isSigned, isIdpKnown, () => isSignatureValid, userId, _audit.Add);
+            return Saml20LogoutHandler.HandleSoapLogoutRequest(isSigned, isIdpKnown, () => isSignatureValid, () => isExpired, userId, _loggedOut.Add, _audit.Add);
         }
+
+        private static readonly (string, string) Denied = (Saml20Constants.StatusCodes.Requester, Saml20Constants.StatusCodes.RequestDenied);
 
         [Test]
-        public void ValidRequestIsAccepted()
+        public void ValidRequestLogsTheUserOut()
         {
-            Assert.AreEqual(Saml20Constants.StatusCodes.Success, Status(true, true, true, "user"));
+            Assert.AreEqual((Saml20Constants.StatusCodes.Success, (string)null), Handle());
+            CollectionAssert.AreEqual(new[] { "user" }, _loggedOut);
             Assert.IsEmpty(_audit);
         }
 
         [Test]
         public void UnsignedRequestIsDenied()
         {
-            Assert.AreEqual(Saml20Constants.StatusCodes.RequestDenied, Status(false, true, true, "user"));
-            Assert.AreEqual(1, _audit.Count);
-        }
-
-        [Test]
-        public void RequestWithInvalidSignatureIsDenied()
-        {
-            Assert.AreEqual(Saml20Constants.StatusCodes.RequestDenied, Status(true, true, false, "user"));
+            Assert.AreEqual(Denied, Handle(isSigned: false));
+            Assert.IsEmpty(_loggedOut);
             Assert.AreEqual(1, _audit.Count);
         }
 
         [Test]
         public void RequestFromUnknownIdpIsDenied()
         {
-            Assert.AreEqual(Saml20Constants.StatusCodes.NoAvailableIDP, Status(true, false, true, "user"));
+            Assert.AreEqual(Denied, Handle(isIdpKnown: false));
+            Assert.IsEmpty(_loggedOut);
         }
 
         [Test]
-        public void SignatureIsNotCheckedForUnsignedRequest()
+        public void RequestWithInvalidSignatureIsDenied()
         {
-            var checkedSignature = false;
-            Saml20LogoutHandler.SoapLogoutRequestStatus(false, true, () => checkedSignature = true, "user", _audit.Add);
-            Assert.IsFalse(checkedSignature);
+            Assert.AreEqual(Denied, Handle(isSignatureValid: false));
+            Assert.IsEmpty(_loggedOut);
+        }
+
+        [Test]
+        public void ExpiredRequestIsDenied()
+        {
+            Assert.AreEqual(Denied, Handle(isExpired: true));
+            Assert.IsEmpty(_loggedOut);
         }
 
         [TestCase(null)]
         [TestCase("")]
-        public void RequestWithoutUserIdIsDenied(string userId)
+        public void RequestWithoutUserIdIsDeniedAsUnknownPrincipal(string userId)
         {
-            Assert.AreEqual(Saml20Constants.StatusCodes.NoAuthnContext, Status(true, true, true, userId));
+            Assert.AreEqual((Saml20Constants.StatusCodes.Requester, Saml20Constants.StatusCodes.UnknownPrincipal), Handle(userId: userId));
+            Assert.IsEmpty(_loggedOut);
+        }
+
+        [Test]
+        public void SignatureIsNotCheckedForUnsignedRequestOrUnknownIdp()
+        {
+            var checkedSignature = false;
+            Saml20LogoutHandler.HandleSoapLogoutRequest(false, true, () => checkedSignature = true, () => false, "user", _loggedOut.Add, _audit.Add);
+            Saml20LogoutHandler.HandleSoapLogoutRequest(true, false, () => checkedSignature = true, () => false, "user", _loggedOut.Add, _audit.Add);
+            Assert.IsFalse(checkedSignature, "The signature check reads the IdP's metadata, which an unknown IdP doesn't have.");
+        }
+
+        [Test]
+        public void ExpiryIsCheckedOnlyAfterTheSignature()
+        {
+            var checkedExpiry = false;
+            Saml20LogoutHandler.HandleSoapLogoutRequest(true, true, () => false, () => checkedExpiry = true, "user", _loggedOut.Add, _audit.Add);
+            Assert.IsFalse(checkedExpiry);
+        }
+
+        [Test]
+        public void DenialIsTopLevelRequesterWithTheReasonBelow()
+        {
+            var response = new Saml20LogoutResponse { StatusCode = Saml20Constants.StatusCodes.Requester, SubStatusCode = Saml20Constants.StatusCodes.RequestDenied };
+
+            var xml = response.GetXml();
+            var codes = xml.GetElementsByTagName("StatusCode", Saml20Constants.PROTOCOL);
+            Assert.AreEqual(2, codes.Count);
+            Assert.AreEqual(Saml20Constants.StatusCodes.Requester, ((XmlElement)codes[0]).GetAttribute("Value"));
+            Assert.AreEqual(Saml20Constants.StatusCodes.RequestDenied, ((XmlElement)codes[1]).GetAttribute("Value"));
+            Assert.AreSame(codes[0], codes[1].ParentNode);
+        }
+
+        [Test]
+        public void SuccessHasNoSecondLevelStatus()
+        {
+            var response = new Saml20LogoutResponse { StatusCode = Saml20Constants.StatusCodes.Success };
+
+            Assert.AreEqual(1, response.GetXml().GetElementsByTagName("StatusCode", Saml20Constants.PROTOCOL).Count);
+            Assert.IsNull(response.SubStatusCode);
         }
     }
 }
