@@ -522,6 +522,9 @@ AppID={1}</value>
   <data name="DemandingLevelOfAssuranceError" xml:space="preserve">
     <value>Received bad Level of Assurance value: "{0}". Valid values are "Low", "Substantial", "High".</value>
   </data>
+  <data name="DemandingLevelOfAssuranceBelowMinimum" xml:space="preserve">
+    <value>Demanded Level of Assurance "{0}" is below the configured minimum "{1}".</value>
+  </data>
   <data name="NsisLoaTooLowAccordingToDemand" xml:space="preserve">
     <value>Saml assertion does not have the required NSIS Level of Assurance. LoA was: {0} and demanded minimum required LoA was: {1}.</value>
   </data>

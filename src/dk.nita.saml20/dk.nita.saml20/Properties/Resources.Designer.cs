@@ -809,6 +809,15 @@ namespace Saml2.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Demanded Level of Assurance &quot;{0}&quot; is below the configured minimum &quot;{1}&quot;..
+        /// </summary>
+        internal static string DemandingLevelOfAssuranceBelowMinimum {
+            get {
+                return ResourceManager.GetString("DemandingLevelOfAssuranceBelowMinimum", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Saml assertion does not have the required NSIS Level of Assurance. LoA was: {0} and demanded minimum required LoA was: {1}..
         /// </summary>
         internal static string NsisLoaTooLowAccordingToDemand {

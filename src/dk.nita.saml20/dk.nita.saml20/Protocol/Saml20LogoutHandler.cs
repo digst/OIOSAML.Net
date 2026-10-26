@@ -194,44 +194,25 @@ namespace dk.nita.saml20.protocol
 
                 Saml20LogoutResponse response = new Saml20LogoutResponse();
 
-                if (!parser.IsSigned())
-                {
-                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Signature not present in SOAP logout request, msg: " + parser.SamlMessage.OuterXml);
-                    response.StatusCode = Saml20Constants.StatusCodes.RequestDenied;
-                }
-
-                if (idp.metadata == null)
-                {
-                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Cannot find metadata for IdP: " + parser.Issuer);
-                    // Not able to process the request as we do not know the IdP.
-                    response.StatusCode = Saml20Constants.StatusCodes.NoAvailableIDP;
-                }
-                else
-                {
+                if (idp.metadata != null)
                     ValidateNotOnOrAfter(context, parser.LogoutRequest);
-                    
-                    Saml20MetadataDocument metadata = idp.metadata;
 
-                    if (!parser.CheckSignature(metadata.GetKeys(KeyTypes.signing)))
-                    {
-                        AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Request has been denied. Invalid signature SOAP logout, msg: " + parser.SamlMessage.OuterXml);
-                        response.StatusCode = Saml20Constants.StatusCodes.RequestDenied;
-                    }
-                }
+                var userId = parser.GetNameID()?.Value;
+                response.StatusCode = SoapLogoutRequestStatus(
+                    parser.IsSigned(),
+                    idp.metadata != null,
+                    () => parser.CheckSignature(idp.metadata.GetKeys(KeyTypes.signing)),
+                    userId,
+                    message => AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, message + ", issuer: " + parser.Issuer + ", msg: " + parser.SamlMessage.OuterXml));
 
-                if (parser.GetNameID() != null && !string.IsNullOrEmpty(parser.GetNameID().Value))
-                    DoSoapLogout(context, parser.GetNameID().Value);
-                else
-                {
-                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Request has been denied. No user ID was supplied in SOAP logout request, msg: " + parser.SamlMessage.OuterXml);
-                    response.StatusCode = Saml20Constants.StatusCodes.NoAuthnContext;
-                }
+                // Only a signed request from a known IdP, with a valid signature, logs the user out.
+                if (response.StatusCode == Saml20Constants.StatusCodes.Success)
+                    DoSoapLogout(context, userId);
 
                 LogoutRequest req = parser.LogoutRequest;
 
                 //Build the response object
                 response.Issuer = config.ServiceProvider.ID;
-                response.StatusCode = Saml20Constants.StatusCodes.Success;
                 response.InResponseTo = req.ID;
                 XmlDocument doc = response.GetXml();
                 var signingCertificate = FederationConfig.GetConfig().GetFirstValidCertificate();
@@ -612,6 +593,44 @@ namespace dk.nita.saml20.protocol
             }
         }
         
+        /// <summary>
+        /// Decides the status of a LogoutRequest received over SOAP. The user may only be logged out when the status is Success.
+        /// </summary>
+        /// <param name="isSigned">Whether the request carries a signature.</param>
+        /// <param name="isIdpKnown">Whether metadata exists for the issuing IdP.</param>
+        /// <param name="isSignatureValid">Verifies the signature against the IdP's signing keys; only called for a signed request from a known IdP.</param>
+        /// <param name="userId">The NameID of the user to log out.</param>
+        /// <param name="audit">Writes an audit log entry for a denied request.</param>
+        internal static string SoapLogoutRequestStatus(bool isSigned, bool isIdpKnown, Func<bool> isSignatureValid, string userId, Action<string> audit)
+        {
+            if (!isSigned)
+            {
+                audit("Request has been denied. Signature not present in SOAP logout request");
+                return Saml20Constants.StatusCodes.RequestDenied;
+            }
+
+            if (!isIdpKnown)
+            {
+                // Not able to process the request as we do not know the IdP.
+                audit("Request has been denied. Cannot find metadata for IdP");
+                return Saml20Constants.StatusCodes.NoAvailableIDP;
+            }
+
+            if (!isSignatureValid())
+            {
+                audit("Request has been denied. Invalid signature SOAP logout");
+                return Saml20Constants.StatusCodes.RequestDenied;
+            }
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                audit("Request has been denied. No user ID was supplied in SOAP logout request");
+                return Saml20Constants.StatusCodes.NoAuthnContext;
+            }
+
+            return Saml20Constants.StatusCodes.Success;
+        }
+
         /// <summary>
         /// Validates that the <see cref="LogoutRequest"/> has not expired, by checking that NotOnOrAfter + allowedTimeSkew is greater than current time.
         /// Only validated if <see cref="LogoutRequest.NotOnOrAfter"/> is not null.
