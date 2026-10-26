@@ -715,6 +715,7 @@ namespace dk.nita.saml20.protocol
 
         private void DoLogin(HttpContext context, Saml20Assertion assertion)
         {
+            SessionStore.RotateSessionId();
             SessionStore.AssociateUserIdWithCurrentSession(assertion.Subject.Value);
 
             // The assertion is what keeps the session alive. If it is ever removed ... the session will appear as removed in the SessionStoreProvider because Saml20AssertionLite is the only thing kept in session store when login flow is completed..
