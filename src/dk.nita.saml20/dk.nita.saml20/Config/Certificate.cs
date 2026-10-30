@@ -24,7 +24,7 @@ namespace dk.nita.saml20.config
             try
             {
                 store.Open(OpenFlags.ReadOnly);
-                var found = store.Certificates.Find(x509FindType, findValue, validOnly);
+                var found = store.Certificates.Find(x509FindType, findValue, false);
                 if (found.Count == 0)
                 {
                     var msg = $"A configured certificate could not be found in the certificate store. {SearchDescriptor()}";
@@ -105,7 +105,7 @@ namespace dk.nita.saml20.config
             try
             {
                 store.Open(OpenFlags.ReadOnly);
-                return store.Certificates.Find(x509FindType, findValue, validOnly);
+                return store.Certificates.Find(x509FindType, findValue, false);
             }
             finally
             {
@@ -115,7 +115,7 @@ namespace dk.nita.saml20.config
 
         private string SearchDescriptor()
         {
-            var msg = $"The certificate was searched for in {storeLocation}/{storeName}, {x509FindType}='{findValue}', validOnly={validOnly}.";
+            var msg = $"The certificate was searched for in {storeLocation}/{storeName}, {x509FindType}='{findValue}'.";
 
             if (x509FindType == X509FindType.FindByThumbprint && findValue?.Length > 0 && findValue[0] == 0x200E)
             {
@@ -150,9 +150,8 @@ namespace dk.nita.saml20.config
         public X509FindType x509FindType;
 
         /// <summary>
-        /// If true, a certificate is only used if its chain, including revocation, can be validated by Windows.
-        /// The revocation check needs the CA's CRL or OCSP responder to be reachable. If false (the default),
-        /// only the validity period is checked.
+        /// Ignored. The SP's own certificate is checked for its validity period only; its chain and revocation are
+        /// checked by the IdP that trusts it. Kept so that existing configuration files can still be read.
         /// </summary>
         [XmlAttribute]
         public bool validOnly = false;

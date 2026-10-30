@@ -61,7 +61,7 @@ An `IDPEndPoint` configured in `Web.config` keeps its settings through a reload,
 
 ## When the SP changes its certificate
 
-Each `SigningCertificate` in `Federation/SigningCertificates` names one certificate in the certificate store, preferably by thumbprint. It is used if it has a private key and is within its validity period. With `validOnly="true"` the certificate's chain, including revocation, must also validate, which needs the CA's CRL or OCSP responder to be reachable from the server; the default is `false`. The store is searched again every ten minutes.
+Each `SigningCertificate` in `Federation/SigningCertificates` names one certificate in the certificate store, preferably by thumbprint. It is used if it has a private key and is within its validity period. Its chain and revocation are not checked by the SP, but by the IdP that trusts it; the `validOnly` attribute is ignored. The store is searched again every ten minutes.
 
 Messages are signed with the certificate of the first entry that can be used. Assertions are decrypted with any of them, and the SP metadata lists all of them. To change certificate:
 

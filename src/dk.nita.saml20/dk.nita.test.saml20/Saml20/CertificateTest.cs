@@ -86,7 +86,7 @@ namespace dk.nita.test.Saml20
         }
 
         [Test]
-        public void ValidOnlyDecidesWhetherTheChainIsValidated()
+        public void ChainIsNotValidatedEvenWithValidOnly()
         {
             // Self-signed, so the chain can't be validated.
             var selfSigned = new X509Certificate2(Create(-1, 100).Export(X509ContentType.Pfx), (string)null,
@@ -106,7 +106,8 @@ namespace dk.nita.test.Saml20
                 };
 
                 Assert.AreEqual(selfSigned.Thumbprint, Configured(false).GetFirstValidX509Certificate().Thumbprint);
-                Assert.IsNull(Configured(true).GetFirstValidX509Certificate());
+                Assert.AreEqual(selfSigned.Thumbprint, Configured(true).GetFirstValidX509Certificate().Thumbprint);
+                Assert.AreEqual(selfSigned.Thumbprint, Configured(true).GetCertificate().Thumbprint);
             }
             finally
             {
