@@ -63,6 +63,15 @@ namespace dk.nita.saml20
         }
 
         /// <summary>
+        /// Gets or sets the second-level status code, which gives the reason for a Requester or Responder status code.
+        /// </summary>
+        public string SubStatusCode
+        {
+            get { return _response.Status.StatusCode.SubStatusCode?.Value; }
+            set { _response.Status.StatusCode.SubStatusCode = value == null ? null : new StatusCode { Value = value }; }
+        }
+
+        /// <summary>
         /// Gets the underlying Response schema class instance.
         /// </summary>
         /// <value>The response.</value>

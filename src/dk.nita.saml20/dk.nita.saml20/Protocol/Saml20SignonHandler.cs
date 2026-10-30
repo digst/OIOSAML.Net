@@ -577,10 +577,11 @@ namespace dk.nita.saml20.protocol
         /// <returns>True if valid, otherwise false.</returns>
         private bool ValidateLoA(HttpContext context, Saml20Assertion assertion, XmlElement assertionXml)
         {
-            // If AssuranceLevel is allowed, and it's present in assertion, validate.
+            // If AssuranceLevel is allowed, and it's present in assertion, validate. A demanded NSIS LoA always needs a NSIS LoA.
             var allowAL = SAML20FederationConfig.GetConfig().AllowAssuranceLevel;
             var assertionAL = GetAssuranceLevel(assertion);
-            if(allowAL && assertionAL != null)
+            var demandedNsisLoa = SessionStore.CurrentSession[SessionConstants.ExpectedNsisLoa]?.ToString();
+            if (UsesLegacyAssuranceLevel(allowAL, assertionAL, demandedNsisLoa))
             {
                 return ValidateAssuranceLevel(assertionAL, context, assertionXml);
             }
@@ -594,33 +595,50 @@ namespace dk.nita.saml20.protocol
                 return false;
             }
 
-            return ValidateNsisLoa(assertionNsisLoa, context, assertionXml);
+            return ValidateNsisLoa(assertionNsisLoa, demandedNsisLoa, context, assertionXml);
         }
 
         /// <summary>
-        /// Validates if a NSIS LoA is equals to or higher than a minimum required LoA.
+        /// Whether the legacy OIOSAML 2 AssuranceLevel is validated instead of the NSIS LoA: only when it is allowed,
+        /// present in the assertion, and no NSIS LoA was demanded.
+        /// </summary>
+        internal static bool UsesLegacyAssuranceLevel(bool allowAssuranceLevel, string assuranceLevel, string demandedNsisLoa)
+        {
+            return allowAssuranceLevel && assuranceLevel != null && demandedNsisLoa == null;
+        }
+
+        /// <summary>
+        /// Checks a NSIS LoA demanded in the login request: it must be a NSIS level and at least the configured minimum.
+        /// </summary>
+        /// <returns>null if the demand can be sent to the IdP, otherwise the error message template ({0} the demand, {1} the minimum).</returns>
+        internal static string DemandedNsisLoaError(string demandedNsisLoa, string configuredNsisLoa)
+        {
+            if (!DKSaml20NsisLoaAttribute.IsValidLevel(demandedNsisLoa))
+                return Resources.DemandingLevelOfAssuranceError;
+
+            if (!DKSaml20NsisLoaAttribute.IsAtLeast(demandedNsisLoa, configuredNsisLoa))
+                return Resources.DemandingLevelOfAssuranceBelowMinimum;
+
+            return null;
+        }
+
+        /// <summary>
+        /// Validates if a NSIS LoA is equals to or higher than a minimum required LoA: the configured minimum, or a stricter demanded LoA.
         /// If validation fails, response is modified to display an error page.
         /// </summary>
         /// <returns>True if valid, otherwise false (and modified response).</returns>
-        private bool ValidateNsisLoa(string loa, HttpContext context, XmlElement assertionXml)
+        private bool ValidateNsisLoa(string loa, string demandedNsisLoa, HttpContext context, XmlElement assertionXml)
         {
-            var demandedNsisLoa = SessionStore.CurrentSession[SessionConstants.ExpectedNsisLoa]?.ToString();
-            var minLoa = demandedNsisLoa ?? SAML20FederationConfig.GetConfig().MinimumNsisLoa;
-            
-            if (loa == minLoa) return true;
-            
-            switch (minLoa)
-            {
-                case "High" when loa != "High":
-                case "Substantial" when loa != "High" && loa != "Substantial":
-                    var msgTemplate = demandedNsisLoa != null ?
-                        Resources.NsisLoaTooLowAccordingToDemand :
-                        Resources.NsisLoaTooLow;
-                    HandleLoaValidationError(msgTemplate, loa, demandedNsisLoa, context, assertionXml);
-                    return false;
-                default:
-                    return true;
-            }
+            var configuredNsisLoa = SAML20FederationConfig.GetConfig().MinimumNsisLoa;
+            var minLoa = DKSaml20NsisLoaAttribute.Stricter(configuredNsisLoa, demandedNsisLoa);
+
+            if (DKSaml20NsisLoaAttribute.IsAtLeast(loa, minLoa)) return true;
+
+            var msgTemplate = minLoa != configuredNsisLoa ?
+                Resources.NsisLoaTooLowAccordingToDemand :
+                Resources.NsisLoaTooLow;
+            HandleLoaValidationError(msgTemplate, loa, minLoa, context, assertionXml);
+            return false;
         }
 
         /// <summary>
@@ -713,10 +731,12 @@ namespace dk.nita.saml20.protocol
 
         private void DoLogin(HttpContext context, Saml20Assertion assertion)
         {
+            SessionStore.RotateSessionId();
             SessionStore.AssociateUserIdWithCurrentSession(assertion.Subject.Value);
 
             // The assertion is what keeps the session alive. If it is ever removed ... the session will appear as removed in the SessionStoreProvider because Saml20AssertionLite is the only thing kept in session store when login flow is completed..
             SessionStore.CurrentSession[SessionConstants.Saml20AssertionLite] = Saml20AssertionLite.ToLite(assertion);
+            SessionStore.CurrentSession[SessionConstants.ExpectedNsisLoa] = null;
 
             if (Trace.ShouldTrace(TraceEventType.Information))
             {
@@ -820,19 +840,22 @@ namespace dk.nita.saml20.protocol
             }
 
             var requestContextItems = new List<(string value, ItemsChoiceType7 type)>();
+            string demandedNsisLoa = null;
             if (!string.IsNullOrEmpty(context.Request.Params[NsisLoa]))
             {
                 var demandedLevelOfAssurance = context.Request.Params[NsisLoa];
-                if (!new[] { "Low", "Substantial", "High" }.Contains(demandedLevelOfAssurance))
+
+                // A demanded LoA can only raise the configured minimum.
+                var configuredNsisLoa = SAML20FederationConfig.GetConfig().MinimumNsisLoa;
+                var demandError = DemandedNsisLoaError(demandedLevelOfAssurance, configuredNsisLoa);
+                if (demandError != null)
                 {
-                    HandleError(context, Resources.DemandingLevelOfAssuranceError, demandedLevelOfAssurance);
+                    HandleError(context, demandError, demandedLevelOfAssurance, configuredNsisLoa);
                     return;
                 }
 
                 requestContextItems.Add((DKSaml20NsisLoaAttribute.NAME + "/" + demandedLevelOfAssurance, ItemsChoiceType7.AuthnContextClassRef));
-
-                // Persist demanded LoA in session to be able to verify assertion
-                SessionStore.CurrentSession[SessionConstants.ExpectedNsisLoa] = demandedLevelOfAssurance;
+                demandedNsisLoa = demandedLevelOfAssurance;
 
                 Trace.TraceData(TraceEventType.Information, string.Format(Tracing.DemandingLevelOfAssurance, demandedLevelOfAssurance));
             }
@@ -882,8 +905,9 @@ namespace dk.nita.saml20.protocol
 
             AuthnRequestAppenderFactory.GetAppender()?.AppendAction(request, context.Request);
 
-            //Save request message id to session
+            //Save request message id to session, together with the demanded LoA to verify the assertion against
             SessionStore.CurrentSession[SessionConstants.ExpectedInResponseTo] = request.ID;
+            SessionStore.CurrentSession[SessionConstants.ExpectedNsisLoa] = demandedNsisLoa;
 
             var shaHashingAlgorithm = SignatureProviderFactory.ValidateShaHashingAlgorithm(idpEndpoint.ShaHashingAlgorithm);
             if (destination.Binding == SAMLBinding.REDIRECT)

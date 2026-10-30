@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Linq;
+using System.Reflection;
 using System.Web;
+using dk.nita.saml20.session;
 using dk.nita.saml20.config;
 using dk.nita.saml20.Utils;
 
@@ -73,11 +76,61 @@ namespace dk.nita.saml20.Session
 
             var sessionId = GetSessionIdFromCookie();
 
-            if (!sessionId.HasValue)
+            // Only continue a session the store knows; never create one for an id chosen by the client.
+            if (!sessionId.HasValue || !SessionStoreProvider.DoesSessionExists(sessionId.Value))
             {
                 WriteSessionCookie();
             }
         }
+
+        /// <summary>
+        /// Gives the user a new session id at login, so that a session id known before the login is of no use after it (session fixation).
+        /// The values of the login flow move to the new session, and the old session is emptied. An assertion from an earlier login is not moved.
+        /// </summary>
+        internal static void RotateSessionId()
+        {
+            var previous = CurrentSession;
+            WriteSessionCookie();
+            if (previous == null)
+                return;
+
+            var current = CurrentSession;
+            foreach (var key in SessionKeys)
+            {
+                var value = previous[key];
+                if (value == null)
+                    continue;
+
+                if (key != SessionConstants.Saml20AssertionLite)
+                    current[key] = value;
+                previous[key] = null;
+            }
+        }
+
+        /// <summary>
+        /// Tells the browser to delete the session cookie, at logout.
+        /// </summary>
+        internal static void ExpireSessionCookie()
+        {
+            if (HttpContext.Current == null)
+                return;
+
+            HttpContext.Current.Response.Cookies.Set(new HttpCookie(GetSessionCookieName(), string.Empty)
+            {
+                Expires = DateTime.UtcNow.AddYears(-1),
+                Secure = true,
+                HttpOnly = true,
+            });
+        }
+
+        /// <summary>
+        /// The keys the library stores in a session.
+        /// </summary>
+        private static readonly string[] SessionKeys = typeof(SessionConstants)
+            .GetFields(BindingFlags.Public | BindingFlags.Static)
+            .Where(field => field.IsLiteral && field.FieldType == typeof(string))
+            .Select(field => (string)field.GetRawConstantValue())
+            .ToArray();
 
         /// <summary>
         /// Associates the given userId with the current session id
@@ -102,8 +155,8 @@ namespace dk.nita.saml20.Session
         private static Guid? GetSessionIdFromCookie()
         {
             HttpCookie httpCookie = HttpContext.Current.Request.Cookies[GetSessionCookieName()];
-            if (httpCookie != null)
-                return new Guid(httpCookie.Value);
+            if (httpCookie != null && Guid.TryParse(httpCookie.Value, out var sessionId))
+                return sessionId;
 
             return null;
         }
