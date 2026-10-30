@@ -58,3 +58,13 @@ The IdP metadata files are read from the directory set in `IDPEndPoints/@metadat
 * **The new certificate comes in a separate metadata file.** Add the new file next to the old one, with the same `entityID`. The keys of all files with that `entityID` are trusted, and the newest file gives the endpoints. Delete the old file once the IdP has switched.
 
 An `IDPEndPoint` configured in `Web.config` keeps its settings through a reload, even while its metadata file is being replaced. A file that can't be read, for example while it is being copied or is locked, keeps its last version for up to five minutes; after that its keys are no longer trusted and an error is traced. A file that can be read but isn't usable SAML 2.0 metadata with one `EntityDescriptor` counts as removed straight away. Certificates are still checked by the configured certificate validation (by default chain and revocation), so the new certificate's CA must be trusted on the server.
+
+## When the SP changes its certificate
+
+Each `SigningCertificate` in `Federation/SigningCertificates` names one certificate in the certificate store, preferably by thumbprint. It is used if it has a private key and is within its validity period. With `validOnly="true"` the certificate's chain, including revocation, must also validate, which needs the CA's CRL or OCSP responder to be reachable from the server; the default is `false`. The store is searched again every ten minutes.
+
+Messages are signed with the certificate of the first entry that can be used. Assertions are decrypted with any of them, and the SP metadata lists all of them. To change certificate:
+
+1. Install the new certificate and add an entry for it after the current one. Register the SP metadata, which now has both certificates, with the IdP.
+2. Once the IdP has the new metadata, move the new entry first.
+3. Remove the old entry, then the old certificate.
