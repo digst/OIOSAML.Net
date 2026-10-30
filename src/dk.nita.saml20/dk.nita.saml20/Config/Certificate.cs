@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Xml.Serialization;
 using Saml2.Properties;
@@ -22,7 +24,7 @@ namespace dk.nita.saml20.config
             try
             {
                 store.Open(OpenFlags.ReadOnly);
-                var found = store.Certificates.Find(x509FindType, findValue, validOnly);
+                var found = store.Certificates.Find(x509FindType, findValue, false);
                 if (found.Count == 0)
                 {
                     var msg = $"A configured certificate could not be found in the certificate store. {SearchDescriptor()}";
@@ -42,46 +44,68 @@ namespace dk.nita.saml20.config
         }
 
         /// <summary>
-        /// Opens the certificate from its store.
+        /// The certificate to sign with: of the certificates found that have a private key and are within their
+        /// validity period, the one with the latest NotBefore. Null if there is none.
         /// </summary>
-        /// <returns></returns>
         public X509Certificate2 GetFirstValidX509Certificate()
         {
-            var store = new X509Store(storeName, storeLocation);
-            try
-            {
-                store.Open(OpenFlags.ReadOnly);
-                var found = store.Certificates.Find(x509FindType, findValue, true);
-                if (found.Count == 0)
-                {
-                    return null;
-                }
-
-                return found[0];
-            }
-            finally
-            {
-                store.Close();
-            }
+            return GetValidCertificates().FirstOrDefault();
         }
 
         /// <summary>
-        /// Opens the certificate from its store.
+        /// The certificates found that have a private key and are within their validity period, latest NotBefore first.
+        /// Null if there are none.
         /// </summary>
-        /// <returns></returns>
         public X509Certificate2Collection GetAllValidX509Certificates()
+        {
+            var valid = GetValidCertificates();
+            return valid.Length == 0 ? null : new X509Certificate2Collection(valid);
+        }
+
+        /// <summary>
+        /// How long the certificates found in the store are used before the store is searched again.
+        /// </summary>
+        internal TimeSpan RefreshInterval = TimeSpan.FromMinutes(10);
+
+        internal Func<X509Certificate2Collection> FindInStore;
+
+        private readonly object _cacheLock = new object();
+        private X509Certificate2[] _cached;
+        private DateTime _cachedAt;
+
+        private X509Certificate2[] GetValidCertificates()
+        {
+            var now = DateTime.Now;
+            X509Certificate2[] candidates;
+            lock (_cacheLock)
+            {
+                if (_cached == null || now - _cachedAt >= RefreshInterval || now < _cachedAt)
+                {
+                    candidates = (FindInStore ?? FindAll)()
+                        .Cast<X509Certificate2>()
+                        .Where(certificate => certificate.HasPrivateKey)
+                        .OrderByDescending(certificate => certificate.NotBefore)
+                        .ToArray();
+                    // Not cached when nothing is found, so a certificate installed afterwards is found on the next call.
+                    _cached = candidates.Length == 0 ? null : candidates;
+                    _cachedAt = now;
+                }
+                else
+                {
+                    candidates = _cached;
+                }
+            }
+
+            return candidates.Where(certificate => certificate.NotBefore <= now && now <= certificate.NotAfter).ToArray();
+        }
+
+        private X509Certificate2Collection FindAll()
         {
             var store = new X509Store(storeName, storeLocation);
             try
             {
                 store.Open(OpenFlags.ReadOnly);
-                var found = store.Certificates.Find(x509FindType, findValue, true);
-                if (found.Count == 0)
-                {
-                    return null;
-                }
-
-                return found;
+                return store.Certificates.Find(x509FindType, findValue, false);
             }
             finally
             {
@@ -91,7 +115,7 @@ namespace dk.nita.saml20.config
 
         private string SearchDescriptor()
         {
-            var msg = $"The certificate was searched for in {storeLocation}/{storeName}, {x509FindType}='{findValue}', validOnly={validOnly}.";
+            var msg = $"The certificate was searched for in {storeLocation}/{storeName}, {x509FindType}='{findValue}'.";
 
             if (x509FindType == X509FindType.FindByThumbprint && findValue?.Length > 0 && findValue[0] == 0x200E)
             {
@@ -126,7 +150,8 @@ namespace dk.nita.saml20.config
         public X509FindType x509FindType;
 
         /// <summary>
-        /// Determines if only valid certificates are found
+        /// Ignored. The SP's own certificate is checked for its validity period only; its chain and revocation are
+        /// checked by the IdP that trusts it. Kept so that existing configuration files can still be read.
         /// </summary>
         [XmlAttribute]
         public bool validOnly = false;
