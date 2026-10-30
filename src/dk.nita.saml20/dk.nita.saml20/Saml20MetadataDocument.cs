@@ -79,7 +79,6 @@ namespace dk.nita.saml20
             spDescriptor.AuthnRequestsSigned = XmlConvert.ToString(true);
             spDescriptor.WantAssertionsSigned = XmlConvert.ToString(true);
 
-            Uri baseURL = new Uri(config.ServiceProvider.Server);
             List<Endpoint> logoutServiceEndpoints = new List<Endpoint>();
             List<IndexedEndpoint> signonServiceEndpoints = new List<IndexedEndpoint>();
 
@@ -93,7 +92,7 @@ namespace dk.nita.saml20
                     IndexedEndpoint loginEndpoint = new IndexedEndpoint();
                     loginEndpoint.index = endpoint.endPointIndex;
                     loginEndpoint.isDefault = true;
-                    loginEndpoint.Location = new Uri(baseURL, endpoint.localPath).ToString();
+                    loginEndpoint.Location = config.ServiceProvider.GetEndpointUrl(endpoint).ToString();
                     loginEndpoint.Binding = GetBinding(endpoint.Binding, Saml20Constants.ProtocolBindings.HTTP_Post);
                     signonServiceEndpoints.Add(loginEndpoint);
 
@@ -109,13 +108,13 @@ namespace dk.nita.saml20
                 if (endpoint.endpointType == EndpointType.LOGOUT)
                 {
                     Endpoint logoutEndpoint = new Endpoint();
-                    logoutEndpoint.Location = new Uri(baseURL, endpoint.localPath).ToString();
+                    logoutEndpoint.Location = config.ServiceProvider.GetEndpointUrl(endpoint).ToString();
                     logoutEndpoint.ResponseLocation = logoutEndpoint.Location;
                     logoutEndpoint.Binding = GetBinding(endpoint.Binding, Saml20Constants.ProtocolBindings.HTTP_Post);
                     logoutServiceEndpoints.Add(logoutEndpoint);
 
                     logoutEndpoint = new Endpoint();
-                    logoutEndpoint.Location = new Uri(baseURL, endpoint.localPath).ToString();
+                    logoutEndpoint.Location = config.ServiceProvider.GetEndpointUrl(endpoint).ToString();
                     logoutEndpoint.ResponseLocation = logoutEndpoint.Location;
                     logoutEndpoint.Binding = GetBinding(endpoint.Binding, Saml20Constants.ProtocolBindings.HTTP_Redirect);
                     logoutServiceEndpoints.Add(logoutEndpoint);
@@ -132,7 +131,7 @@ namespace dk.nita.saml20
                 if (endpoint.endpointType == EndpointType.SOAPLOGOUT)
                 {
                     Endpoint logoutEndpoint = new Endpoint();
-                    logoutEndpoint.Location = new Uri(baseURL, endpoint.localPath).ToString();
+                    logoutEndpoint.Location = config.ServiceProvider.GetEndpointUrl(endpoint).ToString();
                     logoutEndpoint.ResponseLocation = logoutEndpoint.Location;
                     logoutEndpoint.Binding = GetBinding(endpoint.Binding, Saml20Constants.ProtocolBindings.HTTP_SOAP);
                     logoutServiceEndpoints.Add(logoutEndpoint);

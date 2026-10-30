@@ -827,15 +827,6 @@ namespace Saml2.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Assertion with OneTimeUse condition detected more than once..
-        /// </summary>
-        internal static string OneTimeUseReplay {
-            get {
-                return ResourceManager.GetString("OneTimeUseReplay", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Android.
         /// </summary>
         internal static string PlatformAndroid {
@@ -1363,6 +1354,78 @@ namespace Saml2.Properties {
         internal static string UsernameAndPasswordMissing {
             get {
                 return ResourceManager.GetString("UsernameAndPasswordMissing", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to [OIO-IDP-17] The assertion does not answer the AuthnRequest {0}: no bearer SubjectConfirmationData has that InResponseTo..
+        /// </summary>
+        internal static string AssertionNotForRequest {
+            get {
+                return ResourceManager.GetString("AssertionNotForRequest", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to [OIO-IDP-17] The assertion is addressed to {0}, which is not an assertion consumer service of this service provider ({1}). The URLs are compared exactly, including the case of the path. They come from ServiceProvider/@server and the localPath of the signon ServiceEndpoint, and must match the metadata registered at the IdP..
+        /// </summary>
+        internal static string AssertionRecipientMismatch {
+            get {
+                return ResourceManager.GetString("AssertionRecipientMismatch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to [OIO-IDP-17] The bearer SubjectConfirmationData of the assertion has no NotOnOrAfter..
+        /// </summary>
+        internal static string AssertionNotOnOrAfterMissing {
+            get {
+                return ResourceManager.GetString("AssertionNotOnOrAfterMissing", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The assertion has already been used..
+        /// </summary>
+        internal static string AssertionReplayed {
+            get {
+                return ResourceManager.GetString("AssertionReplayed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The assertion is from the IdP {0}, but the AuthnRequest was sent to the IdP {1}..
+        /// </summary>
+        internal static string AssertionFromOtherIdP {
+            get {
+                return ResourceManager.GetString("AssertionFromOtherIdP", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The ArtifactResponse does not answer an ArtifactResolve sent by this service provider..
+        /// </summary>
+        internal static string UnexpectedArtifactResponse {
+            get {
+                return ResourceManager.GetString("UnexpectedArtifactResponse", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to [OIO-IDP-11] The response must contain exactly one EncryptedAssertion..
+        /// </summary>
+        internal static string EncryptedAssertionMissing {
+            get {
+                return ResourceManager.GetString("EncryptedAssertionMissing", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to [OIO-IDP-11] The response contains an unencrypted Assertion; only an EncryptedAssertion is accepted..
+        /// </summary>
+        internal static string AssertionNotEncrypted {
+            get {
+                return ResourceManager.GetString("AssertionNotEncrypted", resourceCulture);
             }
         }
     }

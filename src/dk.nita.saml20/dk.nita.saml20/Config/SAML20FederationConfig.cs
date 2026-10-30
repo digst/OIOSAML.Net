@@ -856,6 +856,19 @@ namespace dk.nita.saml20.config
         [XmlElement("ServiceEndpoint")] public List<Saml20ServiceEndpoint> serviceEndpoints;
 
         /// <summary>
+        /// The absolute URL of one of the service provider's endpoints: <see cref="Server"/> combined with the endpoint's local path.
+        /// The metadata publishes these URLs, and the Recipient of an assertion is compared with them.
+        /// </summary>
+        /// <exception cref="ConfigurationErrorsException">If <see cref="Server"/> is not an absolute URL.</exception>
+        public Uri GetEndpointUrl(Saml20ServiceEndpoint endpoint)
+        {
+            if (!Uri.TryCreate(Server, UriKind.Absolute, out var server))
+                throw new ConfigurationErrorsException(dk.nita.saml20.Properties.Saml20Resources.MissingServiceProviderServer);
+
+            return new Uri(server, endpoint.localPath);
+        }
+
+        /// <summary>
         /// Gets the logout endpoint.
         /// </summary>
         /// <value>The logout endpoint.</value>

@@ -40,6 +40,12 @@ namespace dk.nita.saml20.Bindings
                         HttpUtility.HtmlEncode(Saml20Resources.MissingServiceProviderId);
                     return false;
                 }
+                if (!Uri.TryCreate(_config.ServiceProvider.Server, UriKind.Absolute, out _))
+                {
+                    errorMessage =
+                        HttpUtility.HtmlEncode(Saml20Resources.MissingServiceProviderServer);
+                    return false;
+                }
                 if (FederationConfig.GetConfig().SigningCertificates == null || FederationConfig.GetConfig().SigningCertificates.Count == 0)
                 {
                     errorMessage = HttpUtility.HtmlEncode(Saml20Resources.MissingSigningCertificate);

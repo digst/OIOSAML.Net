@@ -40,7 +40,7 @@ For a quick setup, you must do the following:
 *   Set the projects 'IdentityProviderDemo' and 'WebsiteDemo' as startup projects by right-clicking solution, select 'properties', selecting 'Multiple start projects'
 *   For the web projects, you must manually set the 'Start URL' that IIS express uses. You do this by:
     *   right click project 'IdentityProviderDemo', select 'properties', select the tab 'Web', alter the 'Start Action' to the radio button 'Start URL', specifying 'https://oiosaml-demoidp.dk:20001'
-    *   right click project 'WebsiteDemo', select 'properties', select the tab 'Web', alter the 'Start Action' to the radio button 'Start URL', specifying 'https://oiosaml-net.dk:20002'
+    *   right click project 'WebsiteDemo', select 'properties', select the tab 'Web', alter the 'Start Action' to the radio button 'Start URL', specifying 'https://localhost:20002'
 *   Run the solution which should start IIS express for the two websites
 
 This should start two browser windows, one for the demo idp ('IdentityProviderDemo'), and one for the service provider ('WebsiteDemo').  
