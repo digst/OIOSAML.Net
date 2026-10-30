@@ -183,7 +183,7 @@ namespace dk.nita.saml20.protocol
                 if (status.StatusCode.Value != Saml20Constants.StatusCodes.Success)
                 {
                     HandleError(context, status);
-                    AuditLogging.logEntry(Direction.IN, Operation.ARTIFACTRESOLVE, string.Format("Illegal status for ArtifactResponse {0} expected 'Success', msg: {1}", status.StatusCode.Value, AuditLogging.Describe(parser.SamlMessage)));
+                    AuditLogging.logEntry(Direction.IN, Operation.ARTIFACTRESOLVE, string.Format("Illegal status for ArtifactResponse {0} expected 'Success', msg: {1}", status.StatusCode.Value, LogText.Describe(parser.SamlMessage)));
                     return;
                 }
                 if (parser.ArtifactResponse.Any.LocalName == Response.ELEMENT_NAME)
@@ -202,7 +202,7 @@ namespace dk.nita.saml20.protocol
                 }
                 else
                 {
-                    AuditLogging.logEntry(Direction.IN, Operation.ARTIFACTRESOLVE, string.Format("Unsupported payload message in ArtifactResponse: {0}, msg: {1}", parser.ArtifactResponse.Any.LocalName, AuditLogging.Describe(parser.SamlMessage)));
+                    AuditLogging.logEntry(Direction.IN, Operation.ARTIFACTRESOLVE, string.Format("Unsupported payload message in ArtifactResponse: {0}, msg: {1}", parser.ArtifactResponse.Any.LocalName, LogText.Describe(parser.SamlMessage)));
                     HandleError(context,"Unsupported payload message in ArtifactResponse: {0}",parser.ArtifactResponse.Any.LocalName);
                 }
             }
@@ -215,7 +215,7 @@ namespace dk.nita.saml20.protocol
                 }
                 else
                 {
-                    AuditLogging.logEntry(Direction.IN, Operation.ARTIFACTRESOLVE, string.Format("Unsupported SamlMessage element: {0}, msg: {1}", parser.SamlMessageName, AuditLogging.Describe(parser.SamlMessage)));
+                    AuditLogging.logEntry(Direction.IN, Operation.ARTIFACTRESOLVE, string.Format("Unsupported SamlMessage element: {0}, msg: {1}", parser.SamlMessageName, LogText.Describe(parser.SamlMessage)));
                     HandleError(context, "Unsupported SamlMessage element: {0}", parser.SamlMessageName);
                 }
             }
@@ -323,7 +323,7 @@ namespace dk.nita.saml20.protocol
             Encoding defaultEncoding = Encoding.UTF8;
             XmlDocument doc = GetDecodedSamlResponse(context, defaultEncoding);
 
-            AuditLogging.logEntry(Direction.IN, Operation.LOGIN, "Received SAMLResponse: " + AuditLogging.Describe(doc.DocumentElement));
+            AuditLogging.logEntry(Direction.IN, Operation.LOGIN, "Received SAMLResponse: " + LogText.Describe(doc.DocumentElement));
 
             try
             {
@@ -585,7 +585,7 @@ namespace dk.nita.saml20.protocol
                 if (!assertion.CheckSignature(GetTrustedSigners(endp.metadata.GetKeys(KeyTypes.signing), endp, out validationFailures)))
                 {
                     AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST,
-                    "Invalid signature, assertion: " + AuditLogging.Describe(elem));
+                    "Invalid signature, assertion: " + LogText.Describe(elem));
 
                     string errorMessage = Resources.SignatureInvalid;
 
@@ -615,7 +615,7 @@ namespace dk.nita.saml20.protocol
             if (DateTime.UtcNow >= validUntil)
             {
                 AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST,
-                "Assertion expired, assertion: " + AuditLogging.Describe(elem));
+                "Assertion expired, assertion: " + LogText.Describe(elem));
 
                 HandleError(context, Resources.AssertionExpired);
                 return;
@@ -657,7 +657,7 @@ namespace dk.nita.saml20.protocol
             var assertionNsisLoa = GetNsisLoa(assertion);
             if (assertionNsisLoa == null)
             {
-                AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST, Resources.NsisLoaMissing + " Assertion: " + AuditLogging.Describe(assertionXml));
+                AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST, Resources.NsisLoaMissing + " Assertion: " + LogText.Describe(assertionXml));
                 HandleError(context, Resources.NsisLoaMissing);
                 return false;
             }

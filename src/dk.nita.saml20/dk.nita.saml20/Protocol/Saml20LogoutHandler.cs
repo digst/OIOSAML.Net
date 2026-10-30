@@ -171,7 +171,7 @@ namespace dk.nita.saml20.protocol
                 Status status = parser.ArtifactResponse.Status;
                 if (status.StatusCode.Value != Saml20Constants.StatusCodes.Success)
                 {
-                    AuditLogging.logEntry(Direction.UNDEFINED, Operation.ARTIFACTRESOLVE, string.Format("Unexpected status code for artifact response: {0}, expected 'Success', msg: {1}", status.StatusCode.Value, AuditLogging.Describe(parser.SamlMessage)));
+                    AuditLogging.logEntry(Direction.UNDEFINED, Operation.ARTIFACTRESOLVE, string.Format("Unexpected status code for artifact response: {0}, expected 'Success', msg: {1}", status.StatusCode.Value, LogText.Describe(parser.SamlMessage)));
                     HandleError(context, status);
                     return;
                 }
@@ -198,7 +198,7 @@ namespace dk.nita.saml20.protocol
                 }
                 else
                 {
-                    AuditLogging.logEntry(Direction.UNDEFINED, Operation.ARTIFACTRESOLVE, string.Format("Unsupported payload message in ArtifactResponse: {0}, msg: {1}", parser.ArtifactResponse.Any.LocalName, AuditLogging.Describe(parser.SamlMessage)));
+                    AuditLogging.logEntry(Direction.UNDEFINED, Operation.ARTIFACTRESOLVE, string.Format("Unsupported payload message in ArtifactResponse: {0}, msg: {1}", parser.ArtifactResponse.Any.LocalName, LogText.Describe(parser.SamlMessage)));
                     HandleError(context,"Unsupported payload message in ArtifactResponse: {0}", parser.ArtifactResponse.Any.LocalName);
                 }
             }
@@ -216,7 +216,7 @@ namespace dk.nita.saml20.protocol
                     () => IsExpired(parser.LogoutRequest),
                     parser.GetNameID()?.Value,
                     userId => DoSoapLogout(context, userId),
-                    message => AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, message + ", issuer: " + parser.Issuer + ", msg: " + AuditLogging.Describe(parser.SamlMessage)));
+                    message => AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, message + ", issuer: " + parser.Issuer + ", msg: " + LogText.Describe(parser.SamlMessage)));
                 response.StatusCode = statusCode;
                 response.SubStatusCode = subStatusCode;
 
@@ -244,7 +244,7 @@ namespace dk.nita.saml20.protocol
                 }
                 else
                 {
-                    AuditLogging.logEntry(Direction.UNDEFINED, Operation.ARTIFACTRESOLVE, string.Format("Unsupported SamlMessage element: {0}, msg: {1}", parser.SamlMessageName, AuditLogging.Describe(parser.SamlMessage)));
+                    AuditLogging.logEntry(Direction.UNDEFINED, Operation.ARTIFACTRESOLVE, string.Format("Unsupported SamlMessage element: {0}, msg: {1}", parser.SamlMessageName, LogText.Describe(parser.SamlMessage)));
                     HandleError(context, "Unsupported SamlMessage element: {0}" , parser.SamlMessageName);
                 }
             }
@@ -347,7 +347,7 @@ namespace dk.nita.saml20.protocol
                 LogoutResponse response = Serialization.DeserializeFromXmlString<LogoutResponse>(parser.Message);
 
                 AuditLogging.logEntry(Direction.IN, Operation.LOGOUTRESPONSE,
-                                      string.Format("Binding: redirect, Signature algorithm: {0}, Message: {1}", parser.SignatureAlgorithm, AuditLogging.Describe(parser.Message)));
+                                      string.Format("Binding: redirect, Signature algorithm: {0}, Message: {1}", parser.SignatureAlgorithm, LogText.Describe(parser.Message)));
 
                 IDPEndPoint idp = RetrieveIDPConfiguration(response.Issuer.Value);
 
@@ -357,7 +357,7 @@ namespace dk.nita.saml20.protocol
                 if (idp.metadata == null)
                 {
                     AuditLogging.logEntry(Direction.IN, Operation.LOGOUTRESPONSE,
-                                      string.Format("No IDP metadata, unknown IDP, response: {0}", AuditLogging.Describe(parser.Message)));
+                                      string.Format("No IDP metadata, unknown IDP, response: {0}", LogText.Describe(parser.Message)));
                     HandleError(context, Resources.UnknownIDP);
                     return;
                 }
@@ -365,7 +365,7 @@ namespace dk.nita.saml20.protocol
                 if (!parser.VerifySignature(idp.metadata.Keys))
                 {
                     AuditLogging.logEntry(Direction.IN, Operation.LOGOUTRESPONSE,
-                                      string.Format("Invalid signature in redirect-binding, response: {0}", AuditLogging.Describe(parser.Message)));
+                                      string.Format("Invalid signature in redirect-binding, response: {0}", LogText.Describe(parser.Message)));
                     HandleError(context, Resources.SignatureInvalid);
                     return;
                 }
@@ -376,7 +376,7 @@ namespace dk.nita.saml20.protocol
             {
                 HttpPostBindingParser parser = new HttpPostBindingParser(context);
                 AuditLogging.logEntry(Direction.IN, Operation.LOGOUTRESPONSE,
-                                      "Binding: POST, Message: " + AuditLogging.Describe(parser.Message));
+                                      "Binding: POST, Message: " + LogText.Describe(parser.Message));
 
 
                 LogoutResponse response = Serialization.DeserializeFromXmlString<LogoutResponse>(parser.Message);
@@ -386,7 +386,7 @@ namespace dk.nita.saml20.protocol
                 if (idp.metadata == null)
                 {
                     AuditLogging.logEntry(Direction.IN, Operation.LOGOUTRESPONSE,
-                                      string.Format("No IDP metadata, unknown IDP, response: {0}", AuditLogging.Describe(parser.Message)));
+                                      string.Format("No IDP metadata, unknown IDP, response: {0}", LogText.Describe(parser.Message)));
                     HandleError(context, Resources.UnknownIDP);
                     return;
                 }
@@ -394,7 +394,7 @@ namespace dk.nita.saml20.protocol
                 if (!parser.IsSigned())
                 {
                     AuditLogging.logEntry(Direction.IN, Operation.LOGOUTRESPONSE,
-                                      string.Format("Signature not present, response: {0}", AuditLogging.Describe(parser.Message)));
+                                      string.Format("Signature not present, response: {0}", LogText.Describe(parser.Message)));
                     HandleError(context, Resources.SignatureNotPresent);
                 }
 
@@ -402,7 +402,7 @@ namespace dk.nita.saml20.protocol
                 if (!parser.CheckSignature(idp.metadata.Keys))
                 {
                     AuditLogging.logEntry(Direction.IN, Operation.LOGOUTRESPONSE,
-                                      string.Format("Invalid signature in post-binding, response: {0}", AuditLogging.Describe(parser.Message)));
+                                      string.Format("Invalid signature in post-binding, response: {0}", LogText.Describe(parser.Message)));
                     HandleError(context, Resources.SignatureInvalid);
                 }
 
@@ -425,7 +425,7 @@ namespace dk.nita.saml20.protocol
             if (status.StatusCode.Value != Saml20Constants.StatusCodes.Success)
             {
                 AuditLogging.logEntry(Direction.IN, Operation.LOGOUTRESPONSE,
-                                      string.Format("Unexpected status code: {0}, msg: {1}", status.StatusCode.Value, AuditLogging.Describe(message)));
+                                      string.Format("Unexpected status code: {0}, msg: {1}", status.StatusCode.Value, LogText.Describe(message)));
                 HandleError(context, status);
                 return;
             }
@@ -461,11 +461,11 @@ namespace dk.nita.saml20.protocol
             {
                 HttpRedirectBindingParser parser = new HttpRedirectBindingParser(context.Request.Url);
                 AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST,
-                                      string.Format("Binding: redirect, Signature algorithm: {0}, Message: {1}", parser.SignatureAlgorithm, AuditLogging.Describe(parser.Message)));
+                                      string.Format("Binding: redirect, Signature algorithm: {0}, Message: {1}", parser.SignatureAlgorithm, LogText.Describe(parser.Message)));
 
                 if (!parser.IsSigned)
                 {
-                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Signature not present, msg: " + AuditLogging.Describe(parser.Message));
+                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Signature not present, msg: " + LogText.Describe(parser.Message));
                     Deny(response);
                 }
 
@@ -486,7 +486,7 @@ namespace dk.nita.saml20.protocol
 
                 if (!parser.VerifySignature(metadata.GetKeys(KeyTypes.signing)))
                 {
-                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Request has been denied. Invalid signature redirect-binding, msg: " + AuditLogging.Describe(parser.Message));
+                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Request has been denied. Invalid signature redirect-binding, msg: " + LogText.Describe(parser.Message));
                     Deny(response);
                 }
 
@@ -496,11 +496,11 @@ namespace dk.nita.saml20.protocol
             {
                 HttpPostBindingParser parser = new HttpPostBindingParser(context);
                 AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST,
-                                      "Binding: POST, Message: " + AuditLogging.Describe(parser.Message));
+                                      "Binding: POST, Message: " + LogText.Describe(parser.Message));
 
                 if (!parser.IsSigned())
                 {
-                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Signature not present, msg: " + AuditLogging.Describe(parser.Message));
+                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Signature not present, msg: " + LogText.Describe(parser.Message));
                     Deny(response);
                 }
 
@@ -521,7 +521,7 @@ namespace dk.nita.saml20.protocol
                 // handle a logout-request
                 if (!parser.CheckSignature(metadata.GetKeys(KeyTypes.signing)))
                 {
-                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Request has been denied. Invalid signature post-binding, msg: " + AuditLogging.Describe(parser.Message));
+                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Request has been denied. Invalid signature post-binding, msg: " + LogText.Describe(parser.Message));
                     Deny(response);
                 }
 
@@ -535,7 +535,7 @@ namespace dk.nita.saml20.protocol
                 return;
             }
 
-            AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Received: " + AuditLogging.Describe(message));
+            AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Received: " + LogText.Describe(message));
 
             // Check that idp in session and request matches.
             string idpRequest = logoutRequest.Issuer.Value;
@@ -549,14 +549,14 @@ namespace dk.nita.saml20.protocol
 
                 if (idpId != null && idpId.ToString() != idpRequest)
                 {
-                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, string.Format(Resources.IdPMismatchBetweenRequestAndSession, idpId, idpRequest), AuditLogging.Describe(message));
+                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, string.Format(Resources.IdPMismatchBetweenRequestAndSession, idpId, idpRequest), LogText.Describe(message));
                     Deny(response);
                 }
             }
             else
             {
                 // All other status codes than Success results in the IdP throwing an error page. Therefore we return default Success even if we do not have a session.
-                AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Session does not exist. Continues the redirect logout procedure with status code success." + idpRequest, AuditLogging.Describe(message));
+                AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Session does not exist. Continues the redirect logout procedure with status code success." + idpRequest, LogText.Describe(message));
             }
 
             //  Only logout if request is valid and we are working on an existing Session.

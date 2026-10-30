@@ -5,7 +5,7 @@ using NUnit.Framework;
 namespace dk.nita.test.Saml20
 {
     [TestFixture]
-    public class AuditLoggingTest
+    public class LogTextTest
     {
         private const string Response =
             "<samlp:Response xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\" xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" " +
@@ -18,7 +18,7 @@ namespace dk.nita.test.Saml20
         [Test]
         public void MessageIsDescribedWithoutItsContent()
         {
-            var description = AuditLogging.Describe(Response);
+            var description = LogText.Describe(Response);
 
             Assert.AreEqual("Response ID=_response InResponseTo=_request IssueInstant=2026-10-30T12:00:00Z Issuer=https://idp.example.dk", description);
             StringAssert.DoesNotContain("secret-subject", description);
@@ -28,26 +28,26 @@ namespace dk.nita.test.Saml20
         [Test]
         public void UnreadableMessageIsNotLogged()
         {
-            Assert.AreEqual("<unreadable message>", AuditLogging.Describe("not xml 0101010101"));
-            Assert.AreEqual("<no message>", AuditLogging.Describe((System.Xml.XmlElement)null));
+            Assert.AreEqual("<unreadable message>", LogText.Describe("not xml 0101010101"));
+            Assert.AreEqual("<no message>", LogText.Describe((System.Xml.XmlElement)null));
         }
 
         [Test]
         public void LineBreaksInLoggedValuesAreEscaped()
         {
-            Assert.AreEqual("a\\r\\nb\\nc", AuditLogging.OneLine("a\r\nb\nc"));
-            StringAssert.DoesNotContain("\n", AuditLogging.Describe(Response.Replace("idp.example.dk", "idp.example.dk\nsecond line")));
+            Assert.AreEqual("a\\r\\nb\\nc", LogText.OneLine("a\r\nb\nc"));
+            StringAssert.DoesNotContain("\n", LogText.Describe(Response.Replace("idp.example.dk", "idp.example.dk\nsecond line")));
         }
 
         [Test]
         public void SessionIdIsLoggedAsAHash()
         {
             var sessionId = Guid.NewGuid();
-            var hash = AuditLogging.HashSessionId(sessionId);
+            var hash = LogText.HashSessionId(sessionId);
 
             Assert.AreEqual(16, hash.Length);
-            Assert.AreEqual(hash, AuditLogging.HashSessionId(sessionId));
-            Assert.AreNotEqual(hash, AuditLogging.HashSessionId(Guid.NewGuid()));
+            Assert.AreEqual(hash, LogText.HashSessionId(sessionId));
+            Assert.AreNotEqual(hash, LogText.HashSessionId(Guid.NewGuid()));
             StringAssert.DoesNotContain(sessionId.ToString("N").Substring(0, 8), hash);
         }
     }

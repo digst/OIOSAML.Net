@@ -235,7 +235,7 @@ namespace dk.nita.saml20
 
             if (Trace.ShouldTrace(TraceEventType.Information))
             {
-                Trace.TraceData(TraceEventType.Information, string.Format(Tracing.AttrQueryAssertion, AuditLogging.Describe(xmlAssertion)));
+                Trace.TraceData(TraceEventType.Information, string.Format(Tracing.AttrQueryAssertion, LogText.Describe(xmlAssertion)));
             }
 
             IEnumerable<string> validationFailures;

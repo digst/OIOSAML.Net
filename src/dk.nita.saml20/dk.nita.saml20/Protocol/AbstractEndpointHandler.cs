@@ -80,7 +80,7 @@ namespace dk.nita.saml20.protocol
             var loaErrorMessage = string.Format(errorMessageTemplate, sourceLoa, requiredMinLoa);
             
             AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST,
-                loaErrorMessage + " Assertion: " + AuditLogging.Describe(assertionXml));
+                loaErrorMessage + " Assertion: " + LogText.Describe(assertionXml));
             
             HandleError(context, loaErrorMessage, (m) => new Saml20NsisLoaException(m));
         }
