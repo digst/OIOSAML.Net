@@ -85,7 +85,7 @@ namespace dk.nita.saml20.Logging
         ///<param name="data"></param>
         public static void logEntry(Direction dir, Operation op, string msg, XmlElement data)
         {
-            logEntry(dir, op, msg, data.OuterXml);
+            logEntry(dir, op, msg, LogText.Describe(data));
         }
 
         ///<summary>
@@ -97,9 +97,9 @@ namespace dk.nita.saml20.Logging
         public static void logEntry(Direction dir, Operation op, string msg, string data)
         {
             var userHostAddress = HttpContext.Current != null ? HttpContext.Current.Request.UserHostAddress : "<no ip>";
-            var sessionId = SessionStore.CurrentSession != null ? SessionStore.CurrentSession.SessionId.ToString() : "<no session id>";
+            var sessionId = SessionStore.CurrentSession != null ? LogText.HashSessionId(SessionStore.CurrentSession.SessionId) : "<no session id>";
 
-            AuditLogger.LogEntry(dir, op, msg, data, userHostAddress, IdpId, AssertionId, sessionId);
+            AuditLogger.LogEntry(dir, op, LogText.OneLine(msg), LogText.OneLine(data), userHostAddress, LogText.OneLine(IdpId), LogText.OneLine(AssertionId), sessionId);
         }
     }
     ///<summary>

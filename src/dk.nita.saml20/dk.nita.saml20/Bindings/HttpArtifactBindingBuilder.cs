@@ -124,9 +124,9 @@ namespace dk.nita.saml20.Bindings
                 destinationUrl += "&relayState=" + relayState;
             }
 
-            if(Trace.ShouldTrace(TraceEventType.Information))
+            if(Trace.ShouldTrace(TraceEventType.Verbose))
             {
-                Trace.TraceData(TraceEventType.Information, string.Format(Tracing.CreatedArtifact, artifact, signedSamlMessage.OuterXml));
+                Trace.TraceData(TraceEventType.Verbose, string.Format(Tracing.CreatedArtifact, artifact, signedSamlMessage.OuterXml));
             }
 
             _context.Response.Redirect(destinationUrl);
@@ -167,9 +167,9 @@ namespace dk.nita.saml20.Bindings
             var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(shaHashingAlgorithm);
             signatureProvider.SignAssertion(responseDoc, response.ID, signingCertificate);
 
-            if(Trace.ShouldTrace(TraceEventType.Information))
+            if(Trace.ShouldTrace(TraceEventType.Verbose))
             {
-                Trace.TraceData(TraceEventType.Information, string.Format(Tracing.RespondToArtifactResolve, artifactResolve.Artifact, responseDoc.OuterXml));
+                Trace.TraceData(TraceEventType.Verbose, string.Format(Tracing.RespondToArtifactResolve, artifactResolve.Artifact, responseDoc.OuterXml));
             }
             SendResponseMessage(responseDoc.OuterXml);
         }

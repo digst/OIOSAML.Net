@@ -9,6 +9,7 @@ using System.Xml;
 using dk.nita.saml20.Bindings;
 using dk.nita.saml20.Bindings.SignatureProviders;
 using dk.nita.saml20.Identity;
+using dk.nita.saml20.Logging;
 using dk.nita.saml20.config;
 using dk.nita.saml20.identity;
 using dk.nita.saml20.Properties;
@@ -187,8 +188,8 @@ namespace dk.nita.saml20
 
             Stream s;
 
-            if (Trace.ShouldTrace(TraceEventType.Information))
-                Trace.TraceData(TraceEventType.Information, string.Format(Tracing.SendAttrQuery, endPoint.metadata.GetAttributeQueryEndpointLocation(), query.OuterXml));
+            if (Trace.ShouldTrace(TraceEventType.Verbose))
+                Trace.TraceData(TraceEventType.Verbose, string.Format(Tracing.SendAttrQuery, endPoint.metadata.GetAttributeQueryEndpointLocation(), query.OuterXml));
 
             try
             {
@@ -234,7 +235,7 @@ namespace dk.nita.saml20
 
             if (Trace.ShouldTrace(TraceEventType.Information))
             {
-                Trace.TraceData(TraceEventType.Information, string.Format(Tracing.AttrQueryAssertion, xmlAssertion == null ? string.Empty : xmlAssertion.OuterXml));
+                Trace.TraceData(TraceEventType.Information, string.Format(Tracing.AttrQueryAssertion, LogText.Describe(xmlAssertion)));
             }
 
             IEnumerable<string> validationFailures;

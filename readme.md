@@ -68,3 +68,11 @@ Messages are signed with the certificate of the first entry that can be used. As
 1. Install the new certificate and add an entry for it after the current one. Register the SP metadata, which now has both certificates, with the IdP.
 2. Once the IdP has the new metadata, move the new entry first.
 3. Remove the old entry, then the old certificate.
+
+## Logging
+
+The library writes to two trace sources: `dk.nita.saml20.auditLogger` for the audit log (or the class set in the `auditLoggingType` attribute of `Federation`), and `dk.nita.saml20` for tracing.
+
+* Audit entries identify SAML messages by element name, `ID`, `InResponseTo`, `IssueInstant` and `Issuer`, not by their content. The session id is logged as a hash, which correlates the entries of one session. Line breaks in logged values are escaped.
+* The SAML messages as received and sent, with assertions still encrypted, are traced at `Verbose` only. Turn that level on only while troubleshooting.
+* Decrypted assertions are never logged.
