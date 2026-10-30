@@ -332,13 +332,12 @@ namespace dk.nita.saml20.Utils
         }
 
         /// <summary>
-        /// The signature algorithms allowed on SAML messages [OIO-ALG-01].
+        /// The signature algorithms allowed on SAML messages [OIO-ALG-01]. The profile also lists ECDSA-SHA256, which
+        /// <see cref="SignedXml"/> on .NET Framework can't verify.
         /// </summary>
         internal static readonly string[] AllowedSignatureAlgorithms =
         {
             SignedXml.XmlDsigRSASHA256Url,
-            "http://www.w3.org/2001/04/xmldsig-more#rsa-sha384",
-            SignedXml.XmlDsigRSASHA512Url,
         };
 
         /// <summary>
@@ -347,8 +346,15 @@ namespace dk.nita.saml20.Utils
         internal static readonly string[] AllowedDigestAlgorithms =
         {
             SignedXml.XmlDsigSHA256Url,
-            "http://www.w3.org/2001/04/xmldsig-more#sha384",
-            SignedXml.XmlDsigSHA512Url,
+        };
+
+        /// <summary>
+        /// The transforms allowed on the reference of a SAML signature (SAML Core 5.4.3, 5.4.4).
+        /// </summary>
+        internal static readonly string[] AllowedTransforms =
+        {
+            SignedXml.XmlDsigEnvelopedSignatureTransformUrl,
+            SignedXml.XmlDsigExcC14NTransformUrl,
         };
 
         /// <summary>
@@ -393,6 +399,20 @@ namespace dk.nita.saml20.Utils
 
             if (Array.IndexOf(AllowedDigestAlgorithms, reference.DigestMethod) < 0)
                 throw new InvalidOperationException("The digest algorithm '" + reference.DigestMethod + "' is not allowed [OIO-ALG-01].");
+
+            if (signedXml.SignedInfo.CanonicalizationMethod != SignedXml.XmlDsigExcC14NTransformUrl)
+                throw new InvalidOperationException("The canonicalization method '" + signedXml.SignedInfo.CanonicalizationMethod + "' is not allowed; it must be exclusive canonicalization.");
+
+            var hasEnvelopedTransform = false;
+            foreach (Transform transform in reference.TransformChain)
+            {
+                if (Array.IndexOf(AllowedTransforms, transform.Algorithm) < 0)
+                    throw new InvalidOperationException("The transform '" + transform.Algorithm + "' is not allowed; only the enveloped signature transform and exclusive canonicalization are.");
+                hasEnvelopedTransform |= transform.Algorithm == SignedXml.XmlDsigEnvelopedSignatureTransformUrl;
+            }
+
+            if (!hasEnvelopedTransform)
+                throw new InvalidOperationException("The signature must use the enveloped signature transform.");
 
             return signedXml;
         }

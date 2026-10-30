@@ -35,6 +35,19 @@ namespace dk.nita.saml20.Utils
         }
 
         /// <summary>
+        /// Loads a document that declares its own encoding, such as a metadata file, keeping its whitespace.
+        /// </summary>
+        internal static XmlDocument Load(Stream input)
+        {
+            var doc = new XmlDocument { XmlResolver = null, PreserveWhitespace = true };
+            using (var reader = XmlReader.Create(input, Settings()))
+            {
+                doc.Load(reader);
+            }
+            return doc;
+        }
+
+        /// <summary>
         /// Creates a reader for deserializing XML received from other parties.
         /// </summary>
         internal static XmlReader CreateReader(string xml)

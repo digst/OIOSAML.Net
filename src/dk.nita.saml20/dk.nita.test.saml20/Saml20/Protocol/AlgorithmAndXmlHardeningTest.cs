@@ -55,12 +55,92 @@ namespace dk.nita.test.Saml20.Protocol
             return XmlSignatureUtils.CheckSignature(doc.DocumentElement, Certificate.GetRSAPublicKey());
         }
 
-        [TestCase(SignedXml.XmlDsigRSASHA256Url, SignedXml.XmlDsigSHA256Url)]
-        [TestCase(RsaSha384, Sha384)]
-        [TestCase(SignedXml.XmlDsigRSASHA512Url, SignedXml.XmlDsigSHA512Url)]
-        public void AllowedAlgorithmsAreVerified(string signatureMethod, string digestMethod)
+        private static bool Refused(XmlDocument doc)
         {
-            Assert.IsTrue(Verify(SignedAssertion(signatureMethod, digestMethod)));
+            try
+            {
+                return !Verify(doc);
+            }
+            catch (Exception e) when (e is InvalidOperationException || e is CryptographicException)
+            {
+                return true;
+            }
+        }
+
+        [Test]
+        public void RsaSha256WithSha256IsVerified()
+        {
+            Assert.IsTrue(Verify(SignedAssertion(SignedXml.XmlDsigRSASHA256Url, SignedXml.XmlDsigSHA256Url)));
+        }
+
+        [TestCase(RsaSha384, SignedXml.XmlDsigSHA256Url)]
+        [TestCase(SignedXml.XmlDsigRSASHA512Url, SignedXml.XmlDsigSHA256Url)]
+        [TestCase(SignedXml.XmlDsigRSASHA256Url, Sha384)]
+        [TestCase(SignedXml.XmlDsigRSASHA256Url, SignedXml.XmlDsigSHA512Url)]
+        public void AlgorithmsOutsideOioAlg01AreRefused(string signatureMethod, string digestMethod)
+        {
+            Assert.Throws<InvalidOperationException>(() => Verify(SignedAssertion(signatureMethod, digestMethod)));
+        }
+
+        [Test]
+        public void InclusiveCanonicalizationIsRefused()
+        {
+            var doc = SignedAssertion(SignedXml.XmlDsigRSASHA256Url, SignedXml.XmlDsigSHA256Url, signedXml =>
+            {
+                signedXml.SignedInfo.CanonicalizationMethod = SignedXml.XmlDsigC14NTransformUrl;
+            });
+
+            Assert.Throws<InvalidOperationException>(() => Verify(doc));
+        }
+
+        [Test]
+        public void TransformOtherThanEnvelopedAndExclusiveCanonicalizationIsRefused()
+        {
+            var doc = SignedAssertion(SignedXml.XmlDsigRSASHA256Url, SignedXml.XmlDsigSHA256Url, signedXml =>
+            {
+                ((Reference)signedXml.SignedInfo.References[0]).AddTransform(new XmlDsigC14NWithCommentsTransform());
+            });
+
+            Assert.Throws<InvalidOperationException>(() => Verify(doc));
+        }
+
+        [Test]
+        public void SignatureWithoutTheEnvelopedTransformIsRefused()
+        {
+            var doc = SignedAssertion(SignedXml.XmlDsigRSASHA256Url, SignedXml.XmlDsigSHA256Url, signedXml =>
+            {
+                var reference = (Reference)signedXml.SignedInfo.References[0];
+                var withoutEnveloped = new Reference(reference.Uri) { DigestMethod = reference.DigestMethod };
+                withoutEnveloped.AddTransform(new XmlDsigExcC14NTransform());
+                signedXml.SignedInfo.References.Clear();
+                signedXml.AddReference(withoutEnveloped);
+            });
+
+            Assert.Throws<InvalidOperationException>(() => Verify(doc));
+        }
+
+        [Test]
+        public void SecondElementWithTheSignedIdIsRefused()
+        {
+            var doc = SignedAssertion(SignedXml.XmlDsigRSASHA256Url, SignedXml.XmlDsigSHA256Url);
+            var copy = (XmlElement)doc.DocumentElement.CloneNode(true);
+            copy.RemoveChild(copy.GetElementsByTagName("Signature", Saml20Constants.XMLDSIG)[0]);
+            doc.DocumentElement.GetElementsByTagName(Subject.ELEMENT_NAME, Saml20Constants.ASSERTION)[0].AppendChild(copy);
+
+            Assert.IsTrue(Refused(doc));
+        }
+
+        [Test]
+        public void SignatureCopiedToOtherContentWithTheSameIdIsRefused()
+        {
+            var signed = SignedAssertion(SignedXml.XmlDsigRSASHA256Url, SignedXml.XmlDsigSHA256Url);
+            var other = AssertionUtil.GetTestAssertion_01();
+            other.DocumentElement.GetElementsByTagName("Issuer", Saml20Constants.ASSERTION)[0].InnerText = "https://other.example.dk";
+            var signature = signed.DocumentElement.GetElementsByTagName("Signature", Saml20Constants.XMLDSIG)[0];
+            var issuer = other.DocumentElement.GetElementsByTagName("Issuer", Saml20Constants.ASSERTION)[0];
+            other.DocumentElement.InsertAfter(other.ImportNode(signature, true), issuer);
+
+            Assert.IsTrue(Refused(other));
         }
 
         [Test]
@@ -169,18 +249,27 @@ namespace dk.nita.test.Saml20.Protocol
         }
 
         [TestCase("SHA1")]
+        [TestCase("SHA512")]
         [TestCase("MD5")]
-        public void OutboundHashAlgorithmOtherThanSha256OrSha512IsRejected(string value)
+        public void OutboundHashAlgorithmOtherThanSha256IsRejected(string value)
         {
             Assert.Throws<InvalidOperationException>(() => new IDPEndPoint { ShaHashingAlgorithm = value });
             Assert.Throws<InvalidOperationException>(() => new FederationConfig { MetaDataShaHashingAlgorithm = value });
         }
 
-        [TestCase("SHA256")]
-        [TestCase("SHA512")]
-        public void OutboundSha256AndSha512AreAccepted(string value)
+        [Test]
+        public void OutboundSha256IsAccepted()
         {
-            Assert.AreEqual(value, new IDPEndPoint { ShaHashingAlgorithm = value }.ShaHashingAlgorithm);
+            Assert.AreEqual("SHA256", new IDPEndPoint { ShaHashingAlgorithm = "SHA256" }.ShaHashingAlgorithm);
+        }
+
+        [Test]
+        public void MetadataFileWithADtdIsNotRead()
+        {
+            using (var stream = new MemoryStream(Encoding.UTF8.GetBytes("<!DOCTYPE EntityDescriptor [<!ENTITY e \"x\">]><EntityDescriptor>&e;</EntityDescriptor>")))
+            {
+                Assert.Throws<XmlException>(() => SafeXml.Load(stream));
+            }
         }
 
         [Test]

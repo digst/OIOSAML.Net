@@ -46,7 +46,7 @@ namespace dk.nita.saml20.config
         private string _metaDataShaHashingAlgorithm = ShaHashingAlgorithm.SHA256.ToString();
 
         /// <summary>
-        /// The hash algorithm for signing metadata: SHA256 (the default) or SHA512. SHA1 is not allowed [OIO-ALG-01].
+        /// The hash algorithm for signing metadata: SHA256, the only one allowed [OIO-ALG-01].
         /// </summary>
         [XmlElement(ElementName = "MetaDataShaHashingAlgorithm")]
         public string MetaDataShaHashingAlgorithm

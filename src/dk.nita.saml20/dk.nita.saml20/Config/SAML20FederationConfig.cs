@@ -595,14 +595,15 @@ namespace dk.nita.saml20.config
         /// </summary>        
         private XmlDocument LoadFileAsXmlDocument(string filename)
         {
-            XmlDocument doc = new XmlDocument();
-            doc.XmlResolver = null;
-            doc.PreserveWhitespace = true;
+            XmlDocument doc = null;
 
             try
             {
                 // First attempt a standard load, where the XML document is expected to declare its encoding by itself.
-                doc.Load(filename);
+                using (var stream = File.OpenRead(filename))
+                {
+                    doc = SafeXml.Load(stream);
+                }
                 try
                 {
                     if (XmlSignatureUtils.IsSigned(doc) && !XmlSignatureUtils.CheckSignature(doc))
@@ -627,7 +628,7 @@ namespace dk.nita.saml20.config
                     try
                     {
                         reader = new StreamReader(filename, encoding);
-                        doc.Load(reader);
+                        doc = SafeXml.Load(reader);
                         if (XmlSignatureUtils.IsSigned(doc) && !XmlSignatureUtils.CheckSignature(doc))
                             continue;
                     }
@@ -1009,7 +1010,7 @@ namespace dk.nita.saml20.config
         public bool Default;
 
         /// <summary>
-        /// The hash algorithm for signing SAML requests to this IdP: SHA256 (the default) or SHA512. SHA1 is not allowed [OIO-ALG-01].
+        /// The hash algorithm for signing SAML requests to this IdP: SHA256, the only one allowed [OIO-ALG-01].
         /// </summary>
         [XmlAttribute(AttributeName = "ShaHashingAlgorithm")]
         public string ShaHashingAlgorithm
