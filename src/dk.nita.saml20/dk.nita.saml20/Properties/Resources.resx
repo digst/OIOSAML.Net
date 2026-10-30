@@ -345,9 +345,6 @@ AppID={1}</value>
   <data name="NoMoreThanOneXmlElement" xml:space="preserve">
     <value>Xml error: a SAML token may contain no more then one {0}: {1} element as a child of {2}.</value>
   </data>
-  <data name="OneTimeUseReplay" xml:space="preserve">
-    <value>Assertion with OneTimeUse condition detected more than once.</value>
-  </data>
   <data name="PolicyExtensionInstanciateError" xml:space="preserve">
     <value>Unable to instantiate policy extension of type {0}.</value>
   </data>
@@ -545,5 +542,29 @@ AppID={1}</value>
   </data>
   <data name="AppSwitchPlatformInvalid" xml:space="preserve">
     <value>AppSwitch Platform URL parameter contains invalid values. Allowed values are: Android, iOS.</value>
+  </data>
+  <data name="AssertionNotForRequest" xml:space="preserve">
+    <value>[OIO-IDP-17] The assertion does not answer the AuthnRequest {0}: no bearer SubjectConfirmationData has that InResponseTo.</value>
+  </data>
+  <data name="AssertionRecipientMismatch" xml:space="preserve">
+    <value>[OIO-IDP-17] The assertion is addressed to {0}, which is not an assertion consumer service of this service provider ({1}). The URLs are compared exactly, including the case of the path. They come from ServiceProvider/@server and the localPath of the signon ServiceEndpoint, and must match the metadata registered at the IdP.</value>
+  </data>
+  <data name="AssertionNotOnOrAfterMissing" xml:space="preserve">
+    <value>[OIO-IDP-17] The bearer SubjectConfirmationData of the assertion has no NotOnOrAfter.</value>
+  </data>
+  <data name="AssertionReplayed" xml:space="preserve">
+    <value>The assertion has already been used.</value>
+  </data>
+  <data name="AssertionFromOtherIdP" xml:space="preserve">
+    <value>The assertion is from the IdP {0}, but the AuthnRequest was sent to the IdP {1}.</value>
+  </data>
+  <data name="UnexpectedArtifactResponse" xml:space="preserve">
+    <value>The ArtifactResponse does not answer an ArtifactResolve sent by this service provider.</value>
+  </data>
+  <data name="EncryptedAssertionMissing" xml:space="preserve">
+    <value>[OIO-IDP-11] The response must contain exactly one EncryptedAssertion.</value>
+  </data>
+  <data name="AssertionNotEncrypted" xml:space="preserve">
+    <value>[OIO-IDP-11] The response contains an unencrypted Assertion; only an EncryptedAssertion is accepted.</value>
   </data>
 </root>

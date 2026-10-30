@@ -203,5 +203,14 @@ namespace dk.nita.saml20.Properties {
                 return ResourceManager.GetString("UnsupportedResponseType", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Missing or invalid server attribute on the &lt;ServiceProvider&gt; element in configuration file. It must be the absolute base URL of the service provider: it is used for the metadata and to check the Recipient of assertions..
+        /// </summary>
+        internal static string MissingServiceProviderServer {
+            get {
+                return ResourceManager.GetString("MissingServiceProviderServer", resourceCulture);
+            }
+        }
     }
 }

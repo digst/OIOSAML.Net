@@ -180,6 +180,16 @@ namespace dk.nita.saml20.Bindings
         /// <returns>A stream containing the artifact response from the IdP</returns>
         public Stream ResolveArtifact()
         {
+            return ResolveArtifact(out _);
+        }
+
+        /// <summary>
+        /// Resolves an artifact.
+        /// </summary>
+        /// <param name="artifactResolveId">The ID of the ArtifactResolve sent; the ArtifactResponse must answer it.</param>
+        /// <returns>A stream containing the artifact response from the IdP</returns>
+        public Stream ResolveArtifact(out string artifactResolveId)
+        {
             Trace.TraceMethodCalled(GetType(), "ResolveArtifact()");
 
             string artifact = _context.Request.Params["SAMLart"];
@@ -196,6 +206,7 @@ namespace dk.nita.saml20.Bindings
             Saml20ArtifactResolve resolve = Saml20ArtifactResolve.GetDefault();
 
             resolve.Artifact = artifact;
+            artifactResolveId = resolve.ID;
 
             XmlDocument doc = resolve.GetXml();
 

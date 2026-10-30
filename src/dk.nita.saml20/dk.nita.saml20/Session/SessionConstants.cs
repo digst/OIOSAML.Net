@@ -24,5 +24,10 @@
         /// Session key used to save the demanded level of assurance
         /// </summary>
         public const string ExpectedNsisLoa = "ExpectedLevelOfAssurance";
+
+        /// <summary>
+        /// Session key used to save the id of the IdP the AuthnRequest was sent to
+        /// </summary>
+        public const string ExpectedIdpId = "ExpectedIdpId";
     }
 }

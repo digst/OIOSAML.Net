@@ -17,7 +17,7 @@ Ensure documentation is updated with the changes, and that the release history i
 
 Integration test must be performed on a test service provider. The latest integrationstest is available [here](https://digitaliser.dk/resource/3126701/artefact/IntegrationstestV1.7.pdf?artefact=true&PID=3126703)  
 
-The test cases should be run using the test service provider https://oiosaml-net.dk:20002  
+The test cases should be run using the test service provider https://localhost:20002  
 
 The following test cases must be run:
 

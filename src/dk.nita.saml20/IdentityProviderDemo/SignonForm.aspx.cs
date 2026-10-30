@@ -191,13 +191,16 @@ namespace IdentityProviderDemo
             response.Status.StatusCode.Value = Saml20Constants.StatusCodes.Success;
 
             var nameIdFormat = metadataDocument.Entity.Items.OfType<SPSSODescriptor>().SingleOrDefault()?.NameIDFormat.SingleOrDefault() ?? Saml20Constants.NameIdentifierFormats.Persistent;
-            Assertion assertion = CreateAssertion(user, entityId, nameIdFormat);
+            Assertion assertion = CreateAssertion(user, entityId, endpoint.Url, request.ID, nameIdFormat);
 
             var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(ShaHashingAlgorithm.SHA256);
             EncryptedAssertion encryptedAssertion = null;
 
+            // OIOSAML requires the assertion to be encrypted; the service provider refuses a plain one.
             var keyDescriptors = metadataDocument.Keys.Where(x => x.use == KeyTypes.encryption);
-            if (keyDescriptors.Any())
+            if (!keyDescriptors.Any())
+                throw new Exception($"The metadata of '{entityId}' has no encryption key, so the assertion can't be encrypted.");
+
             {
                  foreach (KeyDescriptor keyDescriptor in keyDescriptors)
                 {
@@ -235,27 +238,13 @@ namespace IdentityProviderDemo
                     throw new Exception("Could not encrypt. No valid certificates found.");
             }
 
-            if(encryptedAssertion!= null)
-            {
-                response.Items = new object[] { encryptedAssertion };
-
-            }
-            else
-            {
-                response.Items = new object[] { assertion };
-            }
+            response.Items = new object[] { encryptedAssertion };
          
             // Serialize the response.
             XmlDocument responseDoc = new XmlDocument();
             responseDoc.XmlResolver = null;
             responseDoc.PreserveWhitespace = true;
             responseDoc.LoadXml(Serialization.SerializeToXmlString(response));
-
-            if (encryptedAssertion == null)
-            {
-                // Sign the assertion inside the response message.
-                signatureProvider.SignAssertion(responseDoc, assertion.ID, IDPConfig.IDPCertificate);
-            }
 
             HttpPostBindingBuilder builder = new HttpPostBindingBuilder(endpoint);
             builder.Action = SAMLAction.SAMLResponse;
@@ -275,7 +264,7 @@ namespace IdentityProviderDemo
             Context.Response.Cookies.Add(cdc);
         }
         
-        private Assertion CreateAssertion(User user, string receiver, string nameIdFormat)
+        private Assertion CreateAssertion(User user, string receiver, string recipient, string inResponseTo, string nameIdFormat)
         {
             Assertion assertion = new Assertion();
 
@@ -291,7 +280,8 @@ namespace IdentityProviderDemo
                 subjectConfirmation.Method = SubjectConfirmation.BEARER_METHOD;
                 subjectConfirmation.SubjectConfirmationData = new SubjectConfirmationData();
                 subjectConfirmation.SubjectConfirmationData.NotOnOrAfter = DateTime.Now.AddHours(1);
-                subjectConfirmation.SubjectConfirmationData.Recipient = receiver;
+                subjectConfirmation.SubjectConfirmationData.Recipient = recipient;
+                subjectConfirmation.SubjectConfirmationData.InResponseTo = inResponseTo;
 
                 NameID nameId = new NameID();
                 nameId.Format = nameIdFormat;
