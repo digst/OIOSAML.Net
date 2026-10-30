@@ -426,6 +426,18 @@ namespace dk.nita.saml20.config
         [XmlIgnore]
         private Dictionary<string, XmlDocument> _metadataFiles = new Dictionary<string, XmlDocument>();
 
+        /// <summary>
+        /// When each file that kept its last version was first found unreadable.
+        /// </summary>
+        [XmlIgnore]
+        private Dictionary<string, DateTime> _unreadableSince = new Dictionary<string, DateTime>();
+
+        /// <summary>
+        /// How long a file that can't be read keeps its last version. After that its keys are no longer trusted.
+        /// </summary>
+        [XmlIgnore]
+        internal TimeSpan UnreadableGracePeriod = TimeSpan.FromMinutes(5);
+
         [XmlIgnore]
         private readonly object _reloadLock = new object();
 
@@ -451,9 +463,26 @@ namespace dk.nita.saml20.config
             _fileSystemWatcher.Created += (sender, e) => ScheduleReload(ReloadDelay);
             _fileSystemWatcher.Deleted += (sender, e) => ScheduleReload(ReloadDelay);
             _fileSystemWatcher.Renamed += (sender, e) => ScheduleReload(ReloadDelay);
-            _fileSystemWatcher.Error += (sender, e) => ScheduleReload(ReloadDelay);
+            _fileSystemWatcher.Error += (sender, e) => RestartFileSystemWatcher();
             _fileSystemWatcher.Path = _metadataLocation;
             _fileSystemWatcher.EnableRaisingEvents = true;
+        }
+
+        /// <summary>
+        /// The watcher stops raising events after an error, for example when a network share drops.
+        /// </summary>
+        private void RestartFileSystemWatcher()
+        {
+            try
+            {
+                _fileSystemWatcher.EnableRaisingEvents = false;
+                _fileSystemWatcher.EnableRaisingEvents = true;
+            }
+            catch (Exception e)
+            {
+                Trace.TraceData(TraceEventType.Error, "Restarting the watcher of the IdP metadata location failed.", e.ToString());
+            }
+            ScheduleReload(ReloadDelay);
         }
 
         private void ScheduleReload(TimeSpan delay)
@@ -489,9 +518,11 @@ namespace dk.nita.saml20.config
             if (!Directory.Exists(MetadataLocation))
                 throw new DirectoryNotFoundException(string.Format(Resources.MetadataLocationNotFound, MetadataLocation));
 
-            LoadMetadata();
-
+            // Watch first, so a change during the first load isn't missed.
             InitializeFileSystemWatcher();
+
+            if (!LoadMetadata())
+                ScheduleReload(RetryDelay);
         }
 
         /// <summary>
@@ -500,10 +531,12 @@ namespace dk.nita.saml20.config
         /// <item>An endpoint from the configuration file is kept, with the metadata of its entity id, or none.</item>
         /// <item>An entity with metadata but no configured endpoint gets an endpoint, which goes again when its metadata files are gone.</item>
         /// <item>Several files with the same entity id are combined: the newest file gives the endpoints, and the keys of all of them are trusted.</item>
-        /// <item>A file that held metadata but can't be read now, for example while it is being written, keeps its last version.</item>
+        /// <item>A file that can't be read now, for example while it is being written or is locked, keeps its last version
+        /// for <see cref="UnreadableGracePeriod"/>; after that its keys are no longer trusted.</item>
+        /// <item>A file that can be read but isn't usable metadata counts as removed.</item>
         /// </list>
         /// </summary>
-        /// <returns>false if a file kept its last version, so the reload should be retried.</returns>
+        /// <returns>false if a file couldn't be read, so the reload should be retried.</returns>
         internal bool LoadMetadata()
         {
             lock (_reloadLock)
@@ -512,21 +545,36 @@ namespace dk.nita.saml20.config
                     _configuredEndpointIds = IDPEndPoints.Select(endpoint => endpoint.Id).ToList();
 
                 var complete = true;
+                var now = DateTime.UtcNow;
                 var metadataFiles = new Dictionary<string, XmlDocument>();
+                var unreadableSince = new Dictionary<string, DateTime>();
                 foreach (var file in Directory.GetFiles(MetadataLocation))
                 {
-                    var metadataFile = ReadMetadataFile(file);
-                    if (metadataFile == null && _metadataFiles.TryGetValue(file, out var previous))
+                    var metadataFile = ReadMetadataFile(file, out var unreadable);
+                    if (unreadable)
                     {
-                        Trace.TraceData(TraceEventType.Warning, file, "Could not read the metadata file; using its last version until it can be read.");
-                        metadataFile = previous;
                         complete = false;
+                        var since = _unreadableSince.TryGetValue(file, out var first) ? first : now;
+                        unreadableSince[file] = since;
+                        if (_metadataFiles.TryGetValue(file, out var previous))
+                        {
+                            if (now - since < UnreadableGracePeriod)
+                            {
+                                Trace.TraceData(TraceEventType.Warning, file, "Could not read the metadata file; using its last version until it can be read.");
+                                metadataFile = previous;
+                            }
+                            else
+                            {
+                                Trace.TraceData(TraceEventType.Error, file, "Could not read the metadata file since " + since.ToString("o") + "; its last version is no longer used.");
+                            }
+                        }
                     }
 
                     if (metadataFile != null)
                         metadataFiles[file] = metadataFile;
                 }
                 _metadataFiles = metadataFiles;
+                _unreadableSince = unreadableSince;
 
                 var metadataByEntity = metadataFiles
                     .OrderByDescending(f => File.GetLastWriteTimeUtc(f.Key))
@@ -537,7 +585,7 @@ namespace dk.nita.saml20.config
                 var endpoints = new List<IDPEndPoint>();
                 foreach (var endpoint in IDPEndPoints)
                 {
-                    if (metadataByEntity.TryGetValue(endpoint.Id, out var metadata))
+                    if (endpoint.Id != null && metadataByEntity.TryGetValue(endpoint.Id, out var metadata))
                     {
                         endpoint.metadata = metadata;
                         metadataByEntity.Remove(endpoint.Id);
@@ -574,26 +622,50 @@ namespace dk.nita.saml20.config
         /// <summary>
         /// Reads a SAML 2.0 metadata file with one EntityDescriptor.
         /// </summary>
-        /// <returns>The metadata, or null if the file can't be read or isn't SAML 2.0 metadata.</returns>
-        private XmlDocument ReadMetadataFile(string file)
+        /// <param name="file">The file.</param>
+        /// <param name="unreadable">true if the file couldn't be read or isn't well-formed XML, as while it is being written.</param>
+        /// <returns>The metadata, or null if the file can't be read or isn't usable SAML 2.0 metadata.</returns>
+        private XmlDocument ReadMetadataFile(string file, out bool unreadable)
         {
+            unreadable = false;
+            XmlDocument doc;
             try
             {
-                XmlDocument doc = LoadFileAsXmlDocument(file);
-                if (doc?.DocumentElement != null
-                    && doc.DocumentElement.NamespaceURI == Saml20Constants.METADATA
-                    && doc.DocumentElement.LocalName == EntityDescriptor.ELEMENT_NAME)
-                {
-                    new Saml20MetadataDocument(doc); // Fails here rather than during a reload if the document can't be used.
-                    return doc;
-                }
-
-                Trace.TraceData(TraceEventType.Warning, file, "Not a SAML 2.0 metadata file with one EntityDescriptor; ignored.");
+                doc = LoadFileAsXmlDocument(file);
+            }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+            {
+                Trace.TraceData(TraceEventType.Warning, file, "Could not read the metadata file.", e.ToString());
+                unreadable = true;
                 return null;
             }
             catch (Exception e)
             {
-                Trace.TraceData(TraceEventType.Warning, file, "Could not read the metadata file.", e.ToString());
+                Trace.TraceData(TraceEventType.Error, file, "The metadata file can't be used; ignored.", e.ToString());
+                return null;
+            }
+
+            if (doc?.DocumentElement == null)
+            {
+                Trace.TraceData(TraceEventType.Warning, file, "The metadata file is not well-formed XML.");
+                unreadable = true;
+                return null;
+            }
+
+            if (doc.DocumentElement.NamespaceURI != Saml20Constants.METADATA || doc.DocumentElement.LocalName != EntityDescriptor.ELEMENT_NAME)
+            {
+                Trace.TraceData(TraceEventType.Warning, file, "Not a SAML 2.0 metadata file with one EntityDescriptor; ignored.");
+                return null;
+            }
+
+            try
+            {
+                new Saml20MetadataDocument(doc); // Fails here rather than during a reload if the document can't be used.
+                return doc;
+            }
+            catch (Exception e)
+            {
+                Trace.TraceData(TraceEventType.Error, file, "The metadata file can't be used; ignored.", e.ToString());
                 return null;
             }
         }

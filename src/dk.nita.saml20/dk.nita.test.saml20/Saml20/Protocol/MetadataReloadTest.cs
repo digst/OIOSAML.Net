@@ -8,6 +8,7 @@ using System.Threading;
 using dk.nita.saml20;
 using dk.nita.saml20.config;
 using dk.nita.saml20.Schema.Metadata;
+using dk.nita.saml20.Utils;
 using NUnit.Framework;
 
 namespace dk.nita.test.Saml20.Protocol
@@ -240,6 +241,87 @@ namespace dk.nita.test.Saml20.Protocol
             _endpoints.LoadMetadata();
 
             Assert.AreEqual(1, Idp().metadata.GetKeys(KeyTypes.encryption).Count);
+        }
+
+        [Test]
+        public void UnreadableFileLosesItsLastVersionAfterTheGracePeriod()
+        {
+            var file = Write("nemlogin.xml", Metadata(IdpEntityId, Key("signing", Certificate())));
+            _endpoints.LoadMetadata();
+            _endpoints.UnreadableGracePeriod = TimeSpan.Zero;
+
+            File.WriteAllText(file, "<md:EntityDescriptor xmlns:md=\"urn:oasis:names:tc:SAML:2.0:metadata\" entityID=\"" + IdpEntityId);
+
+            Assert.IsFalse(_endpoints.LoadMetadata());
+            Assert.IsNull(Idp().metadata);
+        }
+
+        [Test]
+        public void FileThatIsReadableButNotUsableMetadataLosesItsLastVersion()
+        {
+            var file = Write("nemlogin.xml", Metadata(IdpEntityId, Key("signing", Certificate())));
+            _endpoints.LoadMetadata();
+
+            File.WriteAllText(file, "<md:EntitiesDescriptor xmlns:md=\"urn:oasis:names:tc:SAML:2.0:metadata\">" + Metadata(IdpEntityId, Key("signing", Certificate())) + "</md:EntitiesDescriptor>");
+
+            Assert.IsTrue(_endpoints.LoadMetadata());
+            Assert.IsNull(Idp().metadata);
+        }
+
+        [Test]
+        public void FileThatCantBeReadAtStartupIsRetried()
+        {
+            var file = Write("nemlogin.xml", "<md:EntityDescriptor xmlns:md=\"urn:oasis:names:tc:SAML:2.0:metadata\" entityID=\"" + IdpEntityId);
+
+            Assert.IsFalse(_endpoints.LoadMetadata());
+            Assert.IsNull(Idp().metadata);
+
+            File.WriteAllText(file, Metadata(IdpEntityId, Key("signing", Certificate())));
+
+            Assert.IsTrue(_endpoints.LoadMetadata());
+            Assert.IsNotNull(Idp().metadata);
+        }
+
+        [TestCase("signing")]
+        [TestCase(null)]
+        public void SignatureWithTheCertificateOfASecondFileIsVerified(string use)
+        {
+            using (var newKey = RSA.Create(2048))
+            {
+                Write("nemlogin-old.xml", Metadata(IdpEntityId, Key("signing", Certificate())), ageSeconds: 60);
+                Write("nemlogin-new.xml", Metadata(IdpEntityId, Key(use, Certificate(newKey))));
+                _endpoints.LoadMetadata();
+
+                var signed = Sign(newKey);
+
+                var verifiedBy = Idp().metadata.GetKeys(KeyTypes.signing)
+                    .SelectMany(key => ((System.Security.Cryptography.Xml.KeyInfo)key.KeyInfo).Cast<System.Security.Cryptography.Xml.KeyInfoClause>())
+                    .Count(clause => XmlSignatureUtils.CheckSignature(signed, XmlSignatureUtils.ExtractKey(clause)));
+                Assert.AreEqual(1, verifiedBy);
+            }
+        }
+
+        private static string Certificate(RSA key)
+        {
+            var request = new CertificateRequest("CN=test", key, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+            using (var certificate = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddDays(1)))
+                return Convert.ToBase64String(certificate.Export(X509ContentType.Cert));
+        }
+
+        private static System.Xml.XmlElement Sign(RSA key)
+        {
+            var document = new System.Xml.XmlDocument { PreserveWhitespace = true };
+            document.LoadXml("<Message ID=\"_message\">signed by the new key</Message>");
+            var signedXml = new System.Security.Cryptography.Xml.SignedXml(document.DocumentElement) { SigningKey = key };
+            signedXml.SignedInfo.SignatureMethod = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256";
+            signedXml.SignedInfo.CanonicalizationMethod = System.Security.Cryptography.Xml.SignedXml.XmlDsigExcC14NTransformUrl;
+            var reference = new System.Security.Cryptography.Xml.Reference("#_message") { DigestMethod = "http://www.w3.org/2001/04/xmlenc#sha256" };
+            reference.AddTransform(new System.Security.Cryptography.Xml.XmlDsigEnvelopedSignatureTransform());
+            reference.AddTransform(new System.Security.Cryptography.Xml.XmlDsigExcC14NTransform());
+            signedXml.AddReference(reference);
+            signedXml.ComputeSignature();
+            document.DocumentElement.AppendChild(document.ImportNode(signedXml.GetXml(), true));
+            return document.DocumentElement;
         }
 
         private static string CertificateOf(KeyDescriptor key)
