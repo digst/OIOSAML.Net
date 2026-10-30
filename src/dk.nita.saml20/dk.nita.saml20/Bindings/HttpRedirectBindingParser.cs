@@ -32,6 +32,9 @@ namespace dk.nita.saml20.Bindings
             foreach (KeyValuePair<string, string> param in paramDict)
                 SetParam(param.Key, HttpUtility.UrlDecode(param.Value));
 
+            if (_message == null)
+                throw new Saml20FormatException("The query contains neither a SAMLRequest nor a SAMLResponse.");
+
             // If the message is signed, save the original, encoded parameters so that the signature can be verified.
             if (IsSigned)
                 CreateSignatureSubject(paramDict);
@@ -39,15 +42,38 @@ namespace dk.nita.saml20.Bindings
             ReadMessageParameter();
         }
 
+        private static readonly string[] BindingParameters = { CONSTS.SAMLRequest, CONSTS.SAMLResponse, CONSTS.RelayState, CONSTS.SigAlg, CONSTS.Signature };
+
+        /// <summary>
+        /// The binding parameters of the query, with their values still URL-encoded. Other parameters are left out.
+        /// The signature is verified over these values and the message is read from them, so a binding parameter must
+        /// appear once, with its name spelt as in [SAMLBind] 3.4.4.1.
+        /// </summary>
+        /// <exception cref="Saml20FormatException">If a binding parameter appears more than once, in any letter case,
+        /// both a SAMLRequest and a SAMLResponse are present, or a Signature comes without a SigAlg.</exception>
         private static Dictionary<string, string> ToDictionary(Uri uri)
         {
-            string[] parameters = uri.Query.Substring(1).Split('&');
-            Dictionary<string,string> result = new Dictionary<string, string>(parameters.Length);
-            foreach (string s in parameters)
+            var result = new Dictionary<string, string>();
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var query = uri.Query.Length > 0 ? uri.Query.Substring(1) : string.Empty;
+            foreach (string s in query.Split('&'))
             {
-                string[] parameter = s.Split('=');
-                result.Add(parameter[0], parameter[1]);
+                var separator = s.IndexOf('=');
+                var name = separator < 0 ? s : s.Substring(0, separator);
+                var value = separator < 0 ? string.Empty : s.Substring(separator + 1);
+
+                var parameter = Array.Find(BindingParameters, p => string.Equals(p, name, StringComparison.OrdinalIgnoreCase));
+                if (parameter == null)
+                    continue;
+                if (!seen.Add(name) || parameter != name)
+                    throw new Saml20FormatException($"The query parameter {parameter} must appear once, spelt {parameter}.");
+                result.Add(name, value);
             }
+
+            if (result.ContainsKey(CONSTS.SAMLRequest) && result.ContainsKey(CONSTS.SAMLResponse))
+                throw new Saml20FormatException("The query contains both a SAMLRequest and a SAMLResponse.");
+            if (result.ContainsKey(CONSTS.Signature) && !result.ContainsKey(CONSTS.SigAlg))
+                throw new Saml20FormatException("The query contains a Signature but no SigAlg.");
 
             return result;
         }
@@ -254,23 +280,23 @@ namespace dk.nita.saml20.Bindings
         /// </summary>
         private void SetParam(string key, string value)
         {
-            switch(key.ToLower())
+            switch(key)
             {
-                case "samlrequest" :
+                case CONSTS.SAMLRequest:
                     _isResponse = false;
                     _message = value;
                     return;
-                case "samlresponse" :
+                case CONSTS.SAMLResponse:
                     _isResponse = true;
                     _message = value;
                     return;
-                case "relaystate" :
+                case CONSTS.RelayState:
                     _relaystate = value;
                     return;
-                case "sigalg" :
+                case CONSTS.SigAlg:
                     _signatureAlgorithm = value;
                     return;
-                case "signature" :
+                case CONSTS.Signature:
                     _signature = value;
                     return;
             }
