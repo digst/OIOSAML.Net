@@ -136,12 +136,15 @@
     <Compile Include="Saml20\AuthnRequestAppender\AuthnRequestAppenderSample.cs" />
     <Compile Include="Saml20\DKSAML20ProfileValidationTest.cs" />
     <Compile Include="Saml20\EncryptedAssertionTest.cs" />
+    <Compile Include="Saml20\NsisLoaTest.cs" />
     <Compile Include="Saml20\PingCompatibilityTest.cs" />
     <Compile Include="Saml20\Protocol\AppSwitchConfigurationTest.cs" />
     <Compile Include="Saml20\Protocol\HttpRedirectBindingTest.cs" />
     <Compile Include="Saml20\Protocol\IDPSelectionUtilTest.cs" />
     <Compile Include="Saml20\Protocol\MetadataReloadTest.cs" />
     <Compile Include="Saml20\Protocol\SamlMetadataDocumentTest.cs" />
+    <Compile Include="Saml20\Protocol\SessionStoreTest.cs" />
+    <Compile Include="Saml20\Protocol\SoapLogoutRequestTest.cs" />
     <Compile Include="Saml20\Protocol\XmlSignatureUtilsTest.cs" />
     <Compile Include="Saml20\Saml20CoreValidationTest.cs" />
     <Compile Include="Saml20\SamlAssertionAttributesTest.cs" />
