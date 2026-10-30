@@ -152,6 +152,7 @@
     <Compile Include="Saml20\SamlAssertionAttributesTest.cs" />
     <Compile Include="Saml20\SamlAuthnRequestTest.cs" />
     <Compile Include="Saml20\Schema\BasicPrivilegeProfile\PrivilegeListTypeTest.cs" />
+    <Compile Include="Saml20\AuditLoggingTest.cs" />
     <Compile Include="Saml20\CertificateTest.cs" />
     <Compile Include="Saml20\SignatureTest.cs" />
     <Compile Include="Saml20\TempTest.cs" />
