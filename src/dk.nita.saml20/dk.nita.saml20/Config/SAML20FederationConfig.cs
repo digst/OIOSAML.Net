@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Xml;
 using System.Xml.Serialization;
+using dk.nita.saml20.Profiles.DKSaml20.Attributes;
 using dk.nita.saml20.Schema.Metadata;
 using dk.nita.saml20.Utils;
 using Saml2.Properties;
@@ -134,7 +135,14 @@ namespace dk.nita.saml20.config
         public string MinimumNsisLoa
         {
             get { return _minimumNsisLoa; }
-            set { _minimumNsisLoa = value; }
+            set
+            {
+                if (!DKSaml20NsisLoaAttribute.IsValidLevel(value))
+                {
+                    throw new ConfigurationErrorsException($"MinimumNsisLoa must be Low, Substantial or High, but was \"{value}\".");
+                }
+                _minimumNsisLoa = value;
+            }
         }
 
 
