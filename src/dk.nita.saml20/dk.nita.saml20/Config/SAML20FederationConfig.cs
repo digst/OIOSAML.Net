@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Xml;
 using System.Xml.Serialization;
 using dk.nita.saml20.Profiles.DKSaml20.Attributes;
@@ -325,7 +326,6 @@ namespace dk.nita.saml20.config
         public IDPEndpoints()
         {
             IDPEndPoints = new List<IDPEndPoint>();
-            _fileToEntity = new Dictionary<string, string>();
         }
 
         /// <summary>
@@ -415,124 +415,95 @@ namespace dk.nita.saml20.config
         #region Handling of metadata files 
 
         /// <summary>
-        /// This dictionary links a file name to the entity id of the metadata document in the file.
+        /// The ids of the endpoints in the configuration file. A reload of the metadata never removes them.
         /// </summary>
         [XmlIgnore]
-        private Dictionary<string, string> _fileToEntity;
+        private List<string> _configuredEndpointIds;
+
+        /// <summary>
+        /// The last metadata document that could be read from each file in the metadata location.
+        /// </summary>
+        [XmlIgnore]
+        private Dictionary<string, XmlDocument> _metadataFiles = new Dictionary<string, XmlDocument>();
+
+        /// <summary>
+        /// When each file that kept its last version was first found unreadable.
+        /// </summary>
+        [XmlIgnore]
+        private Dictionary<string, DateTime> _unreadableSince = new Dictionary<string, DateTime>();
+
+        /// <summary>
+        /// How long a file that can't be read keeps its last version. After that its keys are no longer trusted.
+        /// </summary>
+        [XmlIgnore]
+        internal TimeSpan UnreadableGracePeriod = TimeSpan.FromMinutes(5);
+
+        [XmlIgnore]
+        private readonly object _reloadLock = new object();
+
+        [XmlIgnore]
+        private Timer _reloadTimer;
+
+        /// <summary>
+        /// Waits for a burst of file changes, such as copying a new file and deleting an old one, to finish before reloading.
+        /// </summary>
+        private static readonly TimeSpan ReloadDelay = TimeSpan.FromSeconds(2);
+
+        private static readonly TimeSpan RetryDelay = TimeSpan.FromSeconds(30);
 
         /// <summary>
         /// Initializes the file system watcher to watch for changes in the metadata location
         /// </summary>
         private void InitializeFileSystemWatcher()
         {
+            _reloadTimer = new Timer(_ => ReloadMetadata());
             _fileSystemWatcher = new FileSystemWatcher();
             _fileSystemWatcher.Filter = "*.*";
-            _fileSystemWatcher.Changed += new FileSystemEventHandler(_fileSystemWatcher_Changed);
-            _fileSystemWatcher.Created += new FileSystemEventHandler(_fileSystemWatcher_Changed);
-            _fileSystemWatcher.Deleted += new FileSystemEventHandler(_fileSystemWatcher_Changed);
-            _fileSystemWatcher.Renamed += new RenamedEventHandler(_fileSystemWatcher_Renamed);
+            _fileSystemWatcher.Changed += (sender, e) => ScheduleReload(ReloadDelay);
+            _fileSystemWatcher.Created += (sender, e) => ScheduleReload(ReloadDelay);
+            _fileSystemWatcher.Deleted += (sender, e) => ScheduleReload(ReloadDelay);
+            _fileSystemWatcher.Renamed += (sender, e) => ScheduleReload(ReloadDelay);
+            _fileSystemWatcher.Error += (sender, e) => RestartFileSystemWatcher();
             _fileSystemWatcher.Path = _metadataLocation;
             _fileSystemWatcher.EnableRaisingEvents = true;
         }
 
-        private void _fileSystemWatcher_Renamed(object sender, RenamedEventArgs e)
+        /// <summary>
+        /// The watcher stops raising events after an error, for example when a network share drops.
+        /// </summary>
+        private void RestartFileSystemWatcher()
         {
-            HandleRenamedIdp(e.OldFullPath, e.FullPath);
+            try
+            {
+                _fileSystemWatcher.EnableRaisingEvents = false;
+                _fileSystemWatcher.EnableRaisingEvents = true;
+            }
+            catch (Exception e)
+            {
+                Trace.TraceData(TraceEventType.Error, "Restarting the watcher of the IdP metadata location failed.", e.ToString());
+            }
+            ScheduleReload(ReloadDelay);
         }
 
-        private void _fileSystemWatcher_Changed(object sender, FileSystemEventArgs e)
+        private void ScheduleReload(TimeSpan delay)
         {
-            switch (e.ChangeType)
-            {
-                case WatcherChangeTypes.Created:
-                    HandleCreateIdp(e.FullPath);
-                    break;
-                case WatcherChangeTypes.Changed:
-                    HandleUpdateIdp(e.FullPath);
-                    break;
-                case WatcherChangeTypes.Deleted:
-                    HandleDeleteIdp(e.FullPath);
-                    break;
-            }
+            _reloadTimer.Change(delay, Timeout.InfiniteTimeSpan);
         }
 
-        private void HandleRenamedIdp(string oldFilename, string filename)
+        /// <summary>
+        /// Reloads the metadata on a timer thread, where an exception would end the process.
+        /// </summary>
+        private void ReloadMetadata()
         {
-            var metadataDoc = ParseFile(filename);
-            if (metadataDoc != null)
+            try
             {
-                var endp = FindEndPoint(metadataDoc.EntityId);
-                if (endp != null && _fileToEntity.ContainsKey(oldFilename))
-                {
-                    _fileToEntity.Remove(oldFilename);
-                    _fileToEntity.Add(filename, metadataDoc.EntityId);
-                    HandleUpdateIdp(filename);
-                }
+                if (!LoadMetadata())
+                    ScheduleReload(RetryDelay);
             }
-        }
-
-        private void HandleDeleteIdp(string filename)
-        {
-            if (_fileToEntity.ContainsKey(filename))
+            catch (Exception e)
             {
-                var idpEndpoint = FindEndPoint(_fileToEntity[filename]);
-                if (idpEndpoint != null)
-                {
-                    IDPEndPoints.Remove(idpEndpoint);
-                }
-                _fileToEntity.Remove(filename);
-            }
-        }
-
-        private void HandleUpdateIdp(string filename)
-        {
-            var metadataDoc = ParseFile(filename);
-            if (metadataDoc == null)
-                return; // Not a SAML 2.0 metadata file - ignore it instead of failing.
-            // First we try and find the endpoint based on the entity id in the metadata
-            var endp = FindEndPoint(metadataDoc.EntityId);
-            if (endp == null && _fileToEntity.ContainsKey(filename))
-            {
-                // Otherwise we find it in our dictionary - this means that the entity id has been changed in the file
-                endp = FindEndPoint(_fileToEntity[filename]);
-            }
-
-            // If we found it - we will update
-            if (endp != null)
-            {
-                endp.Id = endp.Name = metadataDoc.EntityId;
-                endp.metadata = metadataDoc;
-                _fileToEntity[filename] = metadataDoc.EntityId;
-            }
-        }
-
-        private void HandleCreateIdp(string filename)
-        {
-            if (!_fileToEntity.ContainsKey(filename))
-            {
-                var metadataDoc = ParseFile(filename);
-                if (metadataDoc == null)
-                    return; // Not a SAML 2.0 metadata file (e.g. a README placed in the metadata directory) - ignore it instead of failing.
-                var endp = FindEndPoint(metadataDoc.EntityId);
-                if (endp == null) // If the endpoint does not exist, create it.
-                {
-                    endp = new IDPEndPoint()
-                    {
-                        Id = metadataDoc.EntityId,
-                        Name = metadataDoc.EntityId,
-                        metadata = metadataDoc
-                    };
-                    IDPEndPoints.Add(endp);
-                    _fileToEntity.Add(filename, endp.Id);
-                }
-                else
-                {
-                    HandleUpdateIdp(filename);
-                }
-            }
-            else
-            {
-                HandleUpdateIdp(filename);
+                Trace.TraceData(TraceEventType.Error, "Reloading the IdP metadata failed; retrying.", e.ToString());
+                ScheduleReload(RetryDelay);
             }
         }
 
@@ -547,45 +518,183 @@ namespace dk.nita.saml20.config
             if (!Directory.Exists(MetadataLocation))
                 throw new DirectoryNotFoundException(string.Format(Resources.MetadataLocationNotFound, MetadataLocation));
 
-            string[] files = Directory.GetFiles(MetadataLocation);
-            foreach (string file in files)
-            {
-                HandleCreateIdp(file);
-            }
-
+            // Watch first, so a change during the first load isn't missed.
             InitializeFileSystemWatcher();
+
+            if (!LoadMetadata())
+                ScheduleReload(RetryDelay);
         }
 
         /// <summary>
-        /// Parses the metadata files found in the directory specified in the configuration.
+        /// Reads every metadata file in the metadata location and replaces the IdP endpoints in one step.
+        /// <list type="bullet">
+        /// <item>An endpoint from the configuration file is kept, with the metadata of its entity id, or none.</item>
+        /// <item>An entity with metadata but no configured endpoint gets an endpoint, which goes again when its metadata files are gone.</item>
+        /// <item>Several files with the same entity id are combined: the newest file gives the endpoints, and the keys of all of them are trusted.</item>
+        /// <item>A file that can't be read now, for example while it is being written or is locked, keeps its last version
+        /// for <see cref="UnreadableGracePeriod"/>; after that its keys are no longer trusted.</item>
+        /// <item>A file that can be read but isn't usable metadata counts as removed.</item>
+        /// </list>
         /// </summary>
-        private Saml20MetadataDocument ParseFile(string file)
+        /// <returns>false if a file couldn't be read, so the reload should be retried.</returns>
+        internal bool LoadMetadata()
         {
-            XmlDocument doc = LoadFileAsXmlDocument(file);
-            //_fileInfo[file] = File.GetLastWriteTime(file); // Mark that we have seen the file.
-            try
+            lock (_reloadLock)
             {
-                foreach (XmlNode child in doc.ChildNodes)
-                {
-                    if (child.NamespaceURI == Saml20Constants.METADATA)
-                    {
-                        if (child.LocalName == EntityDescriptor.ELEMENT_NAME)
-                            return new Saml20MetadataDocument(doc);
+                if (_configuredEndpointIds == null)
+                    _configuredEndpointIds = IDPEndPoints.Select(endpoint => endpoint.Id).ToList();
 
-                        // TODO Decide how to handle several entities in one metadata file.
-                        if (child.LocalName == EntitiesDescriptor.ELEMENT_NAME)
-                            throw new NotImplementedException();
+                var complete = true;
+                var now = DateTime.UtcNow;
+                var metadataFiles = new Dictionary<string, XmlDocument>();
+                var unreadableSince = new Dictionary<string, DateTime>();
+                foreach (var file in Directory.GetFiles(MetadataLocation))
+                {
+                    var metadataFile = ReadMetadataFile(file, out var unreadable);
+                    if (unreadable)
+                    {
+                        complete = false;
+                        var since = _unreadableSince.TryGetValue(file, out var first) ? first : now;
+                        unreadableSince[file] = since;
+                        if (_metadataFiles.TryGetValue(file, out var previous))
+                        {
+                            if (now - since < UnreadableGracePeriod)
+                            {
+                                Trace.TraceData(TraceEventType.Warning, file, "Could not read the metadata file; using its last version until it can be read.");
+                                metadataFile = previous;
+                            }
+                            else
+                            {
+                                Trace.TraceData(TraceEventType.Error, file, "Could not read the metadata file since " + since.ToString("o") + "; its last version is no longer used.");
+                            }
+                        }
+                    }
+
+                    if (metadataFile != null)
+                        metadataFiles[file] = metadataFile;
+                }
+                _metadataFiles = metadataFiles;
+                _unreadableSince = unreadableSince;
+
+                var metadataByEntity = metadataFiles
+                    .OrderByDescending(f => File.GetLastWriteTimeUtc(f.Key))
+                    .Select(f => new Saml20MetadataDocument(f.Value))
+                    .GroupBy(metadata => metadata.EntityId)
+                    .ToDictionary(entity => entity.Key, entity => Combine(entity.ToList()));
+
+                var endpoints = new List<IDPEndPoint>();
+                foreach (var endpoint in IDPEndPoints)
+                {
+                    if (endpoint.Id != null && metadataByEntity.TryGetValue(endpoint.Id, out var metadata))
+                    {
+                        endpoint.metadata = metadata;
+                        metadataByEntity.Remove(endpoint.Id);
+                        endpoints.Add(endpoint);
+                    }
+                    else if (_configuredEndpointIds.Contains(endpoint.Id))
+                    {
+                        endpoint.metadata = null;
+                        endpoints.Add(endpoint);
                     }
                 }
 
-                // No entity descriptor found. 
-                throw new InvalidDataException(); // BAIIIIIIL!!                
+                foreach (var metadata in metadataByEntity.Values)
+                {
+                    endpoints.Add(new IDPEndPoint { Id = metadata.EntityId, Name = metadata.EntityId, metadata = metadata });
+                }
+
+                IDPEndPoints = endpoints;
+                return complete;
+            }
+        }
+
+        /// <summary>
+        /// Combines the metadata documents of one entity, newest first: the first gives the endpoints, and the keys of all are trusted.
+        /// </summary>
+        private static Saml20MetadataDocument Combine(List<Saml20MetadataDocument> documents)
+        {
+            var combined = documents[0];
+            foreach (var other in documents.Skip(1))
+                combined.Keys.AddRange(other.Keys);
+            return combined;
+        }
+
+        /// <summary>
+        /// Reads a SAML 2.0 metadata file with one EntityDescriptor.
+        /// </summary>
+        /// <param name="file">The file.</param>
+        /// <param name="unreadable">true if the file couldn't be read or isn't well-formed XML, as while it is being written.</param>
+        /// <returns>The metadata, or null if the file can't be read or isn't usable SAML 2.0 metadata.</returns>
+        private XmlDocument ReadMetadataFile(string file, out bool unreadable)
+        {
+            unreadable = false;
+            XmlDocument doc;
+            try
+            {
+                doc = LoadFileAsXmlDocument(file);
+            }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+            {
+                Trace.TraceData(TraceEventType.Warning, file, "Could not read the metadata file.", e.ToString());
+                unreadable = true;
+                return null;
             }
             catch (Exception e)
             {
-                // Probably not a metadata file.
-                Trace.TraceData(TraceEventType.Error, file, "Probably not a SAML2.0 metadata file.", e.ToString());
+                Trace.TraceData(TraceEventType.Error, file, "The metadata file can't be used; ignored.", e.ToString());
                 return null;
+            }
+
+            if (doc?.DocumentElement == null)
+            {
+                if (!LooksLikeXml(file))
+                {
+                    Trace.TraceData(TraceEventType.Information, file, "Not an XML file; ignored.");
+                    return null;
+                }
+
+                Trace.TraceData(TraceEventType.Warning, file, "The metadata file is not well-formed XML.");
+                unreadable = true;
+                return null;
+            }
+
+            if (doc.DocumentElement.NamespaceURI != Saml20Constants.METADATA || doc.DocumentElement.LocalName != EntityDescriptor.ELEMENT_NAME)
+            {
+                Trace.TraceData(TraceEventType.Warning, file, "Not a SAML 2.0 metadata file with one EntityDescriptor; ignored.");
+                return null;
+            }
+
+            try
+            {
+                new Saml20MetadataDocument(doc); // Fails here rather than during a reload if the document can't be used.
+                return doc;
+            }
+            catch (Exception e)
+            {
+                Trace.TraceData(TraceEventType.Error, file, "The metadata file can't be used; ignored.", e.ToString());
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Tells a file that isn't XML at all, such as a readme, from an XML file that is still being written.
+        /// </summary>
+        private static bool LooksLikeXml(string file)
+        {
+            try
+            {
+                using (var reader = new StreamReader(file, Encoding.UTF8, true))
+                {
+                    int c;
+                    while ((c = reader.Read()) >= 0 && char.IsWhiteSpace((char)c))
+                    {
+                    }
+                    return c == '<';
+                }
+            }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+            {
+                return true;
             }
         }
 

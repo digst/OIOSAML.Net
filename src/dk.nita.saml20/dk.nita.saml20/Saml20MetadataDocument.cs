@@ -408,12 +408,13 @@ namespace dk.nita.saml20
         }
 
         /// <summary>
-        /// Retrieves the keys marked with the usage given as parameter.
+        /// Retrieves the keys for the usage given as parameter: the keys marked with it, and the keys without a use,
+        /// which SAML metadata defines as usable for both signing and encryption.
         /// </summary>
-        /// <returns>A list containing the keys. If no key is marked with the given usage, the method returns an empty list.</returns>
+        /// <returns>A list containing the keys. If no key has the given usage, the method returns an empty list.</returns>
         public List<KeyDescriptor> GetKeys(KeyTypes usage)
         {
-            return Keys.FindAll(delegate (KeyDescriptor desc) { return desc.use == usage; });
+            return Keys.FindAll(delegate (KeyDescriptor desc) { return !desc.useSpecified || desc.use == usage; });
         }
 
         /// <summary>

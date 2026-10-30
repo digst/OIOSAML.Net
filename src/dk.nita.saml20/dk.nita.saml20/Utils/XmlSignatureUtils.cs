@@ -190,7 +190,7 @@ namespace dk.nita.saml20.Utils
         /// Attempts to retrieve an asymmetric key from the KeyInfoClause given as parameter.        
         /// </summary>
         /// <param name="keyInfoClause"></param>
-        /// <returns>null if the key could not be found.</returns>
+        /// <returns>null if the key could not be found, or is of a type that can't be used, such as an EC key.</returns>
         public static AsymmetricAlgorithm ExtractKey(KeyInfoClause keyInfoClause)
         {
             if (keyInfoClause is RSAKeyValue)
@@ -202,7 +202,15 @@ namespace dk.nita.saml20.Utils
             {
                 X509Certificate2 cert = GetCertificateFromKeyInfo((KeyInfoX509Data)keyInfoClause);
 
-                return cert != null ? cert.PublicKey.Key : null;
+                try
+                {
+                    return cert != null ? cert.PublicKey.Key : null;
+                }
+                catch (NotSupportedException)
+                {
+                    // Skip a key of another type, so that the remaining keys can still be tried.
+                    return null;
+                }
             }
             
             return null;
