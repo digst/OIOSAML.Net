@@ -40,7 +40,7 @@ For a quick setup, you must do the following:
 *   Set the projects 'IdentityProviderDemo' and 'WebsiteDemo' as startup projects by right-clicking solution, select 'properties', selecting 'Multiple start projects'
 *   For the web projects, you must manually set the 'Start URL' that IIS express uses. You do this by:
     *   right click project 'IdentityProviderDemo', select 'properties', select the tab 'Web', alter the 'Start Action' to the radio button 'Start URL', specifying 'https://oiosaml-demoidp.dk:20001'
-    *   right click project 'WebsiteDemo', select 'properties', select the tab 'Web', alter the 'Start Action' to the radio button 'Start URL', specifying 'https://oiosaml-net.dk:20002'
+    *   right click project 'WebsiteDemo', select 'properties', select the tab 'Web', alter the 'Start Action' to the radio button 'Start URL', specifying 'https://localhost:20002'
 *   Run the solution which should start IIS express for the two websites
 
 This should start two browser windows, one for the demo idp ('IdentityProviderDemo'), and one for the service provider ('WebsiteDemo').  
@@ -49,3 +49,12 @@ On the service provider you should now be able to log in using either the demo i
 
 * If you choose NemLog-in, you must use an certificate employee certificate from the [NemLog-In testportal](https://test-nemlog-in.dk/testportal/)  
 * If you choose the local demo idp, you log in with a username/password with one of the users listed in the web.config file for the demo idp under the 'demoIdp' section
+
+## When the IdP changes its signing certificate
+
+The IdP metadata files are read from the directory set in `IDPEndPoints/@metadata`. The library watches the directory and reloads it a few seconds after a change, so a new certificate needs no restart:
+
+* **The IdP publishes metadata with both certificates.** Replace the metadata file with it. Each certificate is in its own `KeyDescriptor`, and signatures made with either are accepted.
+* **The new certificate comes in a separate metadata file.** Add the new file next to the old one, with the same `entityID`. The keys of all files with that `entityID` are trusted, and the newest file gives the endpoints. Delete the old file once the IdP has switched.
+
+An `IDPEndPoint` configured in `Web.config` keeps its settings through a reload, even while its metadata file is being replaced. A file that can't be read, for example while it is being copied or is locked, keeps its last version for up to five minutes; after that its keys are no longer trusted and an error is traced. A file that can be read but isn't usable SAML 2.0 metadata with one `EntityDescriptor` counts as removed straight away. Certificates are still checked by the configured certificate validation (by default chain and revocation), so the new certificate's CA must be trusted on the server.

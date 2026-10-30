@@ -50,6 +50,15 @@ namespace dk.nita.saml20.protocol
         public static bool validated = false;
 
         /// <summary>
+        /// Whether an ArtifactResponse answers the ArtifactResolve this service provider sent. A message received
+        /// as a SOAP request (no ArtifactResolve sent) never does.
+        /// </summary>
+        internal static bool AnswersArtifactResolve(string artifactResolveId, string inResponseTo)
+        {
+            return !string.IsNullOrEmpty(artifactResolveId) && inResponseTo == artifactResolveId;
+        }
+
+        /// <summary>
         /// Enables processing of HTTP Web requests by a custom HttpHandler that implements the <see cref="T:System.Web.IHttpHandler"/> interface.
         /// </summary>
         /// <param name="context">An <see cref="T:System.Web.HttpContext"/> object that provides references to the intrinsic server objects (for example, Request, Response, Session, and Server) used to service HTTP requests.</param>
@@ -132,15 +141,18 @@ namespace dk.nita.saml20.protocol
                 }
             }
 
+            // Read once: a metadata reload replaces the list.
+            var idpEndPoints = config.IDPEndPoints;
+
             //If there is only one configured IDPEndPoint lets just use that
-            if (config.IDPEndPoints.Count == 1 && config.IDPEndPoints[0].metadata != null)
+            if (idpEndPoints.Count == 1 && idpEndPoints[0].metadata != null)
             {
-                AuditLogging.logEntry(Direction.IN, Operation.DISCOVER, "No IdP selected in Common Domain Cookie, using default IdP: " + config.IDPEndPoints[0].Name);
-                return config.IDPEndPoints[0];
+                AuditLogging.logEntry(Direction.IN, Operation.DISCOVER, "No IdP selected in Common Domain Cookie, using default IdP: " + idpEndPoints[0].Name);
+                return idpEndPoints[0];
             }
 
             // If one of the endpoints are marked with default, use that one
-            var defaultIdp = config.Endpoints.IDPEndPoints.Find(idp => idp.Default);
+            var defaultIdp = idpEndPoints.Find(idp => idp.Default);
             if (defaultIdp != null)
             {
                 // A configured endpoint has no metadata when no metadata file matches its id (typically a misspelled
