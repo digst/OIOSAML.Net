@@ -1,9 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
+using System.Linq;
 using System.Web;
+using System.Web.Caching;
 using System.Web.Security;
 using System.Xml;
 using dk.nita.saml20.Bindings;
@@ -187,6 +190,18 @@ namespace dk.nita.saml20.protocol
                     LogoutRequest req = Serialization.DeserializeFromXmlString<LogoutRequest>(parser.ArtifactResponse.Any.OuterXml);
                     response.StatusCode = Saml20Constants.StatusCodes.Success;
                     response.InResponseTo = req.ID;
+
+                    // The artifact was resolved over TLS, so the request needs no signature of its own, but it must come from the IdP that answered.
+                    if (req.Issuer?.Value != idp.Id)
+                    {
+                        AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Request has been denied. The LogoutRequest is not issued by the IdP that sent the ArtifactResponse");
+                        Deny(response);
+                    }
+                    else
+                    {
+                        ProcessLogoutRequest(context, req, idp, false, response);
+                    }
+
                     IDPEndPointElement destination =
                         DetermineEndpointConfiguration(SAMLBinding.REDIRECT, idp.SLOEndpoint, idp.metadata.SLOEndpoints());
 
@@ -194,7 +209,7 @@ namespace dk.nita.saml20.protocol
                 }
                 else if (parser.ArtifactResponse.Any.LocalName == LogoutResponse.ELEMENT_NAME)
                 {
-                    DoLogout(context);
+                    FinishLogout(context, Serialization.DeserializeFromXmlString<LogoutResponse>(parser.ArtifactResponse.Any.OuterXml), false);
                 }
                 else
                 {
@@ -213,7 +228,7 @@ namespace dk.nita.saml20.protocol
                     parser.IsSigned(),
                     idp.metadata != null,
                     () => parser.CheckSignature(idp.metadata.GetKeys(KeyTypes.signing)),
-                    () => IsExpired(parser.LogoutRequest),
+                    () => LogoutRequestFailure(parser.LogoutRequest, false),
                     parser.GetNameID()?.Value,
                     userId => DoSoapLogout(context, userId),
                     message => AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, message + ", issuer: " + parser.Issuer + ", msg: " + LogText.Describe(parser.SamlMessage)));
@@ -264,18 +279,20 @@ namespace dk.nita.saml20.protocol
             IDPEndPointElement destination =
                 DetermineEndpointConfiguration(SAMLBinding.REDIRECT, endpoint.SLOEndpoint, endpoint.metadata.SLOEndpoints());
 
+            var assertion = Saml20PrincipalCache.GetSaml20AssertionLite();
             request.Destination = destination.Url;
+            request.Reason = Saml20Constants.Reasons.User;
+            request.SubjectToLogOut.Format = assertion.Subject.Format;
+            request.SubjectToLogOut.Value = assertion.Subject.Value;
+            request.SessionIndex = assertion.SessionIndex;
 
-            request.SubjectToLogOut.Format = Saml20PrincipalCache.GetSaml20AssertionLite().Subject.Format;
+            // [OIO-SP-28] The local session ends before the request is sent, whatever the IdP answers.
+            EndLocalSession(context, request.ID, endpoint.Id);
 
             var shaHashingAlgorithm = SignatureProviderFactory.ValidateShaHashingAlgorithm(endpoint.ShaHashingAlgorithm);
             if (destination.Binding == SAMLBinding.POST)
             {
                 HttpPostBindingBuilder builder = new HttpPostBindingBuilder(destination);
-                request.Destination = destination.Url;
-                request.Reason = Saml20Constants.Reasons.User;
-                request.SubjectToLogOut.Value = Saml20PrincipalCache.GetSaml20AssertionLite().Subject.Value;
-                request.SessionIndex = Saml20PrincipalCache.GetSaml20AssertionLite().SessionIndex;
                 XmlDocument requestDocument = request.GetXml();
                 var signingCertificate = FederationConfig.GetConfig().GetFirstValidCertificate();
                 var signatureProvider = SignatureProviderFactory.CreateFromShaHashingAlgorithmName(shaHashingAlgorithm);
@@ -295,17 +312,13 @@ namespace dk.nita.saml20.protocol
             {
                 HttpRedirectBindingBuilder builder = new HttpRedirectBindingBuilder();
                 builder.signingKey = FederationConfig.GetConfig().GetFirstValidCertificate().GetRSAPrivateKey();
-                request.Destination = destination.Url;
-                request.Reason = Saml20Constants.Reasons.User;
-                request.SubjectToLogOut.Value = Saml20PrincipalCache.GetSaml20AssertionLite().Subject.Value;
-                request.SessionIndex = Saml20PrincipalCache.GetSaml20AssertionLite().SessionIndex;
                 builder.Request = request.GetXml().OuterXml;
                 builder.ShaHashingAlgorithm = shaHashingAlgorithm;
 
                 string redirectUrl = destination.Url + "?" + builder.ToQuery();
 
-                if (Trace.ShouldTrace(TraceEventType.Information))
-                    Trace.TraceData(TraceEventType.Information, string.Format(Tracing.SendLogoutRequest, "REDIRECT", endpoint.Id, redirectUrl));
+                if (Trace.ShouldTrace(TraceEventType.Verbose))
+                    Trace.TraceData(TraceEventType.Verbose, string.Format(Tracing.SendLogoutRequest, "REDIRECT", endpoint.Id, redirectUrl));
 
                 AuditLogging.logEntry(Direction.OUT, Operation.LOGOUTREQUEST, "Binding: Redirect");
                 context.Response.Redirect(redirectUrl, true);
@@ -317,17 +330,103 @@ namespace dk.nita.saml20.protocol
                 if (Trace.ShouldTrace(TraceEventType.Information))
                     Trace.TraceData(TraceEventType.Information, string.Format(Tracing.SendLogoutRequest, "ARTIFACT", endpoint.Id, string.Empty));
 
-                request.Destination = destination.Url;
-                request.Reason = Saml20Constants.Reasons.User;
-                request.SubjectToLogOut.Value = Saml20PrincipalCache.GetSaml20AssertionLite().Subject.Value;
-                request.SessionIndex = Saml20PrincipalCache.GetSaml20AssertionLite().SessionIndex;
-
                 HttpArtifactBindingBuilder builder = new HttpArtifactBindingBuilder(context);
                 AuditLogging.logEntry(Direction.OUT, Operation.LOGOUTREQUEST, "Method: Artifact");
                 builder.RedirectFromLogout(endpoint, destination, request, Guid.NewGuid().ToString("N"));
             }
 
             HandleError(context, Resources.BindingError);
+        }
+
+        /// <summary>
+        /// Ends the local session at the start of a logout this service provider initiates: runs the logout actions except
+        /// the redirect, which waits for the IdP's LogoutResponse, and abandons the user's sessions. Only the ID of the
+        /// LogoutRequest and the IdP it is sent to are kept, to check the LogoutResponse against.
+        /// </summary>
+        private void EndLocalSession(HttpContext context, string logoutRequestId, string idpId)
+        {
+            var userId = Saml20Identity.Current?.Name;
+            try
+            {
+                foreach (IAction action in Actions.Actions.GetActions())
+                {
+                    if (action is RedirectAction)
+                        continue;
+
+                    Trace.TraceMethodCalled(action.GetType(), "LogoutAction()");
+                    action.LogoutAction(this, context, false);
+                    Trace.TraceMethodDone(action.GetType(), "LogoutAction()");
+                }
+            }
+            finally
+            {
+                if (userId != null)
+                    SessionStore.AbandonAllSessions(userId);
+                SessionStore.CurrentSession[SessionConstants.Saml20AssertionLite] = null;
+                SessionStore.CurrentSession[SessionConstants.PendingLogoutRequestId] = logoutRequestId;
+                SessionStore.CurrentSession[SessionConstants.PendingLogoutIdpId] = idpId;
+            }
+        }
+
+        /// <summary>
+        /// Completes a logout this service provider initiated, when the IdP's LogoutResponse arrives. The local session
+        /// already ended when the LogoutRequest was sent, so only the redirect is left, and only for a response to that request.
+        /// </summary>
+        /// <param name="context">The current HTTP context.</param>
+        /// <param name="response">The LogoutResponse, with its signature already verified if it came through the browser.</param>
+        /// <param name="destinationRequired">Whether the response must carry a Destination, as a signed message through the browser must.</param>
+        private void FinishLogout(HttpContext context, LogoutResponse response, bool destinationRequired)
+        {
+            var session = SessionStore.CurrentSession;
+            var expectedInResponseTo = session?[SessionConstants.PendingLogoutRequestId] as string;
+            var expectedIdpId = session?[SessionConstants.PendingLogoutIdpId] as string;
+            if (session != null)
+            {
+                session[SessionConstants.PendingLogoutRequestId] = null;
+                session[SessionConstants.PendingLogoutIdpId] = null;
+            }
+            SessionStore.ExpireSessionCookie();
+
+            var failure = CheckLogoutResponse(response, expectedInResponseTo, expectedIdpId, SingleLogoutServiceUrls(SAML20FederationConfig.GetConfig().ServiceProvider), destinationRequired);
+            if (failure != null)
+            {
+                AuditLogging.logEntry(Direction.IN, Operation.LOGOUTRESPONSE, "LogoutResponse rejected: " + failure);
+                HandleError(context, "{0}", failure);
+                return;
+            }
+
+            if (response.Status?.StatusCode?.Value != Saml20Constants.StatusCodes.Success)
+            {
+                AuditLogging.logEntry(Direction.IN, Operation.LOGOUTRESPONSE,
+                                      string.Format("Unexpected status code: {0}, response ID: {1}", response.Status?.StatusCode?.Value, response.ID));
+                HandleError(context, response.Status);
+                return;
+            }
+
+            AuditLogging.logEntry(Direction.IN, Operation.LOGOUTRESPONSE, "LogoutResponse validated successfully");
+
+            foreach (IAction action in Actions.Actions.GetActions())
+            {
+                if (action is RedirectAction)
+                    action.LogoutAction(this, context, false);
+            }
+        }
+
+        /// <summary>
+        /// Checks a LogoutResponse apart from its signature: it answers the LogoutRequest this service provider sent, comes
+        /// from the IdP it was sent to, and is addressed to this service provider's single logout service.
+        /// </summary>
+        /// <returns>null if the response is acceptable, otherwise the reason it isn't.</returns>
+        internal static string CheckLogoutResponse(LogoutResponse response, string expectedInResponseTo, string expectedIdpId,
+            ICollection<Uri> singleLogoutServiceUrls, bool destinationRequired)
+        {
+            if (expectedInResponseTo == null)
+                return "No logout is in progress in this session.";
+            if (response.InResponseTo != expectedInResponseTo)
+                return "The LogoutResponse does not answer the LogoutRequest sent by this service provider.";
+            if (response.Issuer?.Value != expectedIdpId)
+                return "The LogoutResponse is not issued by the IdP the LogoutRequest was sent to.";
+            return CheckDestination("LogoutResponse", response.Destination, singleLogoutServiceUrls, destinationRequired);
         }
 
         #endregion
@@ -338,39 +437,37 @@ namespace dk.nita.saml20.protocol
         {
             Trace.TraceMethodCalled(GetType(), "HandleResponse()");
 
-
-            string message = string.Empty;
+            LogoutResponse response;
 
             if (context.Request.RequestType == "GET")
             {
                 HttpRedirectBindingParser parser = new HttpRedirectBindingParser(context.Request.Url);
-                LogoutResponse response = Serialization.DeserializeFromXmlString<LogoutResponse>(parser.Message);
+                response = Serialization.DeserializeFromXmlString<LogoutResponse>(parser.Message);
 
                 AuditLogging.logEntry(Direction.IN, Operation.LOGOUTRESPONSE,
                                       string.Format("Binding: redirect, Signature algorithm: {0}, Message: {1}", parser.SignatureAlgorithm, LogText.Describe(parser.Message)));
 
-                IDPEndPoint idp = RetrieveIDPConfiguration(response.Issuer.Value);
-
-                AuditLogging.IdpId = idp.Id;
+                IDPEndPoint idp = RetrieveIDPConfiguration(response.Issuer?.Value);
+                AuditLogging.IdpId = idp?.Id;
                 AuditLogging.AssertionId = response.ID;
 
-                if (idp.metadata == null)
+                if (idp?.metadata == null)
                 {
                     AuditLogging.logEntry(Direction.IN, Operation.LOGOUTRESPONSE,
                                       string.Format("No IDP metadata, unknown IDP, response: {0}", LogText.Describe(parser.Message)));
+                    SessionStore.ExpireSessionCookie();
                     HandleError(context, Resources.UnknownIDP);
                     return;
                 }
 
-                if (!parser.VerifySignature(idp.metadata.Keys))
+                if (!parser.IsSigned || !Verifies(() => parser.VerifySignature(idp.metadata.GetKeys(KeyTypes.signing))))
                 {
                     AuditLogging.logEntry(Direction.IN, Operation.LOGOUTRESPONSE,
                                       string.Format("Invalid signature in redirect-binding, response: {0}", LogText.Describe(parser.Message)));
+                    SessionStore.ExpireSessionCookie();
                     HandleError(context, Resources.SignatureInvalid);
                     return;
                 }
-
-                message = parser.Message;
             }
             else if (context.Request.RequestType == "POST")
             {
@@ -378,63 +475,39 @@ namespace dk.nita.saml20.protocol
                 AuditLogging.logEntry(Direction.IN, Operation.LOGOUTRESPONSE,
                                       "Binding: POST, Message: " + LogText.Describe(parser.Message));
 
+                response = Serialization.DeserializeFromXmlString<LogoutResponse>(parser.Message);
 
-                LogoutResponse response = Serialization.DeserializeFromXmlString<LogoutResponse>(parser.Message);
+                IDPEndPoint idp = RetrieveIDPConfiguration(response.Issuer?.Value);
+                AuditLogging.IdpId = idp?.Id;
+                AuditLogging.AssertionId = response.ID;
 
-                IDPEndPoint idp = RetrieveIDPConfiguration(response.Issuer.Value);
-
-                if (idp.metadata == null)
+                if (idp?.metadata == null)
                 {
                     AuditLogging.logEntry(Direction.IN, Operation.LOGOUTRESPONSE,
                                       string.Format("No IDP metadata, unknown IDP, response: {0}", LogText.Describe(parser.Message)));
+                    SessionStore.ExpireSessionCookie();
                     HandleError(context, Resources.UnknownIDP);
                     return;
                 }
 
-                if (!parser.IsSigned())
+                if (!parser.IsSigned() || !Verifies(() => parser.CheckSignature(idp.metadata.GetKeys(KeyTypes.signing))))
                 {
                     AuditLogging.logEntry(Direction.IN, Operation.LOGOUTRESPONSE,
-                                      string.Format("Signature not present, response: {0}", LogText.Describe(parser.Message)));
-                    HandleError(context, Resources.SignatureNotPresent);
-                }
-
-                // signature on final message in logout
-                if (!parser.CheckSignature(idp.metadata.Keys))
-                {
-                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTRESPONSE,
-                                      string.Format("Invalid signature in post-binding, response: {0}", LogText.Describe(parser.Message)));
+                                      string.Format("Missing or invalid signature in post-binding, response: {0}", LogText.Describe(parser.Message)));
+                    SessionStore.ExpireSessionCookie();
                     HandleError(context, Resources.SignatureInvalid);
+                    return;
                 }
-
-                message = parser.Message;
             }
             else
             {
                 AuditLogging.logEntry(Direction.IN, Operation.LOGOUTRESPONSE,
                                       string.Format("Unsupported request type format, type: {0}", context.Request.RequestType));
                 HandleError(context, Resources.UnsupportedRequestType, context.Request.RequestType);
-            }
-
-            XmlDocument doc = SafeXml.Load(message);
-
-            XmlElement statElem =
-                (XmlElement)doc.GetElementsByTagName(Status.ELEMENT_NAME, Saml20Constants.PROTOCOL)[0];
-
-            Status status = Serialization.DeserializeFromXmlString<Status>(statElem.OuterXml);
-
-            if (status.StatusCode.Value != Saml20Constants.StatusCodes.Success)
-            {
-                AuditLogging.logEntry(Direction.IN, Operation.LOGOUTRESPONSE,
-                                      string.Format("Unexpected status code: {0}, msg: {1}", status.StatusCode.Value, LogText.Describe(message)));
-                HandleError(context, status);
                 return;
             }
 
-            AuditLogging.logEntry(Direction.IN, Operation.LOGOUTRESPONSE,
-                     "Assertion validated succesfully");
-
-            //Log the user out locally
-            DoLogout(context);
+            FinishLogout(context, response, true);
         }
 
         #endregion
@@ -448,9 +521,8 @@ namespace dk.nita.saml20.protocol
             //Fetch config object
             SAML20FederationConfig config = SAML20FederationConfig.GetConfig();
 
-            LogoutRequest logoutRequest = null;
-            IDPEndPoint endpoint = null;
-            string message = string.Empty;
+            LogoutRequest logoutRequest;
+            IDPEndPoint endpoint;
 
             //Build the response object
             var response = new Saml20LogoutResponse();
@@ -463,34 +535,21 @@ namespace dk.nita.saml20.protocol
                 AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST,
                                       string.Format("Binding: redirect, Signature algorithm: {0}, Message: {1}", parser.SignatureAlgorithm, LogText.Describe(parser.Message)));
 
-                if (!parser.IsSigned)
-                {
-                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Signature not present, msg: " + LogText.Describe(parser.Message));
-                    Deny(response);
-                }
-
                 logoutRequest = parser.LogoutRequest;
-                endpoint = config.FindEndPoint(logoutRequest.Issuer.Value);
-
-                if (endpoint.metadata == null)
+                endpoint = config.FindEndPoint(logoutRequest.Issuer?.Value);
+                if (endpoint?.metadata == null)
                 {
-                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Cannot find metadata for IdP: " + logoutRequest.Issuer.Value);
+                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Cannot find metadata for IdP: " + logoutRequest.Issuer?.Value);
                     // Not able to return a response as we do not know the IdP.
-                    HandleError(context, "Cannot find metadata for IdP {0}", logoutRequest.Issuer.Value);
+                    HandleError(context, "Cannot find metadata for IdP {0}", logoutRequest.Issuer?.Value);
                     return;
                 }
 
-                ValidateNotOnOrAfter(context, logoutRequest); // Throws if not valid.
-                
-                Saml20MetadataDocument metadata = endpoint.metadata;
-
-                if (!parser.VerifySignature(metadata.GetKeys(KeyTypes.signing)))
+                if (!parser.IsSigned || !Verifies(() => parser.VerifySignature(endpoint.metadata.GetKeys(KeyTypes.signing))))
                 {
-                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Request has been denied. Invalid signature redirect-binding, msg: " + LogText.Describe(parser.Message));
+                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Request has been denied. Missing or invalid signature redirect-binding, msg: " + LogText.Describe(parser.Message));
                     Deny(response);
                 }
-
-                message = parser.Message;
             }
             else if (context.Request.RequestType == "POST") // HTTP Post binding
             {
@@ -498,34 +557,21 @@ namespace dk.nita.saml20.protocol
                 AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST,
                                       "Binding: POST, Message: " + LogText.Describe(parser.Message));
 
-                if (!parser.IsSigned())
-                {
-                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Signature not present, msg: " + LogText.Describe(parser.Message));
-                    Deny(response);
-                }
-
                 logoutRequest = parser.LogoutRequest;
-                endpoint = config.FindEndPoint(logoutRequest.Issuer.Value);
-                if (endpoint.metadata == null)
+                endpoint = config.FindEndPoint(logoutRequest.Issuer?.Value);
+                if (endpoint?.metadata == null)
                 {
-                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Cannot find metadata for IdP");
+                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Cannot find metadata for IdP: " + logoutRequest.Issuer?.Value);
                     // Not able to return a response as we do not know the IdP.
-                    HandleError(context, "Cannot find metadata for IdP {0}", logoutRequest.Issuer.Value);
+                    HandleError(context, "Cannot find metadata for IdP {0}", logoutRequest.Issuer?.Value);
                     return;
                 }
 
-                ValidateNotOnOrAfter(context, logoutRequest); // Throws if not valid.
-                
-                Saml20MetadataDocument metadata = endpoint.metadata;
-
-                // handle a logout-request
-                if (!parser.CheckSignature(metadata.GetKeys(KeyTypes.signing)))
+                if (!parser.IsSigned() || !Verifies(() => parser.CheckSignature(endpoint.metadata.GetKeys(KeyTypes.signing))))
                 {
-                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Request has been denied. Invalid signature post-binding, msg: " + LogText.Describe(parser.Message));
+                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Request has been denied. Missing or invalid signature post-binding, msg: " + LogText.Describe(parser.Message));
                     Deny(response);
                 }
-
-                message = parser.Message;
             }
             else
             {
@@ -535,36 +581,8 @@ namespace dk.nita.saml20.protocol
                 return;
             }
 
-            AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Received: " + LogText.Describe(message));
-
-            // Check that idp in session and request matches.
-            string idpRequest = logoutRequest.Issuer.Value;
-
-            // SessionFactory.SessionContext.Current.New is never the first call to Current due to the logic in Application_AuthenticateRequest() ... Saml20Identity.IsInitialized()
-            // Hence we need to check on Saml20Identity.IsInitialized() instead of using SessionFactory.SessionContext.Current.New.
-            bool isOioSamlSessionActive = Saml20Identity.IsInitialized();
-            if (isOioSamlSessionActive)
-            {
-                object idpId = Saml20PrincipalCache.GetSaml20AssertionLite().Issuer;
-
-                if (idpId != null && idpId.ToString() != idpRequest)
-                {
-                    AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, string.Format(Resources.IdPMismatchBetweenRequestAndSession, idpId, idpRequest), LogText.Describe(message));
-                    Deny(response);
-                }
-            }
-            else
-            {
-                // All other status codes than Success results in the IdP throwing an error page. Therefore we return default Success even if we do not have a session.
-                AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Session does not exist. Continues the redirect logout procedure with status code success." + idpRequest, LogText.Describe(message));
-            }
-
-            //  Only logout if request is valid and we are working on an existing Session.
-            if (Saml20Constants.StatusCodes.Success == response.StatusCode && isOioSamlSessionActive)
-            {
-                // Execute all actions that the service provider has configured
-                DoLogout(context, true);
-            }
+            if (response.StatusCode == Saml20Constants.StatusCodes.Success)
+                ProcessLogoutRequest(context, logoutRequest, endpoint, true, response);
 
             // Update the response object with informations that first is available when request has been parsed.
             IDPEndPointElement destination = DetermineEndpointConfiguration(SAMLBinding.REDIRECT, endpoint.SLOEndpoint, endpoint.metadata.SLOEndpoints());
@@ -600,24 +618,66 @@ namespace dk.nita.saml20.protocol
                 return;
             }
         }
-        
+
+        /// <summary>
+        /// Acts on an IdP's LogoutRequest whose signature, or the channel it came through, has been verified: checks it and,
+        /// when it names the user of this session, logs the user out. The outcome is set on <paramref name="response"/>.
+        /// </summary>
+        private void ProcessLogoutRequest(HttpContext context, LogoutRequest logoutRequest, IDPEndPoint endpoint, bool destinationRequired, Saml20LogoutResponse response)
+        {
+            AuditLogging.AssertionId = logoutRequest.ID;
+
+            var failure = LogoutRequestFailure(logoutRequest, destinationRequired);
+            if (failure != null)
+            {
+                AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Request has been denied. " + failure);
+                Deny(response);
+                return;
+            }
+
+            var session = Saml20PrincipalCache.GetSaml20AssertionLite();
+            if (session == null)
+            {
+                // All other status codes than Success results in the IdP throwing an error page. Therefore we return default Success even if we do not have a session.
+                AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Session does not exist. Continues the logout procedure with status code success. " + endpoint.Id);
+                return;
+            }
+
+            if (session.Issuer != endpoint.Id)
+            {
+                AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, string.Format(Resources.IdPMismatchBetweenRequestAndSession, session.Issuer, endpoint.Id));
+                Deny(response);
+                return;
+            }
+
+            if (!NamesSubject(logoutRequest, session))
+            {
+                AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, "Request has been denied. [OIO-SP-23] The NameID or SessionIndex does not match the logged-in subject");
+                response.StatusCode = Saml20Constants.StatusCodes.Requester;
+                response.SubStatusCode = Saml20Constants.StatusCodes.UnknownPrincipal;
+                return;
+            }
+
+            DoLogout(context, true);
+        }
+
         private static readonly (string StatusCode, string SubStatusCode) Denied =
             (Saml20Constants.StatusCodes.Requester, Saml20Constants.StatusCodes.RequestDenied);
 
         /// <summary>
         /// Handles a LogoutRequest received over SOAP. The user is logged out only when the request is signed by a known IdP
-        /// with a valid signature, has not expired and names a user.
+        /// with a valid signature, passes the checks of <see cref="LogoutRequestFailure"/> and names a user.
         /// </summary>
         /// <param name="isSigned">Whether the request carries a signature.</param>
         /// <param name="isIdpKnown">Whether metadata exists for the issuing IdP.</param>
         /// <param name="isSignatureValid">Verifies the signature against the IdP's signing keys; only called for a signed request from a known IdP.</param>
-        /// <param name="isExpired">Whether the request's NotOnOrAfter has passed; only called once the signature is valid.</param>
+        /// <param name="failure">Checks the request apart from its signature, returning the reason it is refused or null; only called once the signature is valid.</param>
         /// <param name="userId">The NameID of the user to log out.</param>
         /// <param name="logOut">Logs the user out.</param>
         /// <param name="audit">Writes an audit log entry for a denied request.</param>
         /// <returns>The status codes for the LogoutResponse: Success, or Requester with the reason as second-level status code.</returns>
         internal static (string StatusCode, string SubStatusCode) HandleSoapLogoutRequest(bool isSigned, bool isIdpKnown, Func<bool> isSignatureValid,
-            Func<bool> isExpired, string userId, Action<string> logOut, Action<string> audit)
+            Func<string> failure, string userId, Action<string> logOut, Action<string> audit)
         {
             if (!isSigned)
             {
@@ -637,9 +697,10 @@ namespace dk.nita.saml20.protocol
                 return Denied;
             }
 
-            if (isExpired())
+            var reason = failure();
+            if (reason != null)
             {
-                audit("Request has been denied. The SOAP logout request has expired");
+                audit("Request has been denied. " + reason);
                 return Denied;
             }
 
@@ -663,42 +724,108 @@ namespace dk.nita.saml20.protocol
         }
 
         /// <summary>
-        /// Whether the <see cref="LogoutRequest"/> has expired: its NotOnOrAfter, if any, plus the allowed clock skew has passed.
+        /// How old a LogoutRequest may be. The IdP sends it as soon as it issues it; an older one may be a replay.
         /// </summary>
-        internal static bool IsExpired(LogoutRequest logoutRequest)
+        internal static readonly TimeSpan LogoutRequestMaximumAge = TimeSpan.FromMinutes(5);
+
+        private const string LogoutRequestCacheKeyPrefix = "dk.nita.saml20.logoutrequest:";
+
+        /// <summary>
+        /// Checks an IdP's LogoutRequest apart from its signature and the session, and accepts each request ID once.
+        /// </summary>
+        /// <returns>null if the request is acceptable, otherwise the reason it isn't.</returns>
+        private static string LogoutRequestFailure(LogoutRequest logoutRequest, bool destinationRequired)
         {
-            return logoutRequest.NotOnOrAfter.HasValue
-                && logoutRequest.NotOnOrAfter.Value.AddMinutes(FederationConfig.GetConfig().AllowedClockSkewMinutes) <= DateTime.UtcNow;
+            var skew = TimeSpan.FromMinutes(FederationConfig.GetConfig().AllowedClockSkewMinutes);
+            var now = DateTime.UtcNow;
+            var failure = CheckLogoutRequest(logoutRequest, SingleLogoutServiceUrls(SAML20FederationConfig.GetConfig().ServiceProvider), destinationRequired, now, skew);
+            if (failure != null)
+                return failure;
+
+            var acceptedUntil = logoutRequest.IssueInstant.Value + LogoutRequestMaximumAge + skew;
+            var isNew = HttpRuntime.Cache.Add(LogoutRequestCacheKeyPrefix + logoutRequest.ID, string.Empty, null, acceptedUntil,
+                Cache.NoSlidingExpiration, CacheItemPriority.NotRemovable, null) == null;
+            return isNew ? null : "The LogoutRequest has been received before.";
         }
 
         /// <summary>
-        /// Validates that the <see cref="LogoutRequest"/> has not expired, by checking that NotOnOrAfter + allowedTimeSkew is greater than current time.
-        /// Only validated if <see cref="LogoutRequest.NotOnOrAfter"/> is not null.
+        /// Checks an IdP's LogoutRequest apart from its signature and the session: it has an ID, is addressed to this
+        /// service provider's single logout service, was issued within <see cref="LogoutRequestMaximumAge"/> and has not expired.
         /// </summary>
-        /// <param name="context">The requests <see cref="HttpContext"/></param>
-        /// <param name="logoutRequest">The LogoutRequest to validate</param>
-        /// <exception cref="T:System.Threading.ThreadAbortException">Throws ThreadAbortException if validation fails, and config is set to show an error page.</exception>
-        /// <exception cref="Saml20Exception">Throws Saml20Exception if validation fails, and config is set to throw exception.</exception>
-        private void ValidateNotOnOrAfter(HttpContext context, LogoutRequest logoutRequest)
+        /// <returns>null if the request is acceptable, otherwise the reason it isn't.</returns>
+        internal static string CheckLogoutRequest(LogoutRequest logoutRequest, ICollection<Uri> singleLogoutServiceUrls, bool destinationRequired, DateTime now, TimeSpan skew)
         {
-            if (!IsExpired(logoutRequest))
-            {
-                return;
-            }
+            if (string.IsNullOrEmpty(logoutRequest.ID))
+                return "The LogoutRequest has no ID.";
 
-            var errormessage = $"Logout request expired. NotOnOrAfter={logoutRequest.NotOnOrAfter}, RequestReceived={DateTime.UtcNow}";
-            AuditLogging.logEntry(Direction.IN, Operation.LOGOUTREQUEST, errormessage);
-            HandleError(context, errormessage);
+            var destinationFailure = CheckDestination("LogoutRequest", logoutRequest.Destination, singleLogoutServiceUrls, destinationRequired);
+            if (destinationFailure != null)
+                return destinationFailure;
+
+            if (!logoutRequest.IssueInstant.HasValue)
+                return "The LogoutRequest has no IssueInstant.";
+            if (logoutRequest.IssueInstant.Value - skew > now || logoutRequest.IssueInstant.Value + LogoutRequestMaximumAge + skew <= now)
+                return $"[OIO-GE-01] The LogoutRequest IssueInstant is in the future or more than {LogoutRequestMaximumAge.TotalMinutes} minutes old.";
+
+            if (logoutRequest.NotOnOrAfter.HasValue && logoutRequest.NotOnOrAfter.Value + skew <= now)
+                return "[OIO-GE-01] The LogoutRequest has expired.";
+
+            return null;
+        }
+
+        /// <summary>
+        /// [OIO-SP-23] Whether the LogoutRequest names the subject of the session: the same NameID value and format and,
+        /// if the request lists session indexes, the session's among them.
+        /// </summary>
+        internal static bool NamesSubject(LogoutRequest logoutRequest, Saml20AssertionLite session)
+        {
+            if (!(logoutRequest.Item is Schema.Core.NameID nameId) || session.Subject == null)
+                return false;
+            if (nameId.Value != session.Subject.Value || nameId.Format != session.Subject.Format)
+                return false;
+            return logoutRequest.SessionIndex == null || logoutRequest.SessionIndex.Length == 0
+                || Array.IndexOf(logoutRequest.SessionIndex, session.SessionIndex) >= 0;
+        }
+
+        private static string CheckDestination(string messageName, string destination, ICollection<Uri> singleLogoutServiceUrls, bool required)
+        {
+            if (destination == null)
+                return required ? $"The {messageName} has no Destination." : null;
+            if (!Uri.TryCreate(destination, UriKind.Absolute, out var url) || !singleLogoutServiceUrls.Contains(url))
+                return $"The {messageName} Destination is not this service provider's single logout service.";
+            return null;
+        }
+
+        /// <summary>
+        /// The single logout service URLs, as published in the service provider's metadata.
+        /// </summary>
+        internal static ICollection<Uri> SingleLogoutServiceUrls(ServiceProviderElement serviceProvider)
+        {
+            return serviceProvider.serviceEndpoints
+                .Where(e => e.endpointType == EndpointType.LOGOUT)
+                .Select(serviceProvider.GetEndpointUrl)
+                .ToList();
+        }
+
+        /// <summary>
+        /// Runs a signature check; a signature that can't be processed counts as invalid.
+        /// </summary>
+        private static bool Verifies(Func<bool> checkSignature)
+        {
+            try
+            {
+                return checkSignature();
+            }
+            catch (Exception e) when (!(e is ThreadAbortException))
+            {
+                Trace.TraceData(TraceEventType.Warning, "The signature could not be verified: " + e.Message);
+                return false;
+            }
         }
 
         #endregion
 
         #region Private utility functions
-
-        private void DoLogout(HttpContext context)
-        {
-            DoLogout(context, false);
-        }
 
         private void DoLogout(HttpContext context, bool IdPInitiated)
         {

@@ -19,9 +19,9 @@ namespace dk.nita.test.Saml20.Protocol
             _loggedOut.Clear();
         }
 
-        private (string StatusCode, string SubStatusCode) Handle(bool isSigned = true, bool isIdpKnown = true, bool isSignatureValid = true, bool isExpired = false, string userId = "user")
+        private (string StatusCode, string SubStatusCode) Handle(bool isSigned = true, bool isIdpKnown = true, bool isSignatureValid = true, string failure = null, string userId = "user")
         {
-            return Saml20LogoutHandler.HandleSoapLogoutRequest(isSigned, isIdpKnown, () => isSignatureValid, () => isExpired, userId, _loggedOut.Add, _audit.Add);
+            return Saml20LogoutHandler.HandleSoapLogoutRequest(isSigned, isIdpKnown, () => isSignatureValid, () => failure, userId, _loggedOut.Add, _audit.Add);
         }
 
         private static readonly (string, string) Denied = (Saml20Constants.StatusCodes.Requester, Saml20Constants.StatusCodes.RequestDenied);
@@ -57,9 +57,9 @@ namespace dk.nita.test.Saml20.Protocol
         }
 
         [Test]
-        public void ExpiredRequestIsDenied()
+        public void RequestThatFailsTheContentChecksIsDenied()
         {
-            Assert.AreEqual(Denied, Handle(isExpired: true));
+            Assert.AreEqual(Denied, Handle(failure: "The LogoutRequest has expired."));
             Assert.IsEmpty(_loggedOut);
         }
 
@@ -75,17 +75,17 @@ namespace dk.nita.test.Saml20.Protocol
         public void SignatureIsNotCheckedForUnsignedRequestOrUnknownIdp()
         {
             var checkedSignature = false;
-            Saml20LogoutHandler.HandleSoapLogoutRequest(false, true, () => checkedSignature = true, () => false, "user", _loggedOut.Add, _audit.Add);
-            Saml20LogoutHandler.HandleSoapLogoutRequest(true, false, () => checkedSignature = true, () => false, "user", _loggedOut.Add, _audit.Add);
+            Saml20LogoutHandler.HandleSoapLogoutRequest(false, true, () => checkedSignature = true, () => null, "user", _loggedOut.Add, _audit.Add);
+            Saml20LogoutHandler.HandleSoapLogoutRequest(true, false, () => checkedSignature = true, () => null, "user", _loggedOut.Add, _audit.Add);
             Assert.IsFalse(checkedSignature, "The signature check reads the IdP's metadata, which an unknown IdP doesn't have.");
         }
 
         [Test]
-        public void ExpiryIsCheckedOnlyAfterTheSignature()
+        public void ContentIsCheckedOnlyAfterTheSignature()
         {
-            var checkedExpiry = false;
-            Saml20LogoutHandler.HandleSoapLogoutRequest(true, true, () => false, () => checkedExpiry = true, "user", _loggedOut.Add, _audit.Add);
-            Assert.IsFalse(checkedExpiry);
+            var checkedContent = false;
+            Saml20LogoutHandler.HandleSoapLogoutRequest(true, true, () => false, () => { checkedContent = true; return null; }, "user", _loggedOut.Add, _audit.Add);
+            Assert.IsFalse(checkedContent, "The content check remembers the request ID, which an unverified request must not do.");
         }
 
         [Test]
