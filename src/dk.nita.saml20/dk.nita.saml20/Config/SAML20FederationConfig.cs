@@ -647,6 +647,12 @@ namespace dk.nita.saml20.config
 
             if (doc?.DocumentElement == null)
             {
+                if (!LooksLikeXml(file))
+                {
+                    Trace.TraceData(TraceEventType.Information, file, "Not an XML file; ignored.");
+                    return null;
+                }
+
                 Trace.TraceData(TraceEventType.Warning, file, "The metadata file is not well-formed XML.");
                 unreadable = true;
                 return null;
@@ -667,6 +673,28 @@ namespace dk.nita.saml20.config
             {
                 Trace.TraceData(TraceEventType.Error, file, "The metadata file can't be used; ignored.", e.ToString());
                 return null;
+            }
+        }
+
+        /// <summary>
+        /// Tells a file that isn't XML at all, such as a readme, from an XML file that is still being written.
+        /// </summary>
+        private static bool LooksLikeXml(string file)
+        {
+            try
+            {
+                using (var reader = new StreamReader(file, Encoding.UTF8, true))
+                {
+                    int c;
+                    while ((c = reader.Read()) >= 0 && char.IsWhiteSpace((char)c))
+                    {
+                    }
+                    return c == '<';
+                }
+            }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+            {
+                return true;
             }
         }
 
