@@ -177,10 +177,7 @@ namespace dk.nita.saml20.Bindings
                 StreamReader reader = new StreamReader(_inputStream);
                 _soapEnvelope = reader.ReadToEnd();
 
-                XmlDocument doc = new XmlDocument();
-                doc.XmlResolver = null;
-                doc.PreserveWhitespace = true;
-                doc.LoadXml(_soapEnvelope);
+                XmlDocument doc = SafeXml.Load(_soapEnvelope);
 
                 XmlElement _soapBody = (XmlElement)doc.GetElementsByTagName(SOAPConstants.SOAPBody, SOAPConstants.SOAPNamespace)[0];
                 if (_soapBody != null)

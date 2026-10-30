@@ -421,15 +421,11 @@ namespace dk.nita.saml20.protocol
         {
             string base64 = context.Request.Params["SAMLResponse"];
 
-            XmlDocument doc = new XmlDocument();
-            doc.XmlResolver = null;
-            doc.PreserveWhitespace = true;
             string samlResponse = encoding.GetString(Convert.FromBase64String(base64));
             if (Trace.ShouldTrace(TraceEventType.Information))
                 Trace.TraceData(TraceEventType.Information, "Decoded SAMLResponse", samlResponse);
 
-            doc.LoadXml(samlResponse);
-            return doc;
+            return SafeXml.Load(samlResponse);
         }
 
         /// <summary>
@@ -478,7 +474,7 @@ namespace dk.nita.saml20.protocol
                 {
                     return tryDecryptAssertion(certificate);
                 }
-                catch (Exception)
+                catch (Exception firstFailure)
                 {
                     foreach (var certificate2 in allValidX509Certificates)
                     {
@@ -495,7 +491,9 @@ namespace dk.nita.saml20.protocol
                         }
                     }
 
-                    throw;
+                    // One message for every failure, so that the response doesn't tell why decryption failed.
+                    Trace.TraceData(TraceEventType.Error, "The assertion could not be decrypted: " + firstFailure);
+                    throw new Saml20Exception("The assertion could not be decrypted.");
                 }
             }
 

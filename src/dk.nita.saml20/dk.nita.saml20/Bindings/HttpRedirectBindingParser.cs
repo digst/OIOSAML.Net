@@ -219,10 +219,16 @@ namespace dk.nita.saml20.Bindings
         }
 
         /// <summary>
+        /// The largest message accepted after decompression. SAML messages in the Redirect binding are a few kilobytes.
+        /// </summary>
+        internal const int MaximumInflatedMessageLength = 256 * 1024;
+
+        /// <summary>
         /// Take a Base64-encoded string, decompress the result using the DEFLATE algorithm and return the resulting 
         /// string.
         /// </summary>
-        private static string DeflateDecompress(string str)
+        /// <exception cref="Saml20FormatException">If the decompressed message is longer than <see cref="MaximumInflatedMessageLength"/> characters.</exception>
+        internal static string DeflateDecompress(string str)
         {
             byte[] encoded = Convert.FromBase64String(str);            
             MemoryStream memoryStream = new MemoryStream(encoded);
@@ -230,13 +236,15 @@ namespace dk.nita.saml20.Bindings
             StringBuilder result = new StringBuilder();
             using (DeflateStream stream = new DeflateStream(memoryStream, CompressionMode.Decompress))
             {
-                StreamReader testStream = new StreamReader(new BufferedStream(stream), Encoding.UTF8);
-                // It seems we need to "peek" on the StreamReader to get it started. If we don't do this, the first call to 
-                // ReadToEnd() will return string.empty.
-                testStream.Peek();
-                result.Append(testStream.ReadToEnd());
-                
-                stream.Close();
+                StreamReader reader = new StreamReader(new BufferedStream(stream), Encoding.UTF8);
+                char[] buffer = new char[8192];
+                int read;
+                while ((read = reader.Read(buffer, 0, buffer.Length)) > 0)
+                {
+                    if (result.Length + read > MaximumInflatedMessageLength)
+                        throw new Saml20FormatException($"The decompressed message is longer than {MaximumInflatedMessageLength} characters.");
+                    result.Append(buffer, 0, read);
+                }
             }
             return result.ToString();
         }

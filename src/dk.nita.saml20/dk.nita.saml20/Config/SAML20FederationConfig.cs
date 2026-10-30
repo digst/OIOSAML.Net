@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading;
 using System.Xml;
 using System.Xml.Serialization;
+using dk.nita.saml20.Bindings.SignatureProviders;
 using dk.nita.saml20.Profiles.DKSaml20.Attributes;
 using dk.nita.saml20.Schema.Metadata;
 using dk.nita.saml20.Utils;
@@ -703,14 +704,15 @@ namespace dk.nita.saml20.config
         /// </summary>        
         private XmlDocument LoadFileAsXmlDocument(string filename)
         {
-            XmlDocument doc = new XmlDocument();
-            doc.XmlResolver = null;
-            doc.PreserveWhitespace = true;
+            XmlDocument doc = null;
 
             try
             {
                 // First attempt a standard load, where the XML document is expected to declare its encoding by itself.
-                doc.Load(filename);
+                using (var stream = File.OpenRead(filename))
+                {
+                    doc = SafeXml.Load(stream);
+                }
                 try
                 {
                     if (XmlSignatureUtils.IsSigned(doc) && !XmlSignatureUtils.CheckSignature(doc))
@@ -735,7 +737,7 @@ namespace dk.nita.saml20.config
                     try
                     {
                         reader = new StreamReader(filename, encoding);
-                        doc.Load(reader);
+                        doc = SafeXml.Load(reader);
                         if (XmlSignatureUtils.IsSigned(doc) && !XmlSignatureUtils.CheckSignature(doc))
                             continue;
                     }
@@ -1130,13 +1132,13 @@ namespace dk.nita.saml20.config
         public bool Default;
 
         /// <summary>
-        /// When using RSA keys SHA256 is the default for signing SAML requests. This allows for backwards compatibility if the Identity Provider only support RSA SHA1
+        /// The hash algorithm for signing SAML requests to this IdP: SHA256, the only one allowed [OIO-ALG-01].
         /// </summary>
         [XmlAttribute(AttributeName = "ShaHashingAlgorithm")]
         public string ShaHashingAlgorithm
         {
             get { return _shaHashingAlgorithm; }
-            set { _shaHashingAlgorithm = value; }
+            set { _shaHashingAlgorithm = SignatureProviderFactory.ValidateShaHashingAlgorithm(value).ToString(); }
         }
 
         /// <summary>

@@ -86,9 +86,10 @@ namespace dk.nita.saml20.Utils
         /// <returns></returns>
         public static T DeserializeFromXmlString<T>(string xml)
         {
-            XmlTextReader reader = new XmlTextReader(new StringReader(xml));
-            reader.XmlResolver = null;
-            return Deserialize<T>(reader);
+            using (var reader = SafeXml.CreateReader(xml))
+            {
+                return Deserialize<T>(reader);
+            }
         }
 
         /// <summary>

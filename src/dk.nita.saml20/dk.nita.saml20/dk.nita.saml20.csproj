@@ -335,6 +335,7 @@
     <Compile Include="Utils\BrowserSupportUtil.cs" />
     <Compile Include="Utils\IDPSelectionUtil.cs" />
     <Compile Include="Utils\Saml20Utils.cs" />
+    <Compile Include="Utils\SafeXml.cs" />
     <Compile Include="Protocol\AbstractEndpointHandler.cs" />
     <Compile Include="Protocol\Pages\BasePage.cs">
       <SubType>ASPXCodeBehind</SubType>

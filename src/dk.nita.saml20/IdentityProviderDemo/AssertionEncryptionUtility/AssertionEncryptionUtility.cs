@@ -127,8 +127,8 @@ namespace IdentityProviderDemo.AssertionEncryptionUtility
             encryptedData.KeyInfo = new KeyInfo();
 
             EncryptedKey encryptedKey = new EncryptedKey();
-            encryptedKey.EncryptionMethod = new EncryptionMethod(EncryptedXml.XmlEncRSA15Url);
-            encryptedKey.CipherData = new CipherData(EncryptedXml.EncryptKey(SessionKey.Key, TransportKey, false));
+            encryptedKey.EncryptionMethod = new EncryptionMethod(EncryptedXml.XmlEncRSAOAEPUrl);
+            encryptedKey.CipherData = new CipherData(EncryptedXml.EncryptKey(SessionKey.Key, TransportKey, true));
             encryptedData.KeyInfo.AddClause(new KeyInfoEncryptedKey(encryptedKey));
 
             // Create an empty EncryptedAssertion to hook into.
@@ -166,19 +166,19 @@ namespace IdentityProviderDemo.AssertionEncryptionUtility
                     result = TripleDES.Create();
                     break;
                 case EncryptedXml.XmlEncAES128Url:
-                    result = new RijndaelManaged();
+                    result = Aes.Create();
                     result.KeySize = 128;
                     break;
                 case EncryptedXml.XmlEncAES192Url:
-                    result = new RijndaelManaged();
+                    result = Aes.Create();
                     result.KeySize = 192;
                     break;
                 case EncryptedXml.XmlEncAES256Url:
-                    result = new RijndaelManaged();
+                    result = Aes.Create();
                     result.KeySize = 256;
                     break;
                 default:
-                    result = new RijndaelManaged();
+                    result = Aes.Create();
                     result.KeySize = 256;
                     break;
             }

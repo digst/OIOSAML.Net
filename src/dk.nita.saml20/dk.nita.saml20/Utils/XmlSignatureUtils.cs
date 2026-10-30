@@ -117,7 +117,7 @@ namespace dk.nita.saml20.Utils
         public static bool CheckSignature(XmlDocument doc, AsymmetricAlgorithm alg)
         {
             CheckDocument(doc);
-            SignedXml signedXml = RetrieveSignature(doc);
+            SignedXml signedXml = RetrieveProtocolSignature(doc.DocumentElement);
             return signedXml.CheckSignature(alg);
         }
 
@@ -129,7 +129,7 @@ namespace dk.nita.saml20.Utils
         /// <exception cref="InvalidOperationException">if the XmlDocument instance does not contain a signed XML element.</exception>
         public static bool CheckSignature(XmlElement el, AsymmetricAlgorithm alg)
         {
-            SignedXml signedXml = RetrieveSignature(el);
+            SignedXml signedXml = RetrieveProtocolSignature(el);
             return signedXml.CheckSignature(alg);
         }
 
@@ -335,6 +335,92 @@ namespace dk.nita.saml20.Utils
 
             // verify that the inlined signature has a valid reference uri
             VerifyRererenceURI(signedXml, el.GetAttribute("ID"));
+
+            return signedXml;
+        }
+
+        /// <summary>
+        /// The signature algorithms allowed on SAML messages [OIO-ALG-01]. The profile also lists ECDSA-SHA256, which
+        /// <see cref="SignedXml"/> on .NET Framework can't verify.
+        /// </summary>
+        internal static readonly string[] AllowedSignatureAlgorithms =
+        {
+            SignedXml.XmlDsigRSASHA256Url,
+        };
+
+        /// <summary>
+        /// The digest algorithms allowed on SAML messages [OIO-ALG-01].
+        /// </summary>
+        internal static readonly string[] AllowedDigestAlgorithms =
+        {
+            SignedXml.XmlDsigSHA256Url,
+        };
+
+        /// <summary>
+        /// The transforms allowed on the reference of a SAML signature (SAML Core 5.4.3, 5.4.4).
+        /// </summary>
+        internal static readonly string[] AllowedTransforms =
+        {
+            SignedXml.XmlDsigEnvelopedSignatureTransformUrl,
+            SignedXml.XmlDsigExcC14NTransformUrl,
+        };
+
+        /// <summary>
+        /// Digs the &lt;Signature&gt; element out of a SAML message or assertion, which must sign exactly that element:
+        /// the Signature is a direct child of it, has exactly one Reference, to its ID, and uses allowed algorithms.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">if the element has no such signature.</exception>
+        internal static SignedXml RetrieveProtocolSignature(XmlElement el)
+        {
+            CheckDocument(el);
+
+            var id = el.GetAttribute("ID");
+            if (string.IsNullOrEmpty(id))
+                throw new InvalidOperationException("The signed element has no ID.");
+
+            XmlElement signature = null;
+            foreach (XmlNode child in el.ChildNodes)
+            {
+                if (child is XmlElement candidate && candidate.LocalName == Signature.ELEMENT_NAME && candidate.NamespaceURI == Saml20Constants.XMLDSIG)
+                {
+                    if (signature != null)
+                        throw new InvalidOperationException("The element has more than one signature.");
+                    signature = candidate;
+                }
+            }
+
+            if (signature == null)
+                throw new InvalidOperationException("Document does not contain a signature to verify.");
+
+            SignedXml signedXml = new SignedXml(el);
+            signedXml.LoadXml(signature);
+
+            if (signedXml.SignedInfo.References.Count != 1)
+                throw new InvalidOperationException("The signature must have exactly one reference.");
+
+            var reference = (Reference)signedXml.SignedInfo.References[0];
+            if (reference.Uri != "#" + id)
+                throw new InvalidOperationException("The signature reference '" + reference.Uri + "' does not match the ID of the signed element.");
+
+            if (Array.IndexOf(AllowedSignatureAlgorithms, signedXml.SignedInfo.SignatureMethod) < 0)
+                throw new InvalidOperationException("The signature algorithm '" + signedXml.SignedInfo.SignatureMethod + "' is not allowed [OIO-ALG-01].");
+
+            if (Array.IndexOf(AllowedDigestAlgorithms, reference.DigestMethod) < 0)
+                throw new InvalidOperationException("The digest algorithm '" + reference.DigestMethod + "' is not allowed [OIO-ALG-01].");
+
+            if (signedXml.SignedInfo.CanonicalizationMethod != SignedXml.XmlDsigExcC14NTransformUrl)
+                throw new InvalidOperationException("The canonicalization method '" + signedXml.SignedInfo.CanonicalizationMethod + "' is not allowed; it must be exclusive canonicalization.");
+
+            var hasEnvelopedTransform = false;
+            foreach (Transform transform in reference.TransformChain)
+            {
+                if (Array.IndexOf(AllowedTransforms, transform.Algorithm) < 0)
+                    throw new InvalidOperationException("The transform '" + transform.Algorithm + "' is not allowed; only the enveloped signature transform and exclusive canonicalization are.");
+                hasEnvelopedTransform |= transform.Algorithm == SignedXml.XmlDsigEnvelopedSignatureTransformUrl;
+            }
+
+            if (!hasEnvelopedTransform)
+                throw new InvalidOperationException("The signature must use the enveloped signature transform.");
 
             return signedXml;
         }
