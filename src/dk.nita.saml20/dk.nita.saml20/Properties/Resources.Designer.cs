@@ -755,7 +755,7 @@ namespace Saml2.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Metadata not found for idp endpoint with id {0}.
+        ///   Looks up a localized string similar to No metadata was found for the configured IDPEndpoint with id &quot;{0}&quot;. Verify that the id matches the entityID of a metadata file in the configured metadata directory (a misspelled id is the most common cause).
         /// </summary>
         internal static string MetadataNotFound {
             get {
@@ -805,6 +805,15 @@ namespace Saml2.Properties {
         internal static string NsisLoaTooLow {
             get {
                 return ResourceManager.GetString("NsisLoaTooLow", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Demanded Level of Assurance &quot;{0}&quot; is below the configured minimum &quot;{1}&quot;..
+        /// </summary>
+        internal static string DemandingLevelOfAssuranceBelowMinimum {
+            get {
+                return ResourceManager.GetString("DemandingLevelOfAssuranceBelowMinimum", resourceCulture);
             }
         }
         
