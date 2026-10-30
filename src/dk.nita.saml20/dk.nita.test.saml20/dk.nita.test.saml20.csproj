@@ -142,6 +142,7 @@
     <Compile Include="Saml20\Protocol\HttpRedirectBindingTest.cs" />
     <Compile Include="Saml20\Protocol\IDPSelectionUtilTest.cs" />
     <Compile Include="Saml20\Protocol\SamlMetadataDocumentTest.cs" />
+    <Compile Include="Saml20\Protocol\SessionStoreTest.cs" />
     <Compile Include="Saml20\Protocol\SoapLogoutRequestTest.cs" />
     <Compile Include="Saml20\Protocol\XmlSignatureUtilsTest.cs" />
     <Compile Include="Saml20\Saml20CoreValidationTest.cs" />
