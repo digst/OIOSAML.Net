@@ -47,7 +47,7 @@ namespace dk.nita.saml20.Bindings
         /// <summary>
         /// The binding parameters of the query, with their values still URL-encoded. Other parameters are left out.
         /// The signature is verified over these values and the message is read from them, so a binding parameter must
-        /// appear once, with its name spelt as in [SAMLBind] 3.4.4.1.
+        /// appear once, with its name spelt as in [SAMLBind] 3.4.4.1. Names are compared URL-decoded, as ASP.NET reads them.
         /// </summary>
         /// <exception cref="Saml20FormatException">If a binding parameter appears more than once, in any letter case,
         /// both a SAMLRequest and a SAMLResponse are present, or a Signature comes without a SigAlg.</exception>
@@ -59,7 +59,7 @@ namespace dk.nita.saml20.Bindings
             foreach (string s in query.Split('&'))
             {
                 var separator = s.IndexOf('=');
-                var name = separator < 0 ? s : s.Substring(0, separator);
+                var name = HttpUtility.UrlDecode(separator < 0 ? s : s.Substring(0, separator));
                 var value = separator < 0 ? string.Empty : s.Substring(separator + 1);
 
                 var parameter = Array.Find(BindingParameters, p => string.Equals(p, name, StringComparison.OrdinalIgnoreCase));
