@@ -29,5 +29,15 @@
         /// Session key used to save the id of the IdP the AuthnRequest was sent to
         /// </summary>
         public const string ExpectedIdpId = "ExpectedIdpId";
+
+        /// <summary>
+        /// Session key used to save the id of the LogoutRequest sent at a logout this service provider initiates
+        /// </summary>
+        public const string PendingLogoutRequestId = "PendingLogoutRequestId";
+
+        /// <summary>
+        /// Session key used to save the id of the IdP that LogoutRequest was sent to
+        /// </summary>
+        public const string PendingLogoutIdpId = "PendingLogoutIdpId";
     }
 }
