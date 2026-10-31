@@ -380,7 +380,7 @@ namespace dk.nita.saml20.protocol
             {
                 if (ex is Saml20NsisLoaException)
                 {
-                    HandleError(context, ex.ToString(), (m) => new Saml20NsisLoaException(m));
+                    HandleError(context, ex.Message, (m) => new Saml20NsisLoaException(m));
                 }
                 else
                 {

@@ -1,6 +1,5 @@
 using System;
-using System.Configuration;
-using System.Web.Configuration;
+using System.Web;
 using System.Web.UI;
 using Saml2.Properties;
 
@@ -29,7 +28,7 @@ namespace dk.nita.saml20.protocol.pages
         private string _errorText = string.Empty;
 
         /// <summary>
-        /// Gets or sets the error text.
+        /// Gets or sets the error text: plain text, HTML-encoded by the page; line breaks are kept.
         /// </summary>
         /// <value>The error text.</value>
         public string ErrorText
@@ -41,9 +40,9 @@ namespace dk.nita.saml20.protocol.pages
         private bool _overrideConfig = false;
 
         /// <summary>
-        /// Gets or sets a value indicating whether to override config.
+        /// Ignored: the page always follows the customErrors setting.
         /// </summary>
-        /// <value><c>true</c> if config is overridden; otherwise, <c>false</c>.</value>
+        [Obsolete("Ignored: the error page always follows the customErrors setting.")]
         public bool OverrideConfig
         {
             get { return _overrideConfig; }
@@ -60,35 +59,19 @@ namespace dk.nita.saml20.protocol.pages
         /// <param name="e">The <see cref="T:System.EventArgs"/> object that contains the event data.</param>
         protected override void OnLoad(EventArgs e)
         {
-            string err = Resources.GenericError;
-            
-            Configuration conf = WebConfigurationManager.OpenWebConfiguration(Context.Request.Path);
-            CustomErrorsSection ces = (CustomErrorsSection)conf.GetSection("system.web/customErrors");
-            if(ces != null && !_overrideConfig)
-            {
-                switch (ces.Mode)
-                {
-                    case CustomErrorsMode.Off:
-                        err = _errorText;
-                        break;
-                    case CustomErrorsMode.On:
-                        //Display generic error
-                        break;
-                    case CustomErrorsMode.RemoteOnly:
-                        if (Context.Request.IsLocal)
-                            err = _errorText;
-                        break;
-                }
-            }else
-            {
-                //OverrideConfig: Display detailed error message
-                err = _errorText;
-            }
-            
-            BodyPanel.Controls.Add(new LiteralControl(err));
-            
+            var err = Context.IsCustomErrorEnabled ? Resources.GenericError : _errorText;
+            BodyPanel.Controls.Add(new LiteralControl(ToHtml(err)));
+
         }
 
         #endregion
+
+        /// <summary>
+        /// The error text as HTML: encoded, with its line breaks kept.
+        /// </summary>
+        internal static string ToHtml(string text)
+        {
+            return HttpUtility.HtmlEncode(text ?? string.Empty).Replace("\r\n", "\n").Replace("\n", "<br />");
+        }
     }
 }
