@@ -64,5 +64,29 @@ namespace dk.nita.test.Saml20.Protocol
             Assert.AreEqual(2, metadata.SLOEndpoints().Count);
             Assert.AreEqual(2, metadata.SSOEndpoints().Count);
         }
+
+        [Test]
+        public void ConcurrentReadersSeeCompleteEndpointLists()
+        {
+            XmlDocument doc = new XmlDocument();
+            doc.PreserveWhitespace = true;
+            doc.Load(@"Saml20\Protocol\MetadataDocs\metadata-ADLER.xml");
+            Saml20MetadataDocument metadata = new Saml20MetadataDocument(doc);
+
+            var counts = new System.Collections.Concurrent.ConcurrentBag<int>();
+            System.Threading.Tasks.Parallel.For(0, 64, _ => counts.Add(metadata.SSOEndpoints().Count + metadata.SLOEndpoints().Count));
+
+            CollectionAssert.AreEquivalent(System.Linq.Enumerable.Repeat(4, 64), counts);
+        }
+
+        [Test]
+        public void UnknownArtifactResolutionIndexGivesNoLocation()
+        {
+            XmlDocument doc = new XmlDocument();
+            doc.PreserveWhitespace = true;
+            doc.Load(@"Saml20\Protocol\MetadataDocs\metadata-ADLER.xml");
+
+            Assert.AreEqual(string.Empty, new Saml20MetadataDocument(doc).GetARSEndpoint(ushort.MaxValue));
+        }
     }
 }
