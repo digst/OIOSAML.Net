@@ -73,7 +73,7 @@ namespace dk.nita.saml20.protocol
             {
                 if (ex is Saml20NsisLoaException)
                 {
-                    HandleError(context, ex.ToString(), (m) => new Saml20NsisLoaException(m));
+                    HandleError(context, ex.Message, (m) => new Saml20NsisLoaException(m));
                 }
                 else
                 {
@@ -94,7 +94,7 @@ namespace dk.nita.saml20.protocol
             string errorMessage;
             validated = BindingUtility.ValidateConfiguration(out errorMessage);
             if (!validated)
-                HandleError(ctx, errorMessage);
+                HandleError(ctx, errorMessage, m => new Saml20Exception(m), 500);
         }
 
         /// <summary>
@@ -203,23 +203,7 @@ namespace dk.nita.saml20.protocol
         protected void HandleError(HttpContext context, Status status)
         {
             string errorMessage = string.Format("ErrorCode: {0}. Message: {1}.", status.StatusCode.Value, status.StatusMessage);
-
-            if (status.StatusCode.SubStatusCode != null)
-            {
-                switch (status.StatusCode.SubStatusCode.Value)
-                {
-                    case Saml20Constants.StatusCodes.AuthnFailed:
-                        HandleError(context, errorMessage, true);
-                        break;
-                    default:
-                        HandleError(context, errorMessage, false);
-                        break;
-                }
-            }
-            else
-            {
-                HandleError(context, errorMessage, false);
-            }
+            HandleError(context, errorMessage);
         }
 
         /// <summary>

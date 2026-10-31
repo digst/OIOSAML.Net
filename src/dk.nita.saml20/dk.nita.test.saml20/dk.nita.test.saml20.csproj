@@ -140,6 +140,7 @@
     <Compile Include="Saml20\PingCompatibilityTest.cs" />
     <Compile Include="Saml20\Protocol\AlgorithmAndXmlHardeningTest.cs" />
     <Compile Include="Saml20\Protocol\AppSwitchConfigurationTest.cs" />
+    <Compile Include="Saml20\Protocol\ErrorPageTest.cs" />
     <Compile Include="Saml20\Protocol\AssertionBindingTest.cs" />
     <Compile Include="Saml20\Protocol\HttpRedirectBindingTest.cs" />
     <Compile Include="Saml20\Protocol\IDPSelectionUtilTest.cs" />

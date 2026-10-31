@@ -47,11 +47,23 @@ namespace dk.nita.saml20.protocol
         /// </summary>
         /// <param name="context">The current HTTP context.</param>
         /// <param name="errorMessage">The error message.</param>
-        /// <param name="overrideConfigSetting">if set to <c>true</c> [override config setting].</param>
+        /// <param name="overrideConfigSetting">Ignored: the error page always follows the customErrors setting.</param>
         /// <param name="exceptionCreatorFunc"></param>
         public void HandleError(HttpContext context, string errorMessage, bool overrideConfigSetting, Func<string, Saml20Exception> exceptionCreatorFunc)
         {
-            Trace.TraceData(TraceEventType.Error, "Error: " + errorMessage);
+            HandleError(context, errorMessage, exceptionCreatorFunc, 400);
+        }
+
+        /// <summary>
+        /// Shows the error page with the given HTTP status code, or throws, as the configured error behaviour says.
+        /// </summary>
+        /// <param name="context">The current HTTP context.</param>
+        /// <param name="errorMessage">The error message, as plain text.</param>
+        /// <param name="exceptionCreatorFunc">Creates the exception thrown when the error behaviour is to throw.</param>
+        /// <param name="statusCode">400 for a message or request that is refused, 500 for an error in the service provider.</param>
+        protected void HandleError(HttpContext context, string errorMessage, Func<string, Saml20Exception> exceptionCreatorFunc, int statusCode)
+        {
+            Trace.TraceData(TraceEventType.Error, "Error: " + LogText.OneLine(errorMessage));
 
             var showError = SAML20FederationConfig.GetConfig().ShowError;
             const string defaultMessage = "Unable to validate SAML message!";
@@ -63,9 +75,14 @@ namespace dk.nita.saml20.protocol
             }
             else
             {
+                context.Response.StatusCode = statusCode;
+                context.Response.TrySkipIisCustomErrors = true;
+                context.Response.Cache.SetCacheability(HttpCacheability.NoCache);
+                context.Response.Cache.SetNoStore();
+                context.Response.AppendHeader("X-Frame-Options", "DENY");
+
                 var page = new ErrorPage();
-                page.OverrideConfig = overrideConfigSetting;
-                page.ErrorText = showError ? errorMessage?.Replace("\n", "<br />") : defaultMessage;
+                page.ErrorText = showError ? errorMessage : defaultMessage;
                 page.ProcessRequest(context);
                 context.Response.End();
             }
@@ -93,8 +110,7 @@ namespace dk.nita.saml20.protocol
         /// <param name="args">An object array that contains zero or more objects to format.</param>
         public void HandleError(HttpContext context, string format, params string[] args)
         {
-            var htmlEncodedArguments = args.Select(WebUtility.HtmlEncode).Cast<object>().ToArray();
-            var errorMessage = string.Format(format, htmlEncodedArguments);
+            var errorMessage = string.Format(format, args.Cast<object>().ToArray());
             HandleError(context, errorMessage, false, m => new Saml20Exception(m));
         }
         
@@ -114,7 +130,7 @@ namespace dk.nita.saml20.protocol
         /// </summary>
         /// <param name="context">The current HTTP context.</param>
         /// <param name="errorMessage">The error message.</param>
-        /// <param name="overrideConfigSetting"></param>
+        /// <param name="overrideConfigSetting">Ignored: the error page always follows the customErrors setting.</param>
         public void HandleError(HttpContext context, string errorMessage, bool overrideConfigSetting)
         {
             HandleError(context, errorMessage, overrideConfigSetting, m => new Saml20Exception(m));
@@ -142,14 +158,9 @@ namespace dk.nita.saml20.protocol
             if (e is ThreadAbortException)
                 return;
 
-            StringBuilder sb = new StringBuilder(1000);
-            while (e != null)
-            {
-                sb.AppendLine(e.ToString());
-                e = e.InnerException;
-            }
-
-            HandleError(context, sb.ToString());
+            // The exception, with its stack trace, goes to the trace only; the page shows the message.
+            Trace.TraceData(TraceEventType.Error, e.ToString());
+            HandleError(context, e.Message, m => new Saml20Exception(m), 500);
         }
 
         private string _errorBehaviour;
