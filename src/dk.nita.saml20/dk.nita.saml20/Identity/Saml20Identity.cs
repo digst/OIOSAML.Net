@@ -2,6 +2,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Security.Principal;
+using System.Web;
+using System.Web.Security;
 using dk.nita.saml20.Session;
 using dk.nita.saml20.Schema.Core;
 using dk.nita.saml20.Identity;
@@ -63,11 +65,29 @@ namespace dk.nita.saml20.identity
         }
 
         /// <summary>
-        /// Checks if an OIOSAML session exists.
+        /// Checks if the user is logged in through OIOSAML: the session holds a completed login that has not ended, and a
+        /// Forms ticket issued at that login, if the request carries one, was issued in this session.
         /// </summary>
         public static bool IsInitialized()
         {
-            return SessionStore.DoesSessionExists();
+            if (Saml20PrincipalCache.GetSaml20AssertionLite() == null)
+                return false;
+
+            var ticket = (HttpContext.Current?.User?.Identity as FormsIdentity)?.Ticket;
+            if (ticket?.UserData != null && ticket.UserData.StartsWith(FormsTicketBindingPrefix, StringComparison.Ordinal))
+                return ticket.UserData == FormsTicketBinding();
+
+            return true;
+        }
+
+        private const string FormsTicketBindingPrefix = "oiosaml-session:";
+
+        /// <summary>
+        /// The UserData of a Forms ticket issued at login: it ties the ticket to the current OIOSAML session.
+        /// </summary>
+        internal static string FormsTicketBinding()
+        {
+            return FormsTicketBindingPrefix + SessionStore.SessionBinding();
         }
 
         /// <summary>

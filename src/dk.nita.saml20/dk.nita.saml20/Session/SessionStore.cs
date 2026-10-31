@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Reflection;
 using System.Web;
 using dk.nita.saml20.session;
@@ -222,6 +223,18 @@ namespace dk.nita.saml20.Session
                     throw new Saml20Exception("The user doesn't have a session for unknown reasons.");
                 }
             }
+        }
+
+        /// <summary>
+        /// A value that identifies the current session without revealing its id, or an empty string without a session.
+        /// </summary>
+        internal static string SessionBinding()
+        {
+            if (CurrentSession == null)
+                return string.Empty;
+
+            using (var sha256 = SHA256.Create())
+                return Convert.ToBase64String(sha256.ComputeHash(CurrentSession.SessionId.ToByteArray()));
         }
 
         /// <summary>

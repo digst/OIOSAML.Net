@@ -2,6 +2,10 @@
 using System.IO;
 using System.Web;
 using System.Web.Hosting;
+using System.Web.Security;
+using System.Security.Principal;
+using dk.nita.saml20.identity;
+using dk.nita.saml20.Schema.Core;
 using dk.nita.saml20.config;
 using dk.nita.saml20.Session;
 using dk.nita.saml20.session;
@@ -142,6 +146,92 @@ namespace dk.nita.test.Saml20.Protocol
             Assert.AreEqual(string.Empty, cookie.Value);
             Assert.Less(cookie.Expires, DateTime.UtcNow);
             Assert.IsTrue(cookie.Secure);
+        }
+
+        private static void LoggedIn(DateTime? validUntil)
+        {
+            SessionStore.CurrentSession[SessionConstants.Saml20AssertionLite] = new Saml20AssertionLite
+            {
+                Issuer = "https://idp.example.dk",
+                Subject = new NameID { Value = "subject" },
+                ValidUntil = validUntil
+            };
+        }
+
+        private static void WithFormsTicket(string userData)
+        {
+            var ticket = new FormsAuthenticationTicket(2, "subject", DateTime.Now, DateTime.Now.AddHours(1), false, userData);
+            HttpContext.Current.User = new GenericPrincipal(new FormsIdentity(ticket), null);
+        }
+
+        [Test]
+        public void SessionBeforeLoginCompletesIsNotLoggedIn()
+        {
+            var before = StartedSession();
+            StartRequest(before.ToString());
+
+            Assert.IsTrue(SessionStore.DoesSessionExists());
+            Assert.IsFalse(Saml20Identity.IsInitialized());
+        }
+
+        [Test]
+        public void SessionWithALoginIsLoggedIn()
+        {
+            StartedSession();
+            LoggedIn(DateTime.UtcNow.AddHours(1));
+
+            Assert.IsTrue(Saml20Identity.IsInitialized());
+        }
+
+        [Test]
+        public void LoginStoredByAnEarlierVersionIsKept()
+        {
+            StartedSession();
+            LoggedIn(null);
+
+            Assert.IsTrue(Saml20Identity.IsInitialized());
+        }
+
+        [Test]
+        public void LoginEndsAtItsMaximumLength()
+        {
+            StartedSession();
+            LoggedIn(DateTime.UtcNow.AddMinutes(-FederationConfig.GetConfig().AllowedClockSkewMinutes - 1));
+
+            Assert.IsFalse(Saml20Identity.IsInitialized());
+            Assert.IsNull(SessionStore.CurrentSession[SessionConstants.Saml20AssertionLite]);
+        }
+
+        [Test]
+        public void FormsTicketFromThisSessionIsAccepted()
+        {
+            StartedSession();
+            LoggedIn(DateTime.UtcNow.AddHours(1));
+            WithFormsTicket(Saml20Identity.FormsTicketBinding());
+
+            Assert.IsTrue(Saml20Identity.IsInitialized());
+        }
+
+        [Test]
+        public void FormsTicketFromAnotherSessionIsNotAccepted()
+        {
+            StartedSession();
+            var otherSession = Saml20Identity.FormsTicketBinding();
+            StartedSession();
+            LoggedIn(DateTime.UtcNow.AddHours(1));
+            WithFormsTicket(otherSession);
+
+            Assert.IsFalse(Saml20Identity.IsInitialized());
+        }
+
+        [Test]
+        public void FormsTicketIssuedByTheApplicationIsLeftAlone()
+        {
+            StartedSession();
+            LoggedIn(DateTime.UtcNow.AddHours(1));
+            WithFormsTicket("application data");
+
+            Assert.IsTrue(Saml20Identity.IsInitialized());
         }
     }
 }

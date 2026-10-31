@@ -1,4 +1,5 @@
-﻿using System.Web;
+﻿using System;
+using System.Web;
 using System.Web.Security;
 using dk.nita.saml20.session;
 using dk.nita.saml20.identity;
@@ -27,7 +28,25 @@ namespace dk.nita.saml20.Actions
         /// <param name="assertion">The saml assertion of the currently logged in user.</param>
         public void LoginAction(AbstractEndpointHandler handler, HttpContext context, Saml20Assertion assertion)
         {
-            FormsAuthentication.SetAuthCookie(Saml20PrincipalCache.GetPrincipal().Identity.Name, false);  
+            // Like FormsAuthentication.SetAuthCookie, but the ticket is tied to the OIOSAML session and ends no later than the login.
+            var now = DateTime.Now;
+            var expiration = now.Add(FormsAuthentication.Timeout);
+            var validUntil = Saml20PrincipalCache.GetSaml20AssertionLite()?.ValidUntil?.ToLocalTime();
+            if (validUntil.HasValue && validUntil.Value < expiration)
+                expiration = validUntil.Value;
+
+            var ticket = new FormsAuthenticationTicket(2, Saml20PrincipalCache.GetPrincipal().Identity.Name, now, expiration, false,
+                Saml20Identity.FormsTicketBinding(), FormsAuthentication.FormsCookiePath);
+            var cookie = new HttpCookie(FormsAuthentication.FormsCookieName, FormsAuthentication.Encrypt(ticket))
+            {
+                HttpOnly = true,
+                Secure = FormsAuthentication.RequireSSL,
+                Path = FormsAuthentication.FormsCookiePath,
+                SameSite = FormsAuthentication.CookieSameSite
+            };
+            if (FormsAuthentication.CookieDomain != null)
+                cookie.Domain = FormsAuthentication.CookieDomain;
+            context.Response.Cookies.Add(cookie);
         }
 
         /// <summary>

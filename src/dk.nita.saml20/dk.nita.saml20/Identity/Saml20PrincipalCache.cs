@@ -1,8 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Security.Principal;
 using dk.nita.saml20.Session;
 using dk.nita.saml20.session;
 using dk.nita.saml20.identity;
+using dk.nita.saml20.config;
 
 namespace dk.nita.saml20.Identity
 {
@@ -29,7 +31,17 @@ namespace dk.nita.saml20.Identity
         /// <returns></returns>
         internal static Saml20AssertionLite GetSaml20AssertionLite()
         {
-            return SessionStore.CurrentSession?[SessionConstants.Saml20AssertionLite] as Saml20AssertionLite;
+            var session = SessionStore.CurrentSession;
+            var assertion = session?[SessionConstants.Saml20AssertionLite] as Saml20AssertionLite;
+            if (assertion?.ValidUntil != null &&
+                DateTime.UtcNow >= assertion.ValidUntil.Value.AddMinutes(FederationConfig.GetConfig().AllowedClockSkewMinutes))
+            {
+                // The login has reached its maximum length.
+                session[SessionConstants.Saml20AssertionLite] = null;
+                return null;
+            }
+
+            return assertion;
         }
     }
 }
