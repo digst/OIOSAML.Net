@@ -76,3 +76,9 @@ The library writes to two trace sources: `dk.nita.saml20.auditLogger` for the au
 * Audit entries identify SAML messages by element name, `ID`, `InResponseTo`, `IssueInstant` and `Issuer`, not by their content. The session id is logged as a hash, which correlates the entries of one session. Line breaks in logged values are escaped.
 * The SAML messages as received and sent, with assertions still encrypted, are traced at `Verbose` only. Turn that level on only while troubleshooting.
 * Decrypted assertions are never logged.
+
+## Session lifetime
+
+A login ends after `SessionTimeout` minutes without activity (default 30), and in any case `MaximumSessionLength` minutes after the user authenticated at the IdP (default 480), or earlier if the IdP's `SessionNotOnOrAfter` says so. Both are elements of the `Federation` section. NemLog-in's technical requirements for service providers set the limits these defaults follow.
+
+`Saml20Identity.IsInitialized()` is true only while the session holds a login that has not ended. The Forms ticket issued at login by the default `SetSamlPrincipal` action is tied to the OIOSAML session and ends no later than the login; if it is presented with another session, `IsInitialized()` is false. Sign the user out of Forms authentication when `IsInitialized()` is false, as `WebsiteDemo/Global.asax.cs` does.

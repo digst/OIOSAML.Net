@@ -84,7 +84,10 @@ delete from {
             ExecuteSqlCommand(cmd =>
             {
                 cmd.CommandText =
-$@"update {_schema}.SessionProperties set 
+$@"delete from {_schema}.SessionProperties
+where SessionId = @sessionId and ExpiresAtUtc < @now
+
+update {_schema}.SessionProperties set 
 Value = @value
 where SessionId = @sessionId and [Key] = @key
 if @@ROWCOUNT = 0
@@ -98,6 +101,7 @@ where sessionId = @sessionId";
                 cmd.Parameters.AddWithValue("@key", key);
                 cmd.Parameters.AddWithValue("@valueType", value.GetType().AssemblyQualifiedName);
                 cmd.Parameters.AddWithValue("@value", serializedValue);
+                cmd.Parameters.AddWithValue("@now", DateTime.UtcNow);
                 cmd.Parameters.AddWithValue("@expiresAtUtc", GetExpiresAtUtc());
 
                 cmd.ExecuteNonQuery();
@@ -119,9 +123,10 @@ where SessionId = @sessionId and [Key] = @key
 
 update {_schema}.SessionProperties 
 set ExpiresAtUtc = @expiresAtUtc
-where sessionId = @sessionId";
+where sessionId = @sessionId and ExpiresAtUtc >= @now";
                 cmd.Parameters.AddWithValue("@sessionId", sessionId);
                 cmd.Parameters.AddWithValue("@key", key);
+                cmd.Parameters.AddWithValue("@now", DateTime.UtcNow);
                 cmd.Parameters.AddWithValue("@expiresAtUtc", GetExpiresAtUtc());
                 cmd.ExecuteNonQuery();
             });
@@ -134,12 +139,13 @@ where sessionId = @sessionId";
                 cmd.CommandText =
 $@"update {_schema}.SessionProperties 
 set ExpiresAtUtc = @expiresAtUtc
-where sessionId = @sessionId
+where sessionId = @sessionId and ExpiresAtUtc >= @now
 
 select ValueType, Value from {_schema}.SessionProperties
-where SessionId = @sessionId and [Key] = @key"; 
+where SessionId = @sessionId and [Key] = @key and ExpiresAtUtc >= @now"; 
                 cmd.Parameters.AddWithValue("@sessionId", sessionId);
                 cmd.Parameters.AddWithValue("@key", key);
+                cmd.Parameters.AddWithValue("@now", DateTime.UtcNow);
                 cmd.Parameters.AddWithValue("@expiresAtUtc", GetExpiresAtUtc());
                 using (var reader = cmd.ExecuteReader())
                 {
@@ -195,12 +201,13 @@ delete from {_schema}.UserAssociations where UserId = @userId";
             {
                 cmd.CommandText =
 $@"select top 1 SessionId from {_schema}.SessionProperties
-where SessionId = @sessionId
+where SessionId = @sessionId and ExpiresAtUtc >= @now
 
 update {_schema}.SessionProperties 
 set ExpiresAtUtc = @expiresAtUtc
-where sessionId = @sessionId;";
+where sessionId = @sessionId and ExpiresAtUtc >= @now;";
                 cmd.Parameters.AddWithValue("@sessionid", sessionId);
+                cmd.Parameters.AddWithValue("@now", DateTime.UtcNow);
                 cmd.Parameters.AddWithValue("@expiresAtUtc", GetExpiresAtUtc());
 
                 var any = cmd.ExecuteScalar();

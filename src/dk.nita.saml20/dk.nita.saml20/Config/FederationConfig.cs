@@ -67,6 +67,24 @@ namespace dk.nita.saml20.config
             set { _sessionTimeout = value; }
         }
 
+        private int _maximumSessionLength = 480;
+
+        /// <summary>
+        /// The longest a login lasts, in minutes from the authentication at the IdP, however active the user is. Default 480 (8 hours).
+        /// The IdP's SessionNotOnOrAfter shortens it.
+        /// </summary>
+        [XmlElement(ElementName = "MaximumSessionLength")]
+        public int MaximumSessionLength
+        {
+            get { return _maximumSessionLength; }
+            set
+            {
+                if (value <= 0)
+                    throw new ConfigurationErrorsException($"MaximumSessionLength must be a positive number of minutes, but was {value}.");
+                _maximumSessionLength = value;
+            }
+        }
+
         private string _sessionCookieName = "oiosamlSession";
 
         /// <summary>

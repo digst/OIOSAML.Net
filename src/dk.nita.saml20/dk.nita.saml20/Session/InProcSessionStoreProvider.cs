@@ -70,8 +70,24 @@ namespace dk.nita.saml20.Session
             }
         }
 
+        /// <summary>
+        /// The session, if it exists and has not expired. An expired session is removed, so it can't be revived.
+        /// </summary>
+        private bool TryGetLiveSession(Guid sessionId, out Session session)
+        {
+            if (!_sessions.TryGetValue(sessionId, out session))
+                return false;
+            if (session.Timestamp + _sessionTimeout >= DateTime.UtcNow)
+                return true;
+
+            _sessions.TryRemove(sessionId, out _);
+            session = null;
+            return false;
+        }
+
         void ISessionStoreProvider.SetSessionProperty(Guid sessionId, string key, object value)
         {
+            TryGetLiveSession(sessionId, out _);
             var session = _sessions.GetOrAdd(sessionId, new Session());
             session.UpdateTimestamp();
             session.Properties.AddOrUpdate(key, value, (k,e) => value);
@@ -80,7 +96,7 @@ namespace dk.nita.saml20.Session
         void ISessionStoreProvider.RemoveSessionProperty(Guid sessionId, string key)
         {
             Session session;
-            if (_sessions.TryGetValue(sessionId, out session))
+            if (TryGetLiveSession(sessionId, out session))
             {
                 session.UpdateTimestamp();
 
@@ -92,7 +108,7 @@ namespace dk.nita.saml20.Session
         object ISessionStoreProvider.GetSessionProperty(Guid sessionId, string key)
         {
             Session session;
-            if (_sessions.TryGetValue(sessionId, out session))
+            if (TryGetLiveSession(sessionId, out session))
             {
                 session.UpdateTimestamp();
 
@@ -130,7 +146,7 @@ namespace dk.nita.saml20.Session
         bool ISessionStoreProvider.DoesSessionExists(Guid sessionId)
         {
             Session session;
-            if (_sessions.TryGetValue(sessionId, out session) && session.Properties.Any())
+            if (TryGetLiveSession(sessionId, out session) && session.Properties.Any())
             {
                 session.UpdateTimestamp();
                 return true;
