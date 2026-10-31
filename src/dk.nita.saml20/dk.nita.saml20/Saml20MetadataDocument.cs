@@ -40,6 +40,8 @@ namespace dk.nita.saml20
 
             ExtractKeyDescriptors(entityDescriptor);
             _entity = Serialization.DeserializeFromXmlString<EntityDescriptor>(entityDescriptor.OuterXml);
+            // Before the document is shared: the IdP metadata is read by concurrent requests.
+            ExtractEndpoints();
         }
 
         /// <summary>
@@ -300,8 +302,7 @@ namespace dk.nita.saml20
         /// <returns></returns>
         public List<IDPEndPointElement> SSOEndpoints()
         {
-            if (_SSOEndpoints == null)
-                ExtractEndpoints();
+            EnsureEndpoints();
 
             return _SSOEndpoints;
         }
@@ -312,8 +313,7 @@ namespace dk.nita.saml20
         /// <returns></returns>
         public List<IDPEndPointElement> SLOEndpoints()
         {
-            if (_SLOEndpoints == null)
-                ExtractEndpoints();
+            EnsureEndpoints();
 
             return _SLOEndpoints;
         }
@@ -347,64 +347,85 @@ namespace dk.nita.saml20
         /// <returns></returns>
         public List<IDPEndPointElement> AssertionConsumerServiceEndpoints()
         {
-            if (_AssertionConsumerServiceEndpoints == null)
-                ExtractEndpoints();
+            EnsureEndpoints();
 
             return _AssertionConsumerServiceEndpoints;
         }
 
+        private readonly object _endpointsLock = new object();
+
+        private void EnsureEndpoints()
+        {
+            if (_SSOEndpoints != null)
+                return;
+
+            lock (_endpointsLock)
+            {
+                if (_SSOEndpoints == null)
+                    ExtractEndpoints();
+            }
+        }
+
+        /// <summary>
+        /// Reads the endpoints into new lists and publishes them only when complete, so a concurrent reader never sees a list being filled.
+        /// </summary>
         private void ExtractEndpoints()
         {
-            if (_entity != null)
+            if (_entity == null)
+                return;
+
+            var ssoEndpoints = new List<IDPEndPointElement>();
+            var sloEndpoints = new List<IDPEndPointElement>();
+            var arsEndpoints = new Dictionary<ushort, IndexedEndpoint>();
+            var assertionConsumerServiceEndpoints = new List<IDPEndPointElement>();
+            var attributeQueryEndpoints = new List<Endpoint>();
+
+            foreach (object item in _entity.Items)
             {
-                _SSOEndpoints = new List<IDPEndPointElement>();
-                _SLOEndpoints = new List<IDPEndPointElement>();
-                _ARSEndpoints = new Dictionary<ushort, IndexedEndpoint>();
-                _AssertionConsumerServiceEndpoints = new List<IDPEndPointElement>();
-                _attributeQueryEndpoints = new List<Endpoint>();
-
-                foreach (object item in _entity.Items)
+                if (item is IDPSSODescriptor)
                 {
-                    if (item is IDPSSODescriptor)
+                    IDPSSODescriptor descriptor = (IDPSSODescriptor)item;
+                    foreach (Endpoint endpoint in descriptor.SingleSignOnService)
+                        ssoEndpoints.Add(new IDPEndPointElement(endpoint));
+                }
+
+                if (item is SSODescriptor)
+                {
+                    SSODescriptor descriptor = (SSODescriptor)item;
+
+                    if (descriptor.SingleLogoutService != null)
                     {
-                        IDPSSODescriptor descriptor = (IDPSSODescriptor)item;
-                        foreach (Endpoint endpoint in descriptor.SingleSignOnService)
-                            _SSOEndpoints.Add(new IDPEndPointElement(endpoint));
+                        foreach (Endpoint endpoint in descriptor.SingleLogoutService)
+                            sloEndpoints.Add(new IDPEndPointElement(endpoint));
                     }
 
-                    if (item is SSODescriptor)
+                    if (descriptor.ArtifactResolutionService != null)
                     {
-                        SSODescriptor descriptor = (SSODescriptor)item;
-
-                        if (descriptor.SingleLogoutService != null)
-                        {
-                            foreach (Endpoint endpoint in descriptor.SingleLogoutService)
-                                _SLOEndpoints.Add(new IDPEndPointElement(endpoint));
-                        }
-
-                        if (descriptor.ArtifactResolutionService != null)
-                        {
-                            foreach (IndexedEndpoint ie in descriptor.ArtifactResolutionService)
-                            {
-                                _ARSEndpoints.Add(ie.index, ie);
-                            }
-                        }
-                    }
-
-                    if (item is SPSSODescriptor)
-                    {
-                        SPSSODescriptor descriptor = (SPSSODescriptor)item;
-                        foreach (IndexedEndpoint endpoint in descriptor.AssertionConsumerService)
-                            _AssertionConsumerServiceEndpoints.Add(new IDPEndPointElement(endpoint));
-                    }
-
-                    if (item is AttributeAuthorityDescriptor)
-                    {
-                        AttributeAuthorityDescriptor aad = (AttributeAuthorityDescriptor)item;
-                        _attributeQueryEndpoints.AddRange(aad.AttributeService);
+                        foreach (IndexedEndpoint ie in descriptor.ArtifactResolutionService)
+                            arsEndpoints[ie.index] = ie;
                     }
                 }
+
+                if (item is SPSSODescriptor)
+                {
+                    SPSSODescriptor descriptor = (SPSSODescriptor)item;
+                    foreach (IndexedEndpoint endpoint in descriptor.AssertionConsumerService)
+                        assertionConsumerServiceEndpoints.Add(new IDPEndPointElement(endpoint));
+                }
+
+                if (item is AttributeAuthorityDescriptor)
+                {
+                    AttributeAuthorityDescriptor aad = (AttributeAuthorityDescriptor)item;
+                    attributeQueryEndpoints.AddRange(aad.AttributeService);
+                }
             }
+
+            _SLOEndpoints = sloEndpoints;
+            _ARSEndpoints = arsEndpoints;
+            _AssertionConsumerServiceEndpoints = assertionConsumerServiceEndpoints;
+            _attributeQueryEndpoints = attributeQueryEndpoints;
+            // Last: EnsureEndpoints takes a non-null SSO list to mean that all lists are in place.
+            _SSOEndpoints = ssoEndpoints;
         }
 
         /// <summary>
@@ -466,8 +487,8 @@ namespace dk.nita.saml20
         /// <returns></returns>
         public string GetARSEndpoint(ushort index)
         {
-            IndexedEndpoint ep = _ARSEndpoints[index];
-            if (ep != null)
+            EnsureEndpoints();
+            if (_ARSEndpoints != null && _ARSEndpoints.TryGetValue(index, out var ep) && ep != null)
             {
                 return ep.Location;
             }
@@ -497,10 +518,7 @@ namespace dk.nita.saml20
         /// <returns></returns>
         public List<Endpoint> GetAttributeQueryEndpoints()
         {
-            if (_attributeQueryEndpoints == null)
-            {
-                ExtractEndpoints();
-            }
+            EnsureEndpoints();
 
             return _attributeQueryEndpoints;
         }

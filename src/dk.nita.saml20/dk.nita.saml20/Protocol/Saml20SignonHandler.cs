@@ -56,15 +56,11 @@ namespace dk.nita.saml20.protocol
             internal string IdpId { get; }
         }
 
-        private readonly X509Certificate2 _certificate;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="Saml20SignonHandler"/> class.
         /// </summary>
         public Saml20SignonHandler()
         {
-            _certificate = FederationConfig.GetConfig().GetFirstValidCertificate();
-
             // Read the proper redirect url from config
             try
             {
@@ -579,25 +575,22 @@ namespace dk.nita.saml20.protocol
             Saml20Assertion assertion = new Saml20Assertion(elem, null, quirksMode);
             assertion.Validate(DateTime.UtcNow);
 
-            if (!endp.OmitAssertionSignatureCheck)
+            IEnumerable<string> validationFailures;
+            if (!assertion.CheckSignature(GetTrustedSigners(endp.metadata.GetKeys(KeyTypes.signing), endp, out validationFailures)))
             {
-                IEnumerable<string> validationFailures;
-                if (!assertion.CheckSignature(GetTrustedSigners(endp.metadata.GetKeys(KeyTypes.signing), endp, out validationFailures)))
+                AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST,
+                "Invalid signature, assertion: " + LogText.Describe(elem));
+
+                string errorMessage = Resources.SignatureInvalid;
+
+                validationFailures = validationFailures.ToArray();
+                if (validationFailures.Any())
                 {
-                    AuditLogging.logEntry(Direction.IN, Operation.AUTHNREQUEST_POST,
-                    "Invalid signature, assertion: " + LogText.Describe(elem));
-
-                    string errorMessage = Resources.SignatureInvalid;
-
-                    validationFailures = validationFailures.ToArray();
-                    if (validationFailures.Any())
-                    {
-                        errorMessage += $"\nVerification of IDP certificate used for signature failed from the following certificate checks:\n{string.Join("\n", validationFailures)}";
-                    }
-
-                    HandleError(context, errorMessage);
-                    return;
+                    errorMessage += $"\nVerification of IDP certificate used for signature failed from the following certificate checks:\n{string.Join("\n", validationFailures)}";
                 }
+
+                HandleError(context, errorMessage);
+                return;
             }
 
             // The signed bearer confirmation binds the assertion to the AuthnRequest and to this service provider's ACS.
@@ -742,16 +735,19 @@ namespace dk.nita.saml20.protocol
 
                 foreach (KeyInfoClause clause in ki)
                 {
-                    if (clause is KeyInfoX509Data)
-                    {
-                        X509Certificate2 cert = XmlSignatureUtils.GetCertificateFromKeyInfo((KeyInfoX509Data)clause);
+                    // Only a key in a certificate can be checked by the certificate specifications, so other key forms aren't trusted.
+                    if (!(clause is KeyInfoX509Data))
+                        continue;
 
-                        string failureReason;
-                        if (!IsSatisfiedByAllSpecifications(ep, cert, out failureReason))
-                        {
-                            failures.Add(failureReason);
-                            continue;
-                        }
+                    X509Certificate2 cert = XmlSignatureUtils.GetCertificateFromKeyInfo((KeyInfoX509Data)clause);
+                    if (cert == null)
+                        continue;
+
+                    string failureReason;
+                    if (!IsSatisfiedByAllSpecifications(ep, cert, out failureReason))
+                    {
+                        failures.Add(failureReason);
+                        continue;
                     }
 
                     AsymmetricAlgorithm key = XmlSignatureUtils.ExtractKey(clause);
@@ -1032,7 +1028,7 @@ namespace dk.nita.saml20.protocol
                 Trace.TraceData(TraceEventType.Information, string.Format(Tracing.SendAuthnRequest, Saml20Constants.ProtocolBindings.HTTP_Redirect, idpEndpoint.Id));
 
                 HttpRedirectBindingBuilder builder = new HttpRedirectBindingBuilder();
-                builder.signingKey = _certificate.GetRSAPrivateKey();
+                builder.signingKey = FederationConfig.GetConfig().GetFirstValidCertificate().GetRSAPrivateKey();
                 builder.Request = request.GetXml().OuterXml;
                 builder.ShaHashingAlgorithm = shaHashingAlgorithm;
                 string s = request.Destination + "?" + builder.ToQuery();

@@ -63,7 +63,7 @@ An `IDPEndPoint` configured in `Web.config` keeps its settings through a reload,
 
 Each `SigningCertificate` in `Federation/SigningCertificates` names one certificate in the certificate store, preferably by thumbprint. It is used if it has a private key and is within its validity period. Its chain and revocation are not checked by the SP, but by the IdP that trusts it; the `validOnly` attribute is ignored. The store is searched again every ten minutes.
 
-Messages are signed with the certificate of the first entry that can be used. Assertions are decrypted with any of them, and the SP metadata lists all of them. To change certificate:
+Messages are signed with the certificate of the first entry that can be used. Assertions are decrypted with any of them, and the SP metadata lists every certificate found that has not expired, including one that is not yet valid. To change certificate:
 
 1. Install the new certificate and add an entry for it after the current one. Register the SP metadata, which now has both certificates, with the IdP.
 2. Once the IdP has the new metadata, move the new entry first.

@@ -25,14 +25,7 @@ namespace dk.nita.saml20.Specification
             {
                 foreach(CertificateValidationElement elem in endpoint.CertificateValidation.CertificateValidations)
                 {
-                    try
-                    {
-                        ICertificateSpecification val = (ICertificateSpecification) Activator.CreateInstance(Type.GetType(elem.type));
-                        specs.Add(val);
-                    }catch(Exception e)
-                    {
-                        Trace.TraceData(TraceEventType.Error, e.ToString());
-                    }
+                    specs.Add((ICertificateSpecification) Activator.CreateInstance(Type.GetType(elem.type, true)));
                 }
             }
 

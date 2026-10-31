@@ -78,10 +78,12 @@ namespace dk.nita.saml20.protocol
             var keyinfos = new List<KeyInfo>();
             foreach(Certificate certificate in FederationConfig.GetConfig().SigningCertificates)
             {
-                KeyInfo keyinfo = new KeyInfo();
-                KeyInfoX509Data keyClause = new KeyInfoX509Data(certificate.GetCertificate(), X509IncludeOption.EndCertOnly);
-                keyinfo.AddClause(keyClause);
-                keyinfos.Add(keyinfo);
+                foreach (X509Certificate2 x509Certificate in certificate.GetUnexpiredX509Certificates() ?? new X509Certificate2Collection())
+                {
+                    KeyInfo keyinfo = new KeyInfo();
+                    keyinfo.AddClause(new KeyInfoX509Data(x509Certificate, X509IncludeOption.EndCertOnly));
+                    keyinfos.Add(keyinfo);
+                }
             }
 
             Saml20MetadataDocument doc = new Saml20MetadataDocument(configuration, keyinfos, sign);

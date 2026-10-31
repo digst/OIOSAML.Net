@@ -223,7 +223,8 @@ namespace dk.nita.saml20.Utils
         /// <returns>The last certificate in the chain</returns>
         public static X509Certificate2 GetCertificateFromKeyInfo(KeyInfoX509Data keyInfo)
         {
-            int count = keyInfo.Certificates.Count;
+            // Certificates is null when the X509Data names a certificate (by issuer and serial, subject or key identifier) without containing it.
+            int count = keyInfo.Certificates?.Count ?? 0;
             if (count == 0)
                 return null;
 

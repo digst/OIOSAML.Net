@@ -39,6 +39,18 @@ namespace dk.nita.test.Saml20
         }
 
         [Test]
+        public void MetadataPublishesEveryUnexpiredCertificate()
+        {
+            var current = Create(-10, 100);
+            var next = Create(1, 100);
+            var expired = Create(-20, -1);
+            var certificate = Found(() => new[] { current, next, expired });
+
+            CollectionAssert.AreEqual(new[] { next.Thumbprint, current.Thumbprint },
+                certificate.GetUnexpiredX509Certificates().Cast<X509Certificate2>().Select(c => c.Thumbprint));
+        }
+
+        [Test]
         public void CertificateWithoutPrivateKeyIsNotUsed()
         {
             var withKey = Create(-10, 100);
