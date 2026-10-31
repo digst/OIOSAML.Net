@@ -63,6 +63,17 @@ namespace dk.nita.saml20.config
         }
 
         /// <summary>
+        /// The certificates found that have a private key and have not expired, including those not yet valid, latest
+        /// NotBefore first: the certificates to publish in the service provider's metadata. Null if there are none.
+        /// </summary>
+        public X509Certificate2Collection GetUnexpiredX509Certificates()
+        {
+            var now = DateTime.Now;
+            var unexpired = GetCandidates(now).Where(certificate => now <= certificate.NotAfter).ToArray();
+            return unexpired.Length == 0 ? null : new X509Certificate2Collection(unexpired);
+        }
+
+        /// <summary>
         /// How long the certificates found in the store are used before the store is searched again.
         /// </summary>
         internal TimeSpan RefreshInterval = TimeSpan.FromMinutes(10);
@@ -76,6 +87,11 @@ namespace dk.nita.saml20.config
         private X509Certificate2[] GetValidCertificates()
         {
             var now = DateTime.Now;
+            return GetCandidates(now).Where(certificate => certificate.NotBefore <= now && now <= certificate.NotAfter).ToArray();
+        }
+
+        private X509Certificate2[] GetCandidates(DateTime now)
+        {
             X509Certificate2[] candidates;
             lock (_cacheLock)
             {
@@ -96,7 +112,7 @@ namespace dk.nita.saml20.config
                 }
             }
 
-            return candidates.Where(certificate => certificate.NotBefore <= now && now <= certificate.NotAfter).ToArray();
+            return candidates;
         }
 
         private X509Certificate2Collection FindAll()

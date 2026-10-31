@@ -156,6 +156,7 @@
     <Compile Include="Saml20\Schema\BasicPrivilegeProfile\PrivilegeListTypeTest.cs" />
     <Compile Include="Saml20\LogTextTest.cs" />
     <Compile Include="Saml20\CertificateTest.cs" />
+    <Compile Include="Saml20\ConfigurationCheckTest.cs" />
     <Compile Include="Saml20\SignatureTest.cs" />
     <Compile Include="Saml20\TempTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

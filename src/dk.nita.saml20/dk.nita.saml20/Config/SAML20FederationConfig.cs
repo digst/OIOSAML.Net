@@ -11,6 +11,7 @@ using System.Xml.Serialization;
 using dk.nita.saml20.Bindings.SignatureProviders;
 using dk.nita.saml20.Profiles.DKSaml20.Attributes;
 using dk.nita.saml20.Schema.Metadata;
+using dk.nita.saml20.Specification;
 using dk.nita.saml20.Utils;
 using Saml2.Properties;
 using Trace = dk.nita.saml20.Utils.Trace;
@@ -111,7 +112,12 @@ namespace dk.nita.saml20.config
         public bool AllowAssuranceLevel
         {
             get { return _allowAssuranceLevel; }
-            set { _allowAssuranceLevel = value; }
+            set
+            {
+                if (value)
+                    Trace.TraceData(TraceEventType.Warning, "AllowAssuranceLevel is enabled: assertions with an OIOSAML 2 AssuranceLevel are accepted.");
+                _allowAssuranceLevel = value;
+            }
         }
 
         // default to Substantial. Cooresponds to certificate level in the OIOSAML specification.
@@ -1108,10 +1114,18 @@ namespace dk.nita.saml20.config
         public bool QuirksMode;
 
         /// <summary>
-        /// Omit signature checks on assertions.
+        /// No longer supported: assertions are always signature-checked, and a configuration that sets this to true is refused.
         /// </summary>
         [XmlAttribute(AttributeName = "omitAssertionSignatureCheck")]
-        public bool OmitAssertionSignatureCheck;
+        public bool OmitAssertionSignatureCheck
+        {
+            get { return false; }
+            set
+            {
+                if (value)
+                    throw new ConfigurationErrorsException("omitAssertionSignatureCheck is no longer supported: assertions are always signature-checked.");
+            }
+        }
 
         /// <summary>
         /// Force authentication on each authnrequest
@@ -1220,11 +1234,25 @@ namespace dk.nita.saml20.config
     /// </summary>
     public class CertificateValidationElement
     {
+        private string _type;
+
         /// <summary>
-        /// The concrete type that implements the ICertificateValidationSpecification interface.
+        /// The concrete type that implements the ICertificateSpecification interface. A type that can't be loaded is refused.
         /// </summary>
         [XmlAttribute(AttributeName = "type")]
-        public string type;
+        public string type
+        {
+            get { return _type; }
+            set
+            {
+                var specification = string.IsNullOrWhiteSpace(value) ? null : Type.GetType(value, false);
+                if (specification == null || !typeof(ICertificateSpecification).IsAssignableFrom(specification))
+                    throw new ConfigurationErrorsException($"The certificate validation type \"{value}\" can't be loaded or doesn't implement ICertificateSpecification.");
+                if (specification == typeof(SelfIssuedCertificateSpecification))
+                    Trace.TraceData(TraceEventType.Warning, "SelfIssuedCertificateSpecification is configured: IdP certificates are not checked for a trusted issuer or revocation.");
+                _type = value;
+            }
+        }
     }
 
     /// <summary>

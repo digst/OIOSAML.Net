@@ -53,15 +53,8 @@ namespace dk.nita.saml20.Bindings
                 }
                 try
                 {
-                    foreach (Certificate certificate in FederationConfig.GetConfig().SigningCertificates)
-                    {
-                        X509Certificate2 signingCert = certificate.GetCertificate();
-                        if (!signingCert.HasPrivateKey)
-                        {
-                            errorMessage = Saml20Resources.SigningCertificateMissingPrivateKey;
-                            return false;
-                        }
-                    }
+                    // Throws when no configured certificate has a private key and is within its validity period.
+                    FederationConfig.GetConfig().GetFirstValidCertificate();
                 }
                 catch (Exception ex)
                 {
