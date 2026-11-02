@@ -50,12 +50,12 @@ Følgende tests er ikke relevant for OIOSAML.net komponenten:
 
 ## Release
 
-Releases are tags on `main`, without a `v` (e.g. `3.1.0`, as the earlier releases); the assembly version is read from the tag by `git describe`.
+Releases are tags on `main`, without a `v` (e.g. `3.1.1`, as the earlier releases); the assembly version is read from the tag by `git describe`.
 
 1. Update `RELEASE_NOTES.md`, including "Upgrading from" notes for behaviour integrators must act on, and merge it to `main`.
 2. Run the integration tests above against DevTest4.
 3. Optional: run the **Release** workflow by hand (Actions → Release → Run workflow) on `main` and inspect the `packages` artifact; a run by hand never publishes.
-4. Tag the release commit on `main` and push the tag: `git tag 3.1.0 && git push origin 3.1.0`.
+4. Tag the release commit on `main` and push the tag: `git tag 3.1.1 && git push origin 3.1.1`.
 5. The **Release** workflow builds, tests and packs the three packages, then waits for approval in the `nuget` environment. After approval it publishes them to nuget.org by Trusted Publishing; no API key is stored anywhere.
 6. Create a GitHub release for the tag with the release notes.
 
@@ -63,5 +63,5 @@ Releases are tags on `main`, without a `v` (e.g. `3.1.0`, as the earlier release
 
 ### One-time setup for Trusted Publishing
 
-- On nuget.org, an owner of the Digitaliseringsstyrelsen account adds a Trusted Publishing policy: repository owner `digst`, repository `OIOSAML.Net`, workflow `release.yml`, environment `nuget`.
-- In the repository settings: an environment `nuget` with required reviewers, and a repository variable `NUGET_USER` with the nuget.org user name of the policy owner.
+- On nuget.org, a member of the Digitaliseringsstyrelsen organisation adds a Trusted Publishing policy: package owner Digitaliseringsstyrelsen, scope "Push only new package versions", glob pattern `dk.nita.saml20*`, repository owner `digst`, repository `OIOSAML.Net`, workflow `release.yml`, environment `nuget`.
+- In the repository settings: an environment `nuget` with required reviewers and a deployment rule that allows only tags matching `[0-9]*`, and on that environment the variable `NUGET_USER`: the nuget.org profile name (not the email address) of the member who created the policy. If that member leaves the organisation, another member creates the policy again and `NUGET_USER` changes to their profile name.
