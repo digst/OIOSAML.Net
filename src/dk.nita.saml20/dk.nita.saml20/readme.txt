@@ -1,1 +1,1 @@
-See http://digitaliser.dk/group/42063 or https://github.com/digst/OIOSAML.Net/blob/master/Net%20SAML2%20Service%20Provider%20Framework.docx for documentaion on how to use the OIOSAML.Net component.
+See https://github.com/digst/OIOSAML.Net for documentation on how to use the OIOSAML.Net component (readme.md, and "Net SAML2 Service Provider Framework.docx"), and RELEASE_NOTES.md for what has changed, including "Upgrading from 3.0.x".
