@@ -13,9 +13,9 @@ This is the codebase that the OIOSAML.Net components are built from.
 
 ## Resource links
 
-*   [Project maintenance](https://digitaliser.dk/group/42063)
 *   [Nuget packages (prefixed dk.nita.saml20)](https://www.nuget.org/profiles/Digitaliseringsstyrelsen)
 *   [Code repository](https://github.com/digst/OIOSAML.Net)
+*   [Successor: DK.Gov.Oio.Saml](https://github.com/digst/oiosaml-net), with a migration guide from dk.nita.saml20
 
 ## Repository content
 

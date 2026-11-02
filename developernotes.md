@@ -15,7 +15,7 @@ Ensure documentation is updated with the changes, and that the release history i
 
 ## Run integrationtests
 
-Integration test must be performed on a test service provider. The latest integrationstest is available [here](https://digitaliser.dk/resource/3126701/artefact/IntegrationstestV1.7.pdf?artefact=true&PID=3126703)  
+Integration test must be performed on a test service provider. The test cases are described in NemLog-in's [Integrationstest ved tilslutning til NemLog-in](https://cms.nemlog-in.dk/media/psknz1el/integrationstest-ved-tilslutning-til-nemlog-in.pdf)  
 
 The test cases should be run using the test service provider https://localhost:20002  
 
@@ -48,23 +48,20 @@ Følgende tests er ikke relevant for OIOSAML.net komponenten:
 * IT-ATTQ-1
 * IT-SIGN-1
 
-## Build the packages
+## Release
 
-* Run the BuildPackages.ps1, setting version to a proper version number, e.g 1.0.0 and assemblyVersion to a proper version number, e.g 1.0.0.0\. Use 1.0.0-alpha, 1.00-beta, etc. as version number to make a prerelease
-* Verify the packages looks good and are ready to publish
-* Ensure API key to digitaliseringsstyrelsen's nuget account is installed on your machine
-* Push packages to NuGet by running BuildPackages.ps1 with the switch -pushPackages
-* Add a tag in Git corresponding to the release
+Releases are tags on `main`, without a `v` (e.g. `3.1.0`, as the earlier releases); the assembly version is read from the tag by `git describe`.
 
-## Creating the new resource on digitaliser.dk
+1. Update `RELEASE_NOTES.md`, including "Upgrading from" notes for behaviour integrators must act on, and merge it to `main`.
+2. Run the integration tests above against DevTest4.
+3. Optional: run the **Release** workflow by hand (Actions → Release → Run workflow) on `main` and inspect the `packages` artifact; a run by hand never publishes.
+4. Tag the release commit on `main` and push the tag: `git tag 3.1.0 && git push origin 3.1.0`.
+5. The **Release** workflow builds, tests and packs the three packages, then waits for approval in the `nuget` environment. After approval it publishes them to nuget.org by Trusted Publishing; no API key is stored anywhere.
+6. Create a GitHub release for the tag with the release notes.
 
-* Login on digitaliser.dk and go to the newest version of the ressource (should be https://www.digitaliser.dk/group/42063/resources)
-* Choose Funktioner and click on "Opret ny version"
-* Change the metadata of the ressource accordingly, remember adding link to SVN and the published Nuget packages
-* Publish the new version when ready
+`build/BuildPackages.ps1 -version <version>` builds the same packages locally.
 
-## Change the frontpage of the group
+### One-time setup for Trusted Publishing
 
-* Login on digitaliser.dk and go to the oiosaml group (http://digitaliser.dk/group/42063)
-* Find the old promotion on the grouppage and remove it.
-* Find the new promotion on the grouppage by using the ID from the URL of the page showing the new version.
+- On nuget.org, an owner of the Digitaliseringsstyrelsen account adds a Trusted Publishing policy: repository owner `digst`, repository `OIOSAML.Net`, workflow `release.yml`, environment `nuget`.
+- In the repository settings: an environment `nuget` with required reviewers, and a repository variable `NUGET_USER` with the nuget.org user name of the policy owner.

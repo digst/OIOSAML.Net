@@ -1,0 +1,122 @@
+# REF-98: Release of the dk.nita.saml20 packages
+#
+# A version tag on main (e.g. 3.1.0, as the earlier releases) builds, tests and packs the three
+# packages and, after approval in the nuget environment, publishes them to nuget.org by Trusted
+# Publishing. Run it by hand (workflow_dispatch) to build the packages without publishing them.
+# See developernotes.md.
+name: Release
+
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+      - '[0-9]+.[0-9]+.[0-9]+-*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  SOLUTION: src/dk.nita.saml20/dk.nita.saml20.sln
+  BUILD_FILTER: src/dk.nita.saml20/dk.nita.saml20.ci.slnf
+
+jobs:
+  pack:
+    name: Build, test and pack
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          # The assembly version comes from `git describe --tags` (build/PreBuild.targets.xml).
+          fetch-depth: 0
+
+      - name: Check the tag
+        if: github.ref_type == 'tag'
+        shell: bash
+        run: |
+          version="$GITHUB_REF_NAME"
+          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Tag $version is not MAJOR.MINOR.PATCH or MAJOR.MINOR.PATCH-PRERELEASE."; exit 1
+          fi
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::Tag $version is not on main. Releases are tagged on main only."; exit 1
+          fi
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+
+      - name: Version for a build by hand
+        if: github.ref_type != 'tag'
+        shell: bash
+        run: echo "VERSION=0.0.0-ci.${GITHUB_RUN_NUMBER}" >> "$GITHUB_ENV"
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v3
+
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v4
+
+      - name: Restore NuGet packages
+        run: nuget restore "$env:SOLUTION"
+
+      - name: Build
+        run: msbuild "$env:BUILD_FILTER" /m /p:Configuration=Release /p:Platform="Any CPU"
+
+      - name: Install NUnit 2.6.4 console runner
+        run: nuget install NUnit.Runners -Version 2.6.4 -OutputDirectory tools
+
+      - name: Test
+        run: >
+          tools/NUnit.Runners.2.6.4/tools/nunit-console.exe
+          "src/dk.nita.saml20/dk.nita.test.saml20/bin/Release/dk.nita.test.saml20.dll"
+
+      - name: Pack
+        shell: pwsh
+        run: |
+          foreach ($project in 'dk.nita.saml20', 'dk.nita.saml20.ext.audit.log4net', 'dk.nita.saml20.ext.sessionstore.sqlserver') {
+            nuget pack "src/dk.nita.saml20/$project/$project.csproj" -Version $env:VERSION -Properties Configuration=Release `
+              -Symbols -SymbolPackageFormat snupkg -OutputDirectory packages
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v7
+        with:
+          name: packages
+          path: packages
+          if-no-files-found: error
+
+  # Trusted Publishing: nuget.org exchanges the workflow's OIDC token for a short-lived API key, so no key is stored here.
+  # The nuget environment requires a reviewer's approval before anything is published.
+  publish:
+    name: Publish to nuget.org
+    if: github.ref_type == 'tag'
+    needs: pack
+    runs-on: ubuntu-latest
+    environment: nuget
+    permissions:
+      id-token: write
+    steps:
+      - name: Download packages
+        uses: actions/download-artifact@v8
+        with:
+          name: packages
+          path: packages
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Log in to nuget.org
+        id: nuget
+        uses: NuGet/login@v1
+        with:
+          user: ${{ vars.NUGET_USER }}
+
+      # Pushing a .nupkg also pushes the .snupkg next to it.
+      - name: Push
+        run: >-
+          dotnet nuget push "packages/*.nupkg"
+          --api-key "${{ steps.nuget.outputs.NUGET_API_KEY }}"
+          --source https://api.nuget.org/v3/index.json
+          --skip-duplicate
