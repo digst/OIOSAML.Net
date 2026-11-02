@@ -52,7 +52,7 @@ On the service provider you should now be able to log in using either the demo i
 
 ## Assertion encryption
 
-The library decrypts assertions encrypted with AES-128-CBC or AES-256-CBC and RSA-OAEP, because .NET Framework has no AES-GCM. The SP metadata from `metadata.ashx` lists AES-256-CBC and RSA-OAEP as encryption methods: keep them when you register it, and if the IdP lets you choose, choose AES-CBC. With AES-GCM, every login fails with "The assertion could not be decrypted", and the trace names the algorithm.
+The library decrypts assertions encrypted with AES-128-CBC or AES-256-CBC and RSA-OAEP, because .NET Framework has no AES-GCM. The SP metadata from `metadata.ashx` lists AES-256-CBC and RSA-OAEP as encryption methods, keep them when you register it. If response is encrypted with AES-GCM, every login fails with "The assertion could not be decrypted", and the trace names the algorithm.
 
 ## When the IdP changes its signing certificate
 
