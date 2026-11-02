@@ -1,6 +1,6 @@
 # REF-98: Release of the dk.nita.saml20 packages
 #
-# A version tag on main (e.g. 3.1.0, as the earlier releases) builds, tests and packs the three
+# A version tag on main (e.g. 3.1.1, as the earlier releases) builds, tests and packs the three
 # packages and, after approval in the nuget environment, publishes them to nuget.org by Trusted
 # Publishing. Run it by hand (workflow_dispatch) to build the packages without publishing them.
 # See developernotes.md.
@@ -78,6 +78,31 @@ jobs:
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           }
 
+      # nuget pack copies the nuspec's files into the symbol packages too, but nuget.org refuses other file types there,
+      # and its symbol server takes only portable PDBs.
+      - name: Check symbol packages
+        shell: pwsh
+        run: |
+          foreach ($file in Get-ChildItem packages/*.snupkg) {
+            $zip = [IO.Compression.ZipFile]::Open($file.FullName, 'Update')
+            try {
+              @($zip.Entries) | Where-Object { [IO.Path]::GetExtension($_.Name) -notin '.pdb', '.nuspec', '.xml', '.psmdcp', '.rels', '.p7s' } | ForEach-Object { $_.Delete() }
+
+              $pdbs = @($zip.Entries | Where-Object { $_.Name -like '*.pdb' })
+              if ($pdbs.Count -eq 0) { throw "$($file.Name) has no PDB." }
+              foreach ($pdb in $pdbs) {
+                $stream = $pdb.Open()
+                $signature = [byte[]]::new(4)
+                [void]$stream.Read($signature, 0, 4)
+                $stream.Dispose()
+                if ([Text.Encoding]::ASCII.GetString($signature) -ne 'BSJB') { throw "$($pdb.FullName) in $($file.Name) is not a portable PDB." }
+              }
+            }
+            finally {
+              $zip.Dispose()
+            }
+          }
+
       - name: Upload packages
         uses: actions/upload-artifact@v7
         with:
@@ -113,10 +138,18 @@ jobs:
         with:
           user: ${{ vars.NUGET_USER }}
 
-      # Pushing a .nupkg also pushes the .snupkg next to it.
-      - name: Push
+      # Symbols go separately, so that a refused symbol package can't stop the packages.
+      - name: Push packages
         run: >-
           dotnet nuget push "packages/*.nupkg"
+          --no-symbols
+          --api-key "${{ steps.nuget.outputs.NUGET_API_KEY }}"
+          --source https://api.nuget.org/v3/index.json
+          --skip-duplicate
+
+      - name: Push symbol packages
+        run: >-
+          dotnet nuget push "packages/*.snupkg"
           --api-key "${{ steps.nuget.outputs.NUGET_API_KEY }}"
           --source https://api.nuget.org/v3/index.json
           --skip-duplicate

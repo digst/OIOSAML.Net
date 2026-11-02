@@ -1,6 +1,8 @@
 # OIO SAML 3
 
-## 3.1.0
+## 3.1.1
+
+3.1.0 was not fully published: only dk.nita.saml20.ext.audit.log4net reached NuGet, and it is unlisted. Use 3.1.1.
 
 A security and maintenance release of dk.nita.saml20. It brings the library in line with the OIOSAML Web SSO Profile on the points below and lets NemLog-in change its signing certificate without an outage for service providers. Read **Upgrading from 3.0.x** before upgrading: some input that 3.0.x accepted is now refused.
 
