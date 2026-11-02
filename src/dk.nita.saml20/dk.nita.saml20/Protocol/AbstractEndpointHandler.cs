@@ -163,6 +163,25 @@ namespace dk.nita.saml20.protocol
             HandleError(context, e.Message, m => new Saml20Exception(m), 500);
         }
 
+        /// <summary>
+        /// Whether the exception means that an incoming SAML message was refused, not that the service provider failed.
+        /// </summary>
+        internal static bool IsRefusedMessage(Exception e)
+        {
+            return e is Saml20Exception || e is Saml20FormatException;
+        }
+
+        /// <summary>
+        /// Displays an error page for an incoming SAML message that was refused.
+        /// </summary>
+        /// <param name="context">The current HTTP context.</param>
+        /// <param name="e">The exception that says why the message was refused.</param>
+        protected void HandleRefusedMessage(HttpContext context, Exception e)
+        {
+            Trace.TraceData(TraceEventType.Error, e.ToString());
+            HandleError(context, e.Message);
+        }
+
         private string _errorBehaviour;
 
         /// <summary>

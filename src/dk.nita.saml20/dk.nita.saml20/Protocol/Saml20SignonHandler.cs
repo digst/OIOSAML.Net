@@ -103,8 +103,6 @@ namespace dk.nita.saml20.protocol
 
             if (!string.IsNullOrEmpty(context.Request.Params["SamlResponse"]))
             {
-                SessionStore.AssertSessionExists();
-
                 HandleResponse(context);
             }
             else
@@ -317,12 +315,14 @@ namespace dk.nita.saml20.protocol
         private void HandleResponse(HttpContext context)
         {
             Encoding defaultEncoding = Encoding.UTF8;
-            XmlDocument doc = GetDecodedSamlResponse(context, defaultEncoding);
-
-            AuditLogging.logEntry(Direction.IN, Operation.LOGIN, "Received SAMLResponse: " + LogText.Describe(doc.DocumentElement));
 
             try
             {
+                XmlDocument doc = GetDecodedSamlResponse(context, defaultEncoding);
+
+                AuditLogging.logEntry(Direction.IN, Operation.LOGIN, "Received SAMLResponse: " + LogText.Describe(doc.DocumentElement));
+
+                SessionStore.AssertSessionExists();
 
                 var inResponseToAttribute = doc.DocumentElement.Attributes["InResponseTo"];
 
@@ -378,6 +378,11 @@ namespace dk.nita.saml20.protocol
                 {
                     HandleError(context, ex.Message, (m) => new Saml20NsisLoaException(m));
                 }
+                else if (IsRefusedMessage(ex))
+                {
+                    AuditLogging.logEntry(Direction.IN, Operation.LOGIN, "Response refused: " + ex.Message);
+                    HandleRefusedMessage(context, ex);
+                }
                 else
                 {
                     HandleError(context, ex);
@@ -417,11 +422,18 @@ namespace dk.nita.saml20.protocol
         {
             string base64 = context.Request.Params["SAMLResponse"];
 
-            string samlResponse = encoding.GetString(Convert.FromBase64String(base64));
-            if (Trace.ShouldTrace(TraceEventType.Verbose))
-                Trace.TraceData(TraceEventType.Verbose, "Decoded SAMLResponse", samlResponse);
+            try
+            {
+                string samlResponse = encoding.GetString(Convert.FromBase64String(base64));
+                if (Trace.ShouldTrace(TraceEventType.Verbose))
+                    Trace.TraceData(TraceEventType.Verbose, "Decoded SAMLResponse", samlResponse);
 
-            return SafeXml.Load(samlResponse);
+                return SafeXml.Load(samlResponse);
+            }
+            catch (Exception e) when (e is FormatException || e is XmlException)
+            {
+                throw new Saml20FormatException("The SAMLResponse could not be read.", e);
+            }
         }
 
         /// <summary>
@@ -962,6 +974,7 @@ namespace dk.nita.saml20.protocol
                 var demandError = DemandedNsisLoaError(demandedLevelOfAssurance, configuredNsisLoa);
                 if (demandError != null)
                 {
+                    AuditLogging.logEntry(Direction.IN, Operation.ACCESS, "Login refused: " + string.Format(demandError, demandedLevelOfAssurance, configuredNsisLoa));
                     HandleError(context, demandError, demandedLevelOfAssurance, configuredNsisLoa);
                     return;
                 }
@@ -978,6 +991,7 @@ namespace dk.nita.saml20.protocol
 
                 if (!new[] { "Professional", "Person" }.Contains(demandedProfile))
                 {
+                    AuditLogging.logEntry(Direction.IN, Operation.ACCESS, "Login refused: " + string.Format(Resources.DemandingProfileError, demandedProfile));
                     HandleError(context, Resources.DemandingProfileError, demandedProfile);
                     return;
                 }
@@ -1033,7 +1047,10 @@ namespace dk.nita.saml20.protocol
                 builder.ShaHashingAlgorithm = shaHashingAlgorithm;
                 string s = request.Destination + "?" + builder.ToQuery();
 
-                AuditLogging.logEntry(Direction.OUT, Operation.AUTHNREQUEST_REDIRECT, "Redirecting user to IdP for authentication", builder.Request);
+                if (Trace.ShouldTrace(TraceEventType.Verbose))
+                    Trace.TraceData(TraceEventType.Verbose, "AuthnRequest", builder.Request);
+
+                AuditLogging.logEntry(Direction.OUT, Operation.AUTHNREQUEST_REDIRECT, "Redirecting user to IdP for authentication", LogText.Describe(builder.Request));
 
                 context.Response.Redirect(s, true);
                 return;

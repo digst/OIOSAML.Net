@@ -50,6 +50,10 @@ On the service provider you should now be able to log in using either the demo i
 * If you choose NemLog-in, you must use an certificate employee certificate from the [NemLog-In testportal](https://test-nemlog-in.dk/testportal/)  
 * If you choose the local demo idp, you log in with a username/password with one of the users listed in the web.config file for the demo idp under the 'demoIdp' section
 
+## Assertion encryption
+
+The library decrypts assertions encrypted with AES-128-CBC or AES-256-CBC and RSA-OAEP, because .NET Framework has no AES-GCM. The SP metadata from `metadata.ashx` lists AES-256-CBC and RSA-OAEP as encryption methods: keep them when you register it, and if the IdP lets you choose, choose AES-CBC. With AES-GCM, every login fails with "The assertion could not be decrypted", and the trace names the algorithm.
+
 ## When the IdP changes its signing certificate
 
 The IdP metadata files are read from the directory set in `IDPEndPoints/@metadata`. The library watches the directory and reloads it a few seconds after a change, so a new certificate needs no restart:
@@ -79,6 +83,6 @@ The library writes to two trace sources: `dk.nita.saml20.auditLogger` for the au
 
 ## Session lifetime
 
-A login ends after `SessionTimeout` minutes without activity (default 30), and in any case `MaximumSessionLength` minutes after the user authenticated at the IdP (default 480), or earlier if the IdP's `SessionNotOnOrAfter` says so. Both are elements of the `Federation` section. NemLog-in's technical requirements for service providers set the limits these defaults follow.
+A login ends after `SessionTimeout` minutes without activity (default 30), and in any case `MaximumSessionLength` minutes after the user authenticated at the IdP (default 480), or earlier if the IdP's `SessionNotOnOrAfter` says so. Both are elements of the `Federation` section. `MaximumSessionLength` is checked with the allowed clock skew, so a login can last `AllowedClockSkewMinutes` longer. NemLog-in's technical requirements for service providers set the limits these defaults follow.
 
 `Saml20Identity.IsInitialized()` is true only while the session holds a login that has not ended. The Forms ticket issued at login by the default `SetSamlPrincipal` action is tied to the OIOSAML session and ends no later than the login; if it is presented with another session, `IsInitialized()` is false. Sign the user out of Forms authentication when `IsInitialized()` is false, as `WebsiteDemo/Global.asax.cs` does.

@@ -205,6 +205,7 @@ namespace dk.nita.saml20.protocol
                     IDPEndPointElement destination =
                         DetermineEndpointConfiguration(SAMLBinding.REDIRECT, idp.SLOEndpoint, idp.metadata.SLOEndpoints());
 
+                    AuditLogoutResponse("Redirect", response);
                     builder.RedirectFromLogout(idp, destination, response);
                 }
                 else if (parser.ArtifactResponse.Any.LocalName == LogoutResponse.ELEMENT_NAME)
@@ -247,6 +248,7 @@ namespace dk.nita.saml20.protocol
                 if (doc.FirstChild is XmlDeclaration)
                     doc.RemoveChild(doc.FirstChild);
 
+                AuditLogoutResponse("SOAP", response);
                 builder.SendResponseMessage(doc.OuterXml);
 
             }
@@ -599,6 +601,7 @@ namespace dk.nita.saml20.protocol
                 builder.signingKey = FederationConfig.GetConfig().GetFirstValidCertificate().GetRSAPrivateKey();
                 builder.ShaHashingAlgorithm = shaHashingAlgorithm;
                 string s = destination.Url + "?" + builder.ToQuery();
+                AuditLogoutResponse("Redirect", response);
                 context.Response.Redirect(s, true);
                 return;
             }
@@ -614,9 +617,16 @@ namespace dk.nita.saml20.protocol
                 signatureProvider.SignAssertion(responseDocument, response.ID, signingCertificate);
                 builder.Response = responseDocument.OuterXml;
                 builder.RelayState = context.Request.Params["RelayState"];
+                AuditLogoutResponse("POST", response);
                 builder.GetPage().ProcessRequest(context);
                 return;
             }
+        }
+
+        private static void AuditLogoutResponse(string binding, Saml20LogoutResponse response)
+        {
+            AuditLogging.logEntry(Direction.OUT, Operation.LOGOUTRESPONSE,
+                "Binding: " + binding + ", status: " + response.StatusCode + " " + response.SubStatusCode, response.GetXml().DocumentElement);
         }
 
         /// <summary>
