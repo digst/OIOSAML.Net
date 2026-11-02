@@ -626,7 +626,7 @@ namespace dk.nita.saml20.protocol
         private static void AuditLogoutResponse(string binding, Saml20LogoutResponse response)
         {
             AuditLogging.logEntry(Direction.OUT, Operation.LOGOUTRESPONSE,
-                "Binding: " + binding + ", status: " + response.StatusCode + " " + response.SubStatusCode, response.GetXml().DocumentElement);
+                "Binding: " + binding + ", status: " + (response.StatusCode + " " + response.SubStatusCode).Trim(), response.GetXml().DocumentElement);
         }
 
         /// <summary>
