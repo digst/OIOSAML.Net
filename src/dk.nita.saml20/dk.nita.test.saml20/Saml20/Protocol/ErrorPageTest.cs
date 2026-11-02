@@ -1,4 +1,7 @@
-﻿using dk.nita.saml20.protocol.pages;
+﻿using System;
+using dk.nita.saml20;
+using dk.nita.saml20.protocol;
+using dk.nita.saml20.protocol.pages;
 using NUnit.Framework;
 
 namespace dk.nita.test.Saml20.Protocol
@@ -22,6 +25,21 @@ namespace dk.nita.test.Saml20.Protocol
         public void MissingTextIsEmpty()
         {
             Assert.AreEqual(string.Empty, ErrorPage.ToHtml(null));
+        }
+
+        [Test]
+        public void SamlExceptionsMeanTheMessageWasRefused()
+        {
+            Assert.IsTrue(AbstractEndpointHandler.IsRefusedMessage(new Saml20Exception("x")));
+            Assert.IsTrue(AbstractEndpointHandler.IsRefusedMessage(new Saml20FormatException("x")));
+            Assert.IsTrue(AbstractEndpointHandler.IsRefusedMessage(new Saml20NsisLoaException("x")));
+        }
+
+        [Test]
+        public void OtherExceptionsAreFailuresOfTheServiceProvider()
+        {
+            Assert.IsFalse(AbstractEndpointHandler.IsRefusedMessage(new InvalidOperationException("x")));
+            Assert.IsFalse(AbstractEndpointHandler.IsRefusedMessage(new FormatException("x")));
         }
     }
 }

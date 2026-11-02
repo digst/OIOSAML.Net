@@ -22,7 +22,8 @@ A security and maintenance release of dk.nita.saml20. It brings the library in l
 
 ### Logging and errors
 - Audit entries identify SAML messages by their identifiers instead of including them. The session id is logged as a hash, full messages are traced only at `Verbose`, and decrypted assertions never (REF-93).
-- The error page shows encoded text without exception details and answers 400 or 500 (REF-95).
+- Refused responses and login requests, and outgoing LogoutResponses, are in the audit log (REF-99).
+- The error page shows encoded text without exception details and answers 400 for a refused message and 500 otherwise (REF-95, REF-99).
 
 ### Other
 - Non-metadata files in the metadata directory are ignored (GitHub #25). A clear error for a misspelt default IdP (#24) is produced, `fullName` attribute name spelling corrected (#75) (REF-11).
@@ -32,6 +33,7 @@ A security and maintenance release of dk.nita.saml20. It brings the library in l
 
 ### Upgrading from 3.0.x
 - **Algorithms:** assertions and messages signed with SHA-1, or encrypted with RSA-1.5 or 3DES, are refused, and `SHA1`/`SHA512` are refused as configured signing algorithms. NemLog-in uses the allowed algorithms.
+- **Assertion encryption:** assertions must be encrypted with AES-CBC; AES-GCM isn't available on .NET Framework. Keep the encryption methods from `metadata.ashx` when registering the SP at NemLog-in. See "Assertion encryption" in `readme.md`.
 - **Plain assertions:** an unencrypted assertion is refused. An inbound SOAP `ArtifactResponse` is refused.
 - **Configuration that is refused at start-up:** `omitAssertionSignatureCheck="true"`, a `CertificateValidation` type that can't be loaded, an invalid `MinimumNsisLoa`.
 - **`IAuthnRequestAppender`:** an appender that sets `AssertionConsumerServiceURL` or `AssertionConsumerServiceIndex` must point at one of the service provider's configured ACS URLs, a response to any other URL is refused.
